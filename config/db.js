@@ -1,8 +1,10 @@
 /**
  * ==========================================================================
- * ENTERPRISE DATABASE CONFIGURATION (MongoDB Mongoose + Pooling & Fallback)
+ * ENTERPRISE DATABASE CONFIGURATION (MySQL + MongoDB Mongoose + JSON Fallback)
  * ==========================================================================
  */
+
+const { connectMySQL, getMySQLStatus, queryMySQL } = require('./mysql');
 
 let mongoose = null;
 try {
@@ -14,30 +16,39 @@ try {
 let isMongoConnected = false;
 
 const connectDB = async () => {
-  if (!mongoose) {
-    console.log('[DB Info] Mongoose module not installed. Operating in high-performance JSON fallback mode.');
-    return false;
+  // 1. Try connecting to MySQL Database
+  const mysqlSuccess = await connectMySQL();
+
+  // 2. Try connecting to MongoDB Database if configured
+  if (mongoose) {
+    const mongoURI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/bookbridge';
+    try {
+      const conn = await mongoose.connect(mongoURI, {
+        maxPoolSize: 100,
+        serverSelectionTimeoutMS: 3000,
+        socketTimeoutMS: 45000,
+      });
+
+      isMongoConnected = true;
+      console.log(`[MongoDB Connected] Host: ${conn.connection.host}`);
+    } catch (error) {
+      isMongoConnected = false;
+    }
   }
 
-  const mongoURI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/bookbridge';
-
-  try {
-    const conn = await mongoose.connect(mongoURI, {
-      maxPoolSize: 100, // Handle high concurrency
-      serverSelectionTimeoutMS: 3000,
-      socketTimeoutMS: 45000,
-    });
-
-    isMongoConnected = true;
-    console.log(`[MongoDB Connected] Host: ${conn.connection.host}`);
-    return true;
-  } catch (error) {
-    console.log(`[DB Info] Local MongoDB offline (${error.message}). Gracefully using JSON DB fallback engine.`);
-    isMongoConnected = false;
-    return false;
+  if (!mysqlSuccess && !isMongoConnected) {
+    console.log('[DB Info] Standard JSON DB engine active as fallback.');
   }
+
+  return mysqlSuccess || isMongoConnected;
 };
 
 const getMongoStatus = () => isMongoConnected;
 
-module.exports = { connectDB, getMongoStatus };
+module.exports = {
+  connectDB,
+  getMongoStatus,
+  connectMySQL,
+  getMySQLStatus,
+  queryMySQL
+};

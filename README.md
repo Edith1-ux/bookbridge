@@ -44,6 +44,28 @@ npm start
 ```
 3. Open your browser to `http://localhost:3000`.
 
+### Option 3: MySQL Database Setup
+To set up and connect a production MySQL database:
+1. Ensure MySQL Server is running on your machine or host.
+2. Create the database and import the schema with seed data:
+```bash
+mysql -u root -p -e "CREATE DATABASE IF NOT EXISTS bookbridge;"
+mysql -u root -p bookbridge < data/schema_mysql.sql
+```
+3. Copy `.env.example` to `.env` and set your MySQL credentials:
+```env
+MYSQL_HOST=localhost
+MYSQL_PORT=3306
+MYSQL_USER=root
+MYSQL_PASSWORD=your_mysql_password
+MYSQL_DATABASE=bookbridge
+DATABASE_URL="mysql://root:your_mysql_password@localhost:3306/bookbridge"
+```
+4. Generate Prisma client (optional ORM):
+```bash
+npx prisma generate
+```
+
 ---
 
 ## 📁 File Structure
