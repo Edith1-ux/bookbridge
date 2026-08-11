@@ -1,33 +1,39 @@
 @echo off
-title Book Bridge Server Starter
+title Book Bridge Django Server Starter
 echo ==================================================
-echo   📚 BOOK BRIDGE BACKEND SERVER STARTER 📚
+echo   📚 BOOK BRIDGE PYTHON DJANGO SERVER STARTER 📚
 echo ==================================================
 echo.
 
-:: Check Node.js
-echo Checking Node.js installation...
-where node >nul 2>nul
+:: Check Python
+echo Checking Python installation...
+where python >nul 2>nul
 if %errorlevel% neq 0 (
     echo.
-    echo ❌ [ERROR] Node.js was not found on your system!
-    echo.
-    echo Opening fallback static launcher or starting PowerShell web server...
+    echo ❌ [ERROR] Python was not found on your system!
+    echo Please install Python 3.10+ to run the BookBridge Django server.
+    echo Starting fallback native PowerShell web server...
     powershell -NoProfile -ExecutionPolicy Bypass -File server.ps1
     pause
     exit /b
 )
 
 echo.
-echo ✅ Node.js detected!
-echo Starting backend server on port 8000...
-echo Opening http://localhost:8000 in your default browser...
+echo ✅ Python detected!
+echo Preparing Django environment and database...
+
+python -m pip install -q -r backend/requirements.txt
+python backend/manage.py makemigrations
+python backend/manage.py migrate
+python backend/manage.py seed_db
+
+echo.
+echo 🚀 Starting Django backend server on port 8000...
+echo 🌐 Opening http://localhost:8000/browse in your browser...
 echo.
 
-:: Open default browser to the running web page
-start http://localhost:8000
+start http://localhost:8000/browse
 
-:: Start Node server
-node server.js
+python backend/manage.py runserver 0.0.0.0:8000
 
 pause

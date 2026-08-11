@@ -4,6 +4,7 @@ Generated for production-ready enterprise AI architecture.
 """
 
 import os
+import sys
 from pathlib import Path
 from datetime import timedelta
 
@@ -13,6 +14,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-bookbridge-secret-key-production-12345')
 DEBUG = os.getenv('DEBUG', 'True').lower() in ('true', '1', 't')
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1,0.0.0.0').split(',')
+
+# Add apps directory to sys.path for clean app imports
+sys.path.insert(0, str(BASE_DIR))
+sys.path.insert(0, str(BASE_DIR / 'apps'))
 
 # Installed Apps
 INSTALLED_APPS = [
@@ -75,26 +80,45 @@ ASGI_APPLICATION = 'bookbridge.asgi.application'
 # Custom User Model
 AUTH_USER_MODEL = 'users.User'
 
-# Database Configuration (SQLite dev fallback, PostgreSQL ready)
-DB_ENGINE = os.getenv('DB_ENGINE', 'django.db.backends.sqlite3')
+# Database Configuration (MySQL preferred with SQLite dev fallback)
+DB_ENGINE = os.getenv('DB_ENGINE', 'django.db.backends.mysql')
 if DB_ENGINE == 'django.db.backends.sqlite3':
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
+            'NAME': os.path.abspath(os.path.join(BASE_DIR, 'db.sqlite3')),
         }
     }
 else:
-    DATABASES = {
-        'default': {
-            'ENGINE': os.getenv('DB_ENGINE', 'django.db.backends.postgresql'),
-            'NAME': os.getenv('DB_NAME', 'bookbridge_db'),
-            'USER': os.getenv('DB_USER', 'postgres'),
-            'PASSWORD': os.getenv('DB_PASSWORD', 'postgres'),
-            'HOST': os.getenv('DB_HOST', 'localhost'),
-            'PORT': os.getenv('DB_PORT', '5432'),
-        }
+    mysql_config = {
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': os.getenv('DB_NAME', 'bookbridge'),
+        'USER': os.getenv('DB_USER', 'root'),
+        'PASSWORD': os.getenv('DB_PASSWORD', ''),
+        'HOST': os.getenv('DB_HOST', '127.0.0.1'),
+        'PORT': os.getenv('DB_PORT', '3306'),
+        'OPTIONS': {
+            'charset': 'utf8mb4',
+        },
     }
+    try:
+        import pymysql
+        conn = pymysql.connect(
+            host=mysql_config['HOST'],
+            user=mysql_config['USER'],
+            password=mysql_config['PASSWORD'],
+            port=int(mysql_config['PORT']),
+            connect_timeout=2
+        )
+        conn.close()
+        DATABASES = {'default': mysql_config}
+    except Exception:
+        DATABASES = {
+            'default': {
+                'ENGINE': 'django.db.backends.sqlite3',
+                'NAME': os.path.abspath(os.path.join(BASE_DIR, 'db.sqlite3')),
+            }
+        }
 
 # Password Validation
 AUTH_PASSWORD_VALIDATORS = [
@@ -113,6 +137,7 @@ USE_TZ = True
 # Static & Media Files
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATICFILES_DIRS = [BASE_DIR.parent]
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 

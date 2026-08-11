@@ -9,45 +9,26 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - PORT=8000
-      - NODE_ENV=production
-      - DATABASE_URL=postgresql://bookbridge_user:SecurePassword123!@postgres:5432/bookbridge_db?schema=public
-      - REDIS_URL=redis://redis:6379
-      - JWT_SECRET=bookbridge_super_secret_jwt_key_2026_enterprise
+      - DB_ENGINE=django.db.backends.mysql
+      - DB_NAME=bookbridge
+      - DB_USER=root
+      - DB_PASSWORD=SecurePassword123!
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - SECRET_KEY=bookbridge_super_secret_django_key_2026
     depends_on:
-      - postgres
-      - redis
+      - mysql
 
-  postgres:
-    image: postgres:16-alpine
+  mysql:
+    image: mysql:8.0
     restart: always
     environment:
-      POSTGRES_USER: bookbridge_user
-      POSTGRES_PASSWORD: SecurePassword123!
-      POSTGRES_DB: bookbridge_db
+      MYSQL_ROOT_PASSWORD: SecurePassword123!
+      MYSQL_DATABASE: bookbridge
     ports:
-      - "5432:5432"
+      - "3306:3306"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
-
-  redis:
-    image: redis:7-alpine
-    restart: always
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis_data:/data
-
-  nginx:
-    image: nginx:alpine
-    restart: always
-    ports:
-      - "80:80"
-    volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf:ro
-    depends_on:
-      - app
+      - mysql_data:/var/lib/mysql
 
 volumes:
-  postgres_data:
-  redis_data:
+  mysql_data:

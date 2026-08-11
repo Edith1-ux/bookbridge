@@ -16,9 +16,9 @@ A modern full-stack community platform designed to bridge readers and pre-loved 
   - Book Condition filtering (New, Like New, Good, Fair).
   - Interactive Price Range slider.
   - Sorting (Newest, Price Low/High, Seller Rating).
-- 💾 **Dual Database Architecture**:
-  - **Embedded Client Database (`js/database.js`)**: Built on IndexedDB + LocalStorage sync for zero-dependency execution in any browser. Pre-populated with 10+ rich seed books.
-  - **Node.js Express REST API (`server.js`)**: Full backend implementation providing REST endpoints (`/api/books`, `/api/buy`, `/api/exchange`, `/api/donate/claim`, `/api/stats`) and file storage persistence (`data/db.json`).
+- 💾 **Dual Database & API Architecture**:
+  - **Embedded Client Database (`js/database.js`)**: Built on IndexedDB + LocalStorage sync for zero-dependency execution in any browser. Pre-populated with rich seed books.
+  - **Python Django REST Framework (`backend/`)**: Enterprise backend implementation with MySQL database ORM integration providing REST endpoints (`/api/v1/books/`, `/api/v1/users/`, `/api/v1/exchange/`, `/api/v1/donations/`, `/api/v1/chat/`, `/api/v1/ai/`) and full admin capabilities.
 - 🎨 **Premium UI/UX Design System**:
   - Dark Mode and Light Mode theme toggle.
   - Glassmorphic navigation and card containers.
@@ -29,20 +29,24 @@ A modern full-stack community platform designed to bridge readers and pre-loved 
 
 ## 🚀 How to Run
 
-### Option 1: Direct Browser Run (Instant Zero-Setup)
-1. Double click or open `index.html` in any web browser (Chrome, Edge, Firefox, Safari).
-2. The application will initialize the embedded client database (`window.BookDB`) with rich seed data automatically.
+### Option 1: Double-Click Launcher (`run-server.bat`)
+Double click `run-server.bat`. It will automatically install Python dependencies, apply Django database migrations, seed initial GTU textbooks/users, and launch the Django server on port 8000.
 
-### Option 2: Node.js Express REST Backend Server
-If Node.js is installed on your machine:
+### Option 2: Python Django Backend Server
+If Python is installed on your machine:
 ```bash
 # 1. Install dependencies
-npm install
+pip install -r backend/requirements.txt
 
-# 2. Start Express server
-npm start
+# 2. Run migrations & seed data
+python backend/manage.py makemigrations
+python backend/manage.py migrate
+python backend/manage.py seed_db
+
+# 3. Start Django server
+python backend/manage.py runserver 0.0.0.0:8000
 ```
-3. Open your browser to `http://localhost:3000`.
+3. Open your browser to `http://localhost:8000/browse`.
 
 ### Option 3: MySQL Database Setup
 To set up and connect a production MySQL database:
