@@ -1,9 +1,10 @@
 """
 BookBridge Main URL Configuration
-Serves both REST API endpoints and static frontend HTML pages.
+Serves both REST API endpoints, static frontend HTML pages, and frontend assets.
 """
 
 import os
+import mimetypes
 from pathlib import Path
 from django.contrib import admin
 from django.urls import path, re_path, include
@@ -27,6 +28,15 @@ def serve_static_page(request, page='login.html'):
         with open(filepath, 'rb') as f:
             return HttpResponse(f.read(), content_type='text/html; charset=utf-8')
     return HttpResponse("<h2>BookBridge Online</h2><p><a href='/browse'>Go to Browse Books</a></p>", content_type='text/html; charset=utf-8')
+
+def serve_root_asset(request, asset_path):
+    filepath = PROJECT_ROOT / asset_path
+    if filepath.exists() and filepath.is_file():
+        content_type, _ = mimetypes.guess_type(str(filepath))
+        content_type = content_type or 'application/octet-stream'
+        with open(filepath, 'rb') as f:
+            return HttpResponse(f.read(), content_type=content_type)
+    return HttpResponse("Asset not found", status=404)
 
 def health_check(request):
     return JsonResponse({
@@ -81,6 +91,9 @@ urlpatterns = [
     path('register', lambda req: serve_static_page(req, 'register.html')),
     path('admin', lambda req: serve_static_page(req, 'admin.html')),
     path('dashboard', lambda req: serve_static_page(req, 'dashboard.html')),
+
+    # Static Assets & Catch-All Page Routes
+    re_path(r'^(?P<asset_path>.+\.(css|js|png|jpg|jpeg|svg|json|ico|woff2|woff|ttf))$', serve_root_asset),
     re_path(r'^(?P<page>[a-zA-Z0-9_\-]+)\.html$', serve_static_page),
 ]
 
