@@ -7,6 +7,16 @@
    Render Books Function
 ========================================== */
 
+function escapeHTML(str) {
+    if (str === null || str === undefined) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
 function renderBooks(bookList = books) {
 
     // Get the Books Container
@@ -58,49 +68,49 @@ function renderBooks(bookList = books) {
 
                     <!-- Book Image -->
                     <img
-                        src="${book.image}"
-                        alt="${book.title}"
+                        src="${escapeHTML(book.image)}"
+                        alt="${escapeHTML(book.title)}"
                         class="book-image"
-                        onerror="if(!this.dataset.tried){this.dataset.tried='1'; this.src='./'+'${book.image}';}">
+                        onerror="if(!this.dataset.tried){this.dataset.tried='1'; this.src='./'+'${escapeHTML(book.image)}';}">
 
                     <div class="book-content">
 
                         <!-- Book Badges -->
                         <div class="book-badges">
 
-                            <span>${book.department}</span>
+                            <span>${escapeHTML(book.department)}</span>
 
-                            <span>Sem ${book.semester}</span>
+                            <span>Sem ${escapeHTML(book.semester)}</span>
 
-                            <span>${book.category}</span>
+                            <span>${escapeHTML(book.category)}</span>
 
                         </div>
 
                         <!-- Book Title -->
                         <h5 class="book-title">
 
-                            ${book.title}
+                            ${escapeHTML(book.title)}
 
                         </h5>
 
                         <!-- Book Author -->
                         <p class="book-author">
 
-                            ${book.author}
+                            ${escapeHTML(book.author)}
 
                         </p>
 
                         <!-- Book Price -->
                         <div class="book-price">
 
-                            ${priceText}
+                            ${escapeHTML(priceText)}
 
                         </div>
 
                         <!-- Book Condition -->
                         <div class="book-condition">
 
-                            ${book.condition}
+                            ${escapeHTML(book.condition)}
 
                         </div>
 

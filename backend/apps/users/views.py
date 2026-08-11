@@ -8,10 +8,15 @@ from .serializers import UserSerializer, RegisterSerializer
 from apps.books.models import Book
 
 
+from rest_framework.throttling import ScopedRateThrottle
+
+
 class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
     permission_classes = (permissions.AllowAny,)
     serializer_class = RegisterSerializer
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = 'auth'
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -28,6 +33,8 @@ class RegisterView(generics.CreateAPIView):
 
 class CustomLoginView(APIView):
     permission_classes = (permissions.AllowAny,)
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = 'auth'
 
     def post(self, request):
         email = request.data.get('email')

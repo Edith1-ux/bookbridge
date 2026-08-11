@@ -72,14 +72,17 @@ class BookListCreateView(generics.ListCreateAPIView):
         return ctx
 
 
+from .permissions import IsOwnerOrAdmin
+
+
 class BookDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Book.objects.select_related('seller').all()
     serializer_class = BookSerializer
 
     def get_permissions(self):
-        if self.request.method == 'GET':
+        if self.request.method in permissions.SAFE_METHODS:
             return [permissions.AllowAny()]
-        return [permissions.IsAuthenticated()]
+        return [permissions.IsAuthenticated(), IsOwnerOrAdmin()]
 
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
