@@ -13,7 +13,14 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Security Settings
 SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-bookbridge-secret-key-production-12345')
 DEBUG = os.getenv('DEBUG', 'True').lower() in ('true', '1', 't')
-ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1,0.0.0.0').split(',')
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '*').split(',')
+if os.getenv('RENDER_EXTERNAL_HOSTNAME'):
+    ALLOWED_HOSTS.append(os.getenv('RENDER_EXTERNAL_HOSTNAME'))
+if '*' not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.extend(['.onrender.com', 'localhost', '127.0.0.1', '0.0.0.0'])
+
+# Render / Cloud Proxy SSL Header
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 # Add apps directory to sys.path for clean app imports
 sys.path.insert(0, str(BASE_DIR))
