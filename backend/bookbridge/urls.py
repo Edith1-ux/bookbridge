@@ -29,11 +29,29 @@ def serve_static_page(request, page='login.html'):
             return HttpResponse(f.read(), content_type='text/html; charset=utf-8')
     return HttpResponse("<h2>BookBridge Online</h2><p><a href='/browse'>Go to Browse Books</a></p>", content_type='text/html; charset=utf-8')
 
+MIME_MAP = {
+    '.css': 'text/css; charset=utf-8',
+    '.js': 'application/javascript; charset=utf-8',
+    '.json': 'application/json; charset=utf-8',
+    '.png': 'image/png',
+    '.jpg': 'image/jpeg',
+    '.jpeg': 'image/jpeg',
+    '.svg': 'image/svg+xml',
+    '.ico': 'image/x-icon',
+    '.woff': 'font/woff',
+    '.woff2': 'font/woff2',
+    '.ttf': 'font/ttf',
+    '.html': 'text/html; charset=utf-8',
+}
+
 def serve_root_asset(request, asset_path):
     filepath = PROJECT_ROOT / asset_path
     if filepath.exists() and filepath.is_file():
-        content_type, _ = mimetypes.guess_type(str(filepath))
-        content_type = content_type or 'application/octet-stream'
+        ext = filepath.suffix.lower()
+        content_type = MIME_MAP.get(ext)
+        if not content_type:
+            guessed, _ = mimetypes.guess_type(str(filepath))
+            content_type = guessed or 'application/octet-stream'
         with open(filepath, 'rb') as f:
             return HttpResponse(f.read(), content_type=content_type)
     return HttpResponse("Asset not found", status=404)
