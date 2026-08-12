@@ -16,3 +16,8 @@ yarn-error.log*
 # System & OS files
 .DS_Store
 Thumbs.db
+
+# Agent skills & config
+.agents/
+.claude/
+

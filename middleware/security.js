@@ -12,6 +12,9 @@ try { helmet = require('helmet'); } catch (e) { helmet = null; }
 try { rateLimit = require('express-rate-limit'); } catch (e) { rateLimit = null; }
 
 exports.configureSecurity = (app) => {
+  // 0. Enable proxy trust for reverse proxies (Railway, Render, Nginx)
+  app.set('trust proxy', 1);
+
   // 1. Helmet Security Headers (if installed)
   if (helmet) {
     app.use(helmet({ contentSecurityPolicy: false }));

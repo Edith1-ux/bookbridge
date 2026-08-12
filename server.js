@@ -20,6 +20,8 @@ const authController = require('./controllers/authController');
 const bookController = require('./controllers/bookController');
 
 const app = express();
+// Enable proxy trust for reverse proxies (Railway, Render, Nginx, Vercel)
+app.set('trust proxy', 1);
 const server = http.createServer(app);
 const PORT = process.env.PORT || 8000;
 const DB_FILE = path.join(__dirname, 'data', 'db.json');

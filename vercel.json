@@ -2,12 +2,8 @@
   "version": 2,
   "rewrites": [
     {
-      "source": "/api/(.*)",
-      "destination": "/api/index.js"
-    },
-    {
-      "source": "/(.*)",
-      "destination": "/api/index.js"
+      "source": "/api/:path*",
+      "destination": "https://bookbridge-production-8c39.up.railway.app/api/:path*"
     }
   ]
 }
