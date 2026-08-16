@@ -3,15 +3,17 @@
 # ==========================================================================
 
 param (
-    [int]$Port = 8000
+    [int]$Port = 8080
 )
 
 $root = $PSScriptRoot
 $listener = New-Object System.Net.HttpListener
-$prefix = "http://localhost:$Port/"
+$prefix1 = "http://127.0.0.1:$Port/"
+$prefix2 = "http://localhost:$Port/"
 
 try {
-    $listener.Prefixes.Add($prefix)
+    $listener.Prefixes.Add($prefix1)
+    try { $listener.Prefixes.Add($prefix2) } catch {}
     $listener.Start()
     Write-Host ""
     Write-Host "===========================================================" -ForegroundColor Green
@@ -28,6 +30,7 @@ try {
 
         $urlPath = $request.Url.LocalPath
         if ($urlPath -eq "/") { $urlPath = "/index.html" }
+        if ($urlPath -eq "/demo") { $urlPath = "/demo.html" }
         
         $localFilePath = Join-Path $root ($urlPath.TrimStart('/').Replace('/', '\'))
 

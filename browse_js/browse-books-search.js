@@ -18,7 +18,10 @@ function searchBooks() {
    Search Event
 ========================================== */
 
-document
-    .getElementById("searchInput")
-    .addEventListener("input", searchBooks);
+document.addEventListener("DOMContentLoaded", () => {
+    const searchInput = document.getElementById("searchInput");
+    if (searchInput) {
+        searchInput.addEventListener("input", searchBooks);
+    }
+});
 

@@ -115,6 +115,45 @@ document.addEventListener("DOMContentLoaded", () => {
                 console.error("Failed to save book to localStorage:", err);
             }
 
+            // Sync to unified BookDB / localStorage for dashboard & exchange integration
+            try {
+                const currentUser = JSON.parse(localStorage.getItem('rcti_gtu_current_user') || 'null');
+                const unifiedBook = {
+                    id: 'bk-' + newBook.id,
+                    title: title,
+                    author: author,
+                    branch: department,
+                    semester: semester,
+                    genre: category,
+                    condition: condition,
+                    price: price,
+                    mode: offerType === 'Donate' ? 'donate' : 'exchange',
+                    cover: uploadedBase64Image,
+                    status: 'available',
+                    category: 'physical',
+                    seller: currentUser ? {
+                        id: currentUser.id || 'usr-1',
+                        name: currentUser.name || 'Student Seller',
+                        email: currentUser.email || 'student@rcti.edu',
+                        role: currentUser.role || 'student',
+                        whatsapp: currentUser.whatsapp || '+919876543210'
+                    } : {
+                        id: 'usr-guest',
+                        name: 'Student Seller',
+                        email: 'student@rcti.edu',
+                        role: 'student',
+                        whatsapp: '+919876543210'
+                    },
+                    createdAt: new Date().toISOString()
+                };
+
+                const existingUnified = JSON.parse(localStorage.getItem('rcti_gtu_lab_manual_books') || '[]');
+                existingUnified.unshift(unifiedBook);
+                localStorage.setItem('rcti_gtu_lab_manual_books', JSON.stringify(existingUnified));
+            } catch (err) {
+                console.error("Failed to sync unified book catalog:", err);
+            }
+
             // Increment Live Counter Stats (Books & Exchanges)
             if (typeof incrementLiveStat === "function") {
                 incrementLiveStat("books", 1);
