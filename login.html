@@ -1,404 +1,202 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-
-    <!-- Meta -->
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <!-- Title -->
-    <title>Login | BOOK BRIDGE</title>
-
-    <!-- Google Font -->
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
-        rel="stylesheet">
-
-    <!-- Font Awesome -->
-    <link rel="stylesheet"
-        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
-
-    <!-- CSS -->
-     <link rel="stylesheet" href="login.css">
-    
-
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login – BookBridge</title>
+  <link rel="icon" href="logo.png.jpeg" type="image/jpeg">
+  <link rel="apple-touch-icon" href="logo.png.jpeg">
+  <meta name="description" content="Sign in to your BookBridge student account to buy, sell, exchange, and donate academic textbooks across colleges.">
+  <link rel="canonical" href="https://bookbridge.in/login.html">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <link rel="stylesheet" href="css/design-tokens.css">
+  <link rel="stylesheet" href="style.css">
 </head>
-
 <body>
+  <!-- ACCESSIBILITY SKIP LINK -->
+  <a href="#main-content" class="skip-link">Skip to main content</a>
 
-    <!-- ===========================================
-                    HEADER START
-    ============================================ -->
+  <!-- NAVBAR -->
+  <header class="navbar" id="navbar">
+    <div class="navbar-inner">
+      <a href="index.html" class="brand" aria-label="BookBridge Home">
+        <div class="brand-icon"><img src="logo.png.jpeg" alt="BookBridge Logo"></div>
+        <div>
+          <div class="brand-name">BookBridge</div>
+          <div class="brand-tagline">Bridge Books. Build Minds.</div>
+        </div>
+      </a>
+      <nav class="nav-links" aria-label="Main Navigation">
+        <a href="index.html" class="nav-link">Home</a>
+        <a href="browse.html" class="nav-link">Browse</a>
+        <a href="exchange.html" class="nav-link">Exchange</a>
+        <a href="donate.html" class="nav-link">Donate</a>
+        <a href="about.html" class="nav-link">About</a>
+        <a href="contact.html" class="nav-link">Contact</a>
+      </nav>
+      <div class="nav-actions">
+        <a href="register.html" class="btn btn-primary" id="navRegisterBtn">Get Started</a>
+      </div>
+      <button class="mobile-toggle" id="mobileMenuToggle" aria-label="Toggle Navigation Menu" aria-expanded="false">
+        <i class="fa-solid fa-bars"></i>
+      </button>
+    </div>
+  </header>
 
-    <header class="header">
+  <!-- MOBILE DRAWER -->
+  <div class="mobile-drawer" id="mobileNavDrawer" role="navigation" aria-label="Mobile Navigation">
+    <div class="drawer-links">
+      <a href="index.html" class="drawer-link">Home <i class="fa-solid fa-chevron-right"></i></a>
+      <a href="browse.html" class="drawer-link">Browse Books <i class="fa-solid fa-chevron-right"></i></a>
+      <a href="exchange.html" class="drawer-link">Exchange <i class="fa-solid fa-chevron-right"></i></a>
+      <a href="donate.html" class="drawer-link">Donate <i class="fa-solid fa-chevron-right"></i></a>
+      <a href="about.html" class="drawer-link">About <i class="fa-solid fa-chevron-right"></i></a>
+      <a href="contact.html" class="drawer-link">Contact <i class="fa-solid fa-chevron-right"></i></a>
+    </div>
+    <div class="drawer-actions" id="mobileDrawerActions">
+      <a href="register.html" class="btn btn-primary btn-block">Create Free Account</a>
+    </div>
+  </div>
 
-        <div class="container">
+  <!-- MAIN CONTENT -->
+  <main id="main-content">
+    <div class="auth-layout">
+      <!-- LEFT PANEL ILLUSTRATION -->
+      <div class="auth-illustration">
+        <div class="auth-illustration-content">
+          <span class="auth-emoji">📖</span>
+          <h2>Welcome Back to BookBridge</h2>
+          <p>Bridge the gap between books and readers. Connect with fellow students to buy, sell, exchange, and donate textbooks.</p>
+          <div style="margin-top: 32px; text-align: left; max-width: 280px; margin-left: auto; margin-right: auto;">
+            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
+              <i class="fa-solid fa-circle-check" style="color: rgba(255,255,255,0.9);"></i>
+              <span style="font-size: 14px; opacity: 0.95;">Save up to 80% on textbooks</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
+              <i class="fa-solid fa-circle-check" style="color: rgba(255,255,255,0.9);"></i>
+              <span style="font-size: 14px; opacity: 0.95;">Direct peer-to-peer exchange</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
+              <i class="fa-solid fa-circle-check" style="color: rgba(255,255,255,0.9);"></i>
+              <span style="font-size: 14px; opacity: 0.95;">Verified GTU student network</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <i class="fa-solid fa-circle-check" style="color: rgba(255,255,255,0.9);"></i>
+              <span style="font-size: 14px; opacity: 0.95;">100% Free Donations available</span>
+            </div>
+          </div>
+        </div>
+      </div>
 
-            <!-- Logo -->
+      <!-- RIGHT FORM PANEL -->
+      <div class="auth-form-panel">
+        <div class="auth-form-card">
+          <span class="section-tag">👋 Student Portal</span>
+          <h2>Sign In to Account</h2>
+          <p class="text-small" style="color: var(--color-gray); margin-bottom: 24px;">Enter your credentials to manage your listings and messages</p>
 
-            <a href="index.html" class="logo">
+          <form id="dedicatedLoginForm">
+            <!-- Email Field -->
+            <div class="form-group">
+              <i class="fa-solid fa-envelope form-icon"></i>
+              <input type="email" id="loginEmail" name="email" class="form-input form-icon-left" placeholder=" " required autocomplete="email">
+              <label class="form-label" style="left: 44px;">Email Address *</label>
+              <div class="form-error">Please enter a valid email address</div>
+            </div>
 
-                <i class="fa-solid fa-book-open"></i>
+            <!-- Password Field -->
+            <div class="form-group">
+              <i class="fa-solid fa-lock form-icon"></i>
+              <input type="password" id="loginPassword" name="password" class="form-input form-icon-left" placeholder=" " required autocomplete="current-password">
+              <label class="form-label" style="left: 44px;">Password *</label>
+              <button type="button" class="form-toggle-password" id="togglePassword" aria-label="Toggle password visibility" onclick="togglePasswordVisibility('loginPassword', this)">
+                <i class="fa-solid fa-eye"></i>
+              </button>
+              <div class="form-error">Password is required</div>
+            </div>
 
-                <span>BOOK BRIDGE</span>
+            <!-- Remember Me & Forgot Password -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; font-size: 14px;">
+              <label class="form-checkbox" style="margin-bottom: 0;">
+                <input type="checkbox" id="rememberMe">
+                <span>Remember Me</span>
+              </label>
+              <a href="forgot-password.html" style="color: var(--color-primary); font-weight: 600; text-decoration: none;">Forgot Password?</a>
+            </div>
 
-            </a>
+            <!-- Submit Button -->
+            <button type="submit" id="loginSubmitBtn" class="btn btn-primary btn-block btn-lg">
+              <i class="fa-solid fa-right-to-bracket"></i> Sign In
+            </button>
+          </form>
 
-            <!-- Navigation -->
+          <div class="auth-footer-text">
+            Don't have an account yet? <a href="register.html">Create free account</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
 
-            <nav class="navbar">
-
-                <ul class="nav-menu">
-
-                    <li>
-                        <a href="index.html">Home</a>
-                    </li>
-
-                    <li>
-                        <a href="browse.html">Browse Books</a>
-                    </li>
-
-                    <li>
-                        <a href="exchange.html">Sell Books</a>
-                    </li>
-
-                    <li>
-                        <a href="donate.html">Donate Books</a>
-                    </li>
-
-                    <li>
-                        <a href="about.html">About</a>
-                    </li>
-
-                    <li>
-                        <a href="contact.html">Contact</a>
-                    </li>
-
-                </ul>
-
-            </nav>
-
-             <!-- Register Button -->
-
-                <a href="register.html" class="nav-btn">
-                  Register
-                </a>
-
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="footer-inner">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <div class="brand" style="margin-bottom: 4px;">
+            <div class="brand-icon"><img src="logo.png.jpeg" alt="BookBridge Logo"></div>
+            <div>
+              <div class="brand-name">BookBridge</div>
+              <div class="brand-tagline">Bridge Books. Build Minds.</div>
+            </div>
+          </div>
+          <p>India's premier student platform for buying, selling, exchanging, and donating academic books across colleges.</p>
+          <div class="footer-social">
+            <a href="#" aria-label="Twitter"><i class="fa-brands fa-x-twitter"></i></a>
+            <a href="#" aria-label="Instagram"><i class="fa-brands fa-instagram"></i></a>
+            <a href="#" aria-label="LinkedIn"><i class="fa-brands fa-linkedin-in"></i></a>
+            <a href="#" aria-label="GitHub"><i class="fa-brands fa-github"></i></a>
+          </div>
         </div>
 
-    </header>
-
-    <!-- ===========================================
-                    HEADER END
-    ============================================ -->
-
-
-
-    <!-- ===========================================
-                LOGIN SECTION START
-    ============================================ -->
-
-    <section class="login-section">
-
-        <div class="container login-container">
-
-            <!-- ================= Left Side ================= -->
-
-            <div class="login-left">
-
-                <img src="Login_images/logo.png.jpeg"
-                    alt="BOOK BRIDGE Illustration">
-
-                <h1>
-
-                    Welcome to
-                    <span>BOOK BRIDGE</span>
-
-                </h1>
-
-                <p>
-
-                    Bridge the Gap Between Books and Readers.
-
-                    Buy, Sell and Donate books with your college community.
-                    Save money, help fellow students and give books a second life.
-
-                </p>
-
-            </div>
-
-            <!-- ================= Right Side ================= -->
-
-            <div class="login-right">
-
-                <div class="login-card">
-
-                    <h2>Welcome Back 👋</h2>
-
-                    <p class="subtitle">
-
-                        Sign in to continue your BOOK BRIDGE journey.
-
-                    </p>
-
-                    <!-- Login Form Starts Here -->
-
-
-                                        <form id="loginForm">
-
-                        <!-- Email -->
-
-                        <div class="input-group">
-
-                            <label for="email">
-                                Email Address
-                            </label>
-
-                            <div class="input-box">
-
-                                <i class="fa-solid fa-envelope"></i>
-
-                                <input
-                                    type="email"
-                                    id="email"
-                                    placeholder="Enter your email"
-                                    required>
-
-                            </div>
-
-                        </div>
-
-
-
-                        <!-- Password -->
-
-                        <div class="input-group">
-
-                            <label for="password">
-                                Password
-                            </label>
-
-                            <div class="input-box password-box">
-
-                                <i class="fa-solid fa-lock"></i>
-
-                                <input
-                                    type="password"
-                                    id="password"
-                                    placeholder="Enter your password"
-                                    required>
-
-                                <span id="togglePassword">
-
-                                    <i class="fa-regular fa-eye"></i>
-
-                                </span>
-
-                            </div>
-
-                        </div>
-
-
-
-                        <!-- Remember -->
-
-                        <div class="remember-forgot">
-
-                            <label>
-
-                                <input type="checkbox">
-
-                                Remember Me
-
-                            </label>
-
-                            <a href="#">
-
-                                Forgot Password?
-
-                            </a>
-
-                        </div>
-
-
-
-                        <!-- Login Button -->
-
-                        <button
-                            type="submit"
-                            class="login-btn">
-
-                            Login
-
-                        </button>
-
-
-
-                        <!-- Divider -->
-
-                        <div class="divider">
-
-                            <span>OR</span>
-
-                        </div>
-
-
-
-                        <!-- Google Login -->
-
-                        <button
-                            type="button"
-                            class="google-btn">
-
-                            <img
-                                src="Login_images/google-icon.png"
-                                alt="Google">
-
-                            Continue with Google
-
-                        </button>
-
-
-
-                        <!-- Register -->
-
-                        <div class="register-link">
-
-                            <p>
-
-                                Don't have an account?
-
-                                <a href="register.html">
-
-                                    Register
-
-                                </a>
-
-                            </p>
-
-                        </div>
-
-                    </form>
-
-                </div>
-
-            </div>
-
+        <div class="footer-col">
+          <h4>Platform</h4>
+          <a href="browse.html">Browse Books</a>
+          <a href="exchange.html">Exchange</a>
+          <a href="donate.html">Donate</a>
+          <a href="dashboard.html">Dashboard</a>
         </div>
 
-    </section>
-
-    <!-- ===========================================
-                LOGIN SECTION END
-    ============================================ -->
-
-
-    <!-- ===========================================
-                    FOOTER START
-    ============================================ -->
-
-    <footer class="footer">
-
-        <div class="container footer-container">
-
-            <!-- Footer Logo -->
-
-            <div class="footer-logo">
-
-                <h2>BOOK BRIDGE</h2>
-
-                <p>
-
-                    Bridge the Gap Between Books and Readers.
-
-                </p>
-
-            </div>
-
-            <!-- Quick Links -->
-
-            <div class="footer-links">
-
-                <h3>Quick Links</h3>
-
-                <ul>
-
-                    <li><a href="index.html">Home</a></li>
-
-                    <li><a href="browse.html">Browse Books</a></li>
-
-                    <li><a href="exchange.html">Sell Books</a></li>
-
-                    <li><a href="donate.html">Donate Books</a></li>
-
-                    <li><a href="about.html">About</a></li>
-
-                    <li><a href="contact.html">Contact</a></li>
-
-                </ul>
-
-            </div>
-
-            <!-- Contact -->
-
-            <div class="footer-contact">
-
-                <h3>Contact</h3>
-
-                <p>Email : support@bookbridge.com</p>
-
-                <p>Phone : +91 98765 43210</p>
-
-                <p>Ahmedabad, Gujarat</p>
-
-            </div>
-
-            <!-- Social Icons -->
-
-            <div class="footer-social">
-
-                <h3>Follow Us</h3>
-
-                <div class="social-icons">
-
-                    <a href="#"><i class="fa-brands fa-facebook-f"></i></a>
-
-                    <a href="#"><i class="fa-brands fa-instagram"></i></a>
-
-                    <a href="#"><i class="fa-brands fa-linkedin-in"></i></a>
-
-                    <a href="#"><i class="fa-brands fa-x-twitter"></i></a>
-
-                </div>
-
-            </div>
-
+        <div class="footer-col">
+          <h4>Company</h4>
+          <a href="about.html">About Us</a>
+          <a href="contact.html">Contact</a>
+          <a href="privacy.html">Privacy Policy</a>
+          <a href="terms.html">Terms of Service</a>
         </div>
 
-        <!-- Bottom Footer -->
-
-        <div class="footer-bottom">
-
-            <p>
-
-                © 2026 BOOK BRIDGE. All Rights Reserved.
-
-            </p>
-
+        <div class="footer-col">
+          <h4>Support</h4>
+          <a href="contact.html">Help Center</a>
+          <a href="contact.html#faq">FAQs</a>
+          <a href="contact.html">Report Issue</a>
         </div>
+      </div>
 
-    </footer>
+      <div class="footer-bottom">
+        <span>© 2026 BookBridge — India's Student Book Sharing Platform. All rights reserved.</span>
+        <span>Built with ❤️ by RCTI Students</span>
+      </div>
+    </div>
+  </footer>
 
-    <!-- ===========================================
-                    FOOTER END
-    ============================================ -->
+  <!-- TOAST CONTAINER -->
+  <div class="toast-container" id="toastContainer"></div>
 
-
-    <!-- JavaScript -->
-
-    <script src="js/live-stats.js"></script>
-    <script src="login.js"></script>
-
+  <!-- SCRIPTS -->
+  <script src="js/database.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/live-stats.js"></script>
+  <script src="js/app.js"></script>
 </body>
-
 </html>

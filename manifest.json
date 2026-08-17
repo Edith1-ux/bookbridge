@@ -1,0 +1,24 @@
+{
+  "name": "BookBridge – Student Book Exchange",
+  "short_name": "BookBridge",
+  "description": "India's premier student platform to buy, sell, exchange, and donate academic books.",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#F8F6F1",
+  "theme_color": "#3E6B3A",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "logo.png.jpeg",
+      "sizes": "192x192",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "logo.png.jpeg",
+      "sizes": "512x512",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
+    }
+  ]
+}

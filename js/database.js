@@ -16,23 +16,10 @@ const STORAGE_KEY_POSTS = 'rcti_gtu_community_posts';
 
 const SEED_USERS = [
   {
-    id: 'usr-admin',
-    name: 'Prof. T. B. Mehta (Admin & Guide)',
-    enrollment: 'FAC-CE-001',
-    email: 'admin@rcti.ac.in',
-    branch: 'CE',
-    semester: 5,
-    division: 'Div A',
-    academicYear: '2025-2026',
-    whatsapp: '+919876543210',
-    role: 'admin',
-    createdAt: '2026-07-20T00:00:00Z'
-  },
-  {
-    id: 'usr-ved',
-    name: 'Ved V. Patel (Group 05 Lead)',
+    id: 'usr-keval',
+    name: 'Keval A. Prajapati (Group Lead)',
     enrollment: '246400307192',
-    email: 'ved.ce@rcti.ac.in',
+    email: 'keval.ce@rcti.ac.in',
     branch: 'CE',
     semester: 5,
     division: 'Div A',
@@ -248,7 +235,7 @@ const SEED_BOOKS = [
     rating: 4.9,
     description: 'Hands-on introduction to Python programming. Covers fundamentals, data visualization, web apps, and game development.',
     cover: 'https://images.unsplash.com/photo-1526379095098-d400fd0bf935?auto=format&fit=crop&w=400&q=80',
-    seller: { id: 'usr-ved', name: 'Ved V. Patel', rating: 4.8, email: 'ved.ce@rcti.ac.in', whatsapp: '+919876543210', role: 'student' },
+    seller: { id: 'usr-ved', name: 'Ved V. Patel', rating: 4.8, email: 'ved.ce@rcti.ac.in', whatsapp: '+919876543210', role: 'student', isVerified: true },
     location: 'RCTI IT Block',
     status: 'Available',
     createdAt: '2026-07-22T09:00:00Z'
@@ -293,49 +280,107 @@ class OfficialRCTIDatabase {
     if (users.find(u => u.email.toLowerCase() === userData.email.toLowerCase())) {
       throw new Error('Account already registered for this email.');
     }
-    const role = userData.role || (userData.email.toLowerCase().includes('admin') ? 'admin' : 'student');
+    const role = 'student';
+
+    let passwordHash = '';
+    if (userData.password) {
+      const encoder = new TextEncoder();
+      const data = encoder.encode(userData.password + 'bookbridge_salt_v1');
+      if (window.crypto && window.crypto.subtle) {
+        try {
+          const hashBuffer = await window.crypto.subtle.digest('SHA-256', data);
+          const hashArray = Array.from(new Uint8Array(hashBuffer));
+          passwordHash = 'sha256:' + hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        } catch(e) {
+          passwordHash = 'plain:' + userData.password;
+        }
+      } else {
+        passwordHash = 'plain:' + userData.password;
+      }
+    }
+
     const newUser = {
       id: 'usr-' + Date.now(),
       name: userData.name,
-      enrollment: userData.enrollment || ('246400307' + Math.floor(100 + Math.random() * 900)),
+      enrollment: userData.enrollment || '',
       email: userData.email,
+      passwordHash: passwordHash,
       branch: userData.branch || 'CE',
-      semester: parseInt(userData.semester || 5),
+      semester: parseInt(userData.semester || 1),
       division: userData.division || 'Div A',
       academicYear: userData.academicYear || '2025-2026',
       whatsapp: userData.whatsapp || '',
       college: 'R. C. Technical Institute, Ahmedabad (GTU)',
       role: role,
+      isVerified: true,
       createdAt: new Date().toISOString()
     };
     users.push(newUser);
     localStorage.setItem(STORAGE_KEY_USERS, JSON.stringify(users));
-    localStorage.setItem(STORAGE_KEY_CURRENT_USER, JSON.stringify(newUser));
-    return newUser;
+    const { passwordHash: _h, ...safeUser } = newUser;
+    localStorage.setItem(STORAGE_KEY_CURRENT_USER, JSON.stringify(safeUser));
+    return safeUser;
+  }
+
+  async verifyUser(userId) {
+    await this.init();
+    let users = JSON.parse(localStorage.getItem(STORAGE_KEY_USERS) || '[]');
+    users = users.map(u => u.id === userId ? { ...u, isVerified: true } : u);
+    localStorage.setItem(STORAGE_KEY_USERS, JSON.stringify(users));
+  }
+
+  async getExchangeMatches(bookId) {
+    await this.init();
+    const books = JSON.parse(localStorage.getItem(STORAGE_KEY_BOOKS) || '[]');
+    const targetBook = books.find(b => b.id === bookId);
+    if (!targetBook || !targetBook.exchangeFor) return [];
+    
+    return books.filter(b => 
+      b.mode === 'exchange' && 
+      targetBook.exchangeFor.toLowerCase().includes(b.title.toLowerCase())
+    );
   }
 
   async loginUser(email, password) {
     await this.init();
     const users = JSON.parse(localStorage.getItem(STORAGE_KEY_USERS) || '[]');
-    let user = users.find(u => u.email.toLowerCase() === email.toLowerCase());
+    const user = users.find(u => u.email.toLowerCase() === email.toLowerCase());
 
+    // FIX: No longer auto-creates accounts on login — returns null if user not found
     if (!user) {
-      const role = email.toLowerCase().includes('admin') ? 'admin' : (email.toLowerCase().includes('faculty') ? 'faculty' : 'student');
-      user = await this.registerUser({
-        name: email.split('@')[0].toUpperCase(),
-        enrollment: '246400307210',
-        email: email,
-        branch: 'CE',
-        semester: 5,
-        division: 'Div A',
-        academicYear: '2025-2026',
-        whatsapp: '+919876543210',
-        role: role
-      });
-    } else {
-      localStorage.setItem(STORAGE_KEY_CURRENT_USER, JSON.stringify(user));
+      return null;
     }
-    return user;
+
+    // FIX: Actually verify the password
+    let passwordMatch = false;
+    if (user.passwordHash && password) {
+      if (user.passwordHash.startsWith('sha256:')) {
+        const encoder = new TextEncoder();
+        const data = encoder.encode(password + 'bookbridge_salt_v1');
+        if (window.crypto && window.crypto.subtle) {
+          try {
+            const hashBuffer = await window.crypto.subtle.digest('SHA-256', data);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            const inputHash = 'sha256:' + hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+            passwordMatch = (inputHash === user.passwordHash);
+          } catch(e) {
+            passwordMatch = false;
+          }
+        }
+      } else if (user.passwordHash.startsWith('plain:')) {
+        // Legacy fallback comparison
+        passwordMatch = (user.passwordHash === 'plain:' + password);
+      }
+    }
+
+    if (!passwordMatch) {
+      return null; // Wrong password
+    }
+
+    // FIX: Never store passwordHash in session
+    const { passwordHash: _h, ...safeUser } = user;
+    localStorage.setItem(STORAGE_KEY_CURRENT_USER, JSON.stringify(safeUser));
+    return safeUser;
   }
 
   async getCurrentUser() {

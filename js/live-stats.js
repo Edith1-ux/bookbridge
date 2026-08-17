@@ -1,15 +1,19 @@
 /* ==========================================
-   BookBridge - Dynamic Real-Time Live Stats Manager
-   Calculates stats dynamically from real system database & API
+   BookBridge - Unified Live Stats Counter Engine
+   Real-time animated counters from database across ALL pages
 ========================================== */
 
+/**
+ * Get live statistics by querying the actual database/localStorage
+ * Returns: { students, books, exchanges, donated, saved }
+ */
 async function getLiveStats() {
     try {
         if (window.BookDB && typeof window.BookDB.init === 'function') {
             await window.BookDB.init();
         }
 
-        // 1. Try public stats endpoint from Django API first
+        // 1. Try public stats endpoint from API first
         if (window.BookAPI && typeof window.BookAPI.getPublicStats === 'function') {
             const apiStats = await window.BookAPI.getPublicStats();
             if (apiStats) return apiStats;
@@ -32,7 +36,7 @@ async function getLiveStats() {
 
         const studentUsers = Array.isArray(users) ? users.filter(u => u.role === 'student') : [];
         const realUsersCount = studentUsers.length;
-        const realBooksCount = (Array.isArray(books) && books.length > 0) ? books.length : 25;
+        const realBooksCount = (Array.isArray(books) && books.length > 0) ? books.length : 0;
         const exchangeBooks = Array.isArray(books) ? books.filter(b => b.mode === 'exchange' || Boolean(b.exchangeFor)).length : 0;
         const donatedBooks = Array.isArray(books) ? books.filter(b => b.mode === 'donate' || b.price === 0).length : 0;
         const totalSaved = Array.isArray(books) ? books.reduce((sum, b) => sum + (parseFloat(b.original || b.original_price) || 0), 0) : 0;
@@ -48,46 +52,77 @@ async function getLiveStats() {
         };
     } catch (e) {
         console.error("Error calculating real-time live stats:", e);
-        return { students: 0, books: 25, exchanges: 0, donated: 0, saved: 0 };
+        return { students: 0, books: 0, exchanges: 0, donated: 0, saved: 0 };
     }
 }
 
-// Format numbers with commas (e.g. 0 or 25)
+/**
+ * Format numbers with Indian locale commas (e.g. 1,00,000)
+ */
 function formatStatNumber(num) {
     return Number(num || 0).toLocaleString('en-IN');
 }
 
-// Animate counter from start to end value
-function animateValue(element, start, end, duration = 800) {
-    let startTimestamp = null;
-    const step = (timestamp) => {
-        if (!startTimestamp) startTimestamp = timestamp;
-        const progress = Math.min((timestamp - startTimestamp) / duration, 1);
-        const currentVal = Math.floor(progress * (end - start) + start);
+/**
+ * Animate a counter element from start to end value with easing
+ */
+function animateValue(element, start, end, duration = 1200) {
+    if (typeof end !== 'number' || isNaN(end)) return;
+    if (isNaN(start)) start = 0;
+
+    const startTimestamp = performance.now();
+
+    function step(currentTime) {
+        const elapsed = currentTime - startTimestamp;
+        const progress = Math.min(elapsed / duration, 1);
+        // Ease-out cubic for smooth deceleration
+        const eased = 1 - Math.pow(1 - progress, 3);
+        const currentVal = Math.floor(eased * (end - start) + start);
         element.textContent = formatStatNumber(currentVal);
         if (progress < 1) {
             window.requestAnimationFrame(step);
         } else {
             element.textContent = formatStatNumber(end);
         }
-    };
+    }
     window.requestAnimationFrame(step);
 }
 
-// Update all stat counter elements on the page with real database metrics
+/**
+ * Master function: Update ALL stat counter elements on ANY page with real live data
+ * Handles: index.html, about.html, donate.html, exchange.html, dashboard.html, admin.html, etc.
+ */
 async function updateLiveStatsUI() {
-    // If page has dedicated API statistics fetcher elements (index.html), skip overwriting hero stats
-    if (document.getElementById('activeStudents') || document.getElementById('heroActiveStudents')) {
-        updateCategoryCountsOnly();
-        return;
-    }
-
     const stats = await getLiveStats();
 
-    // Select all elements with data-stat-type attribute
+    // ── INDEX.HTML: Hero stats (top of page) ──
+    const heroStudentsEl = document.getElementById('heroActiveStudents');
+    const heroBooksEl = document.getElementById('heroBooksListed');
+    const heroExchangesEl = document.getElementById('heroSuccessfulExchanges');
+
+    if (heroStudentsEl) animateValue(heroStudentsEl, 0, stats.students);
+    if (heroBooksEl) animateValue(heroBooksEl, 0, stats.books);
+    if (heroExchangesEl) animateValue(heroExchangesEl, 0, stats.exchanges);
+
+    // Also update data-count attribute for counter animation system
+    if (heroStudentsEl) heroStudentsEl.setAttribute('data-count', stats.students);
+    if (heroBooksEl) heroBooksEl.setAttribute('data-count', stats.books);
+    if (heroExchangesEl) heroExchangesEl.setAttribute('data-count', stats.exchanges);
+
+    // ── INDEX.HTML: Main stats section ──
+    const activeStudentsEl = document.getElementById('activeStudents');
+    const booksListedEl = document.getElementById('booksListed');
+    const successfulExchangesEl = document.getElementById('successfulExchanges');
+    const booksDonatedEl = document.getElementById('booksDonated');
+
+    if (activeStudentsEl) animateValue(activeStudentsEl, 0, stats.students);
+    if (booksListedEl) animateValue(booksListedEl, 0, stats.books);
+    if (successfulExchangesEl) animateValue(successfulExchangesEl, 0, stats.exchanges);
+    if (booksDonatedEl) animateValue(booksDonatedEl, 0, stats.donated);
+
+    // ── ABOUT.HTML / ANY PAGE: Elements with data-stat-type attribute ──
     document.querySelectorAll("[data-stat-type]").forEach(el => {
         const type = el.getAttribute("data-stat-type");
-
         if (type && stats[type] !== undefined) {
             const targetVal = stats[type];
             const currentVal = parseInt(el.getAttribute("data-count")) || 0;
@@ -96,9 +131,79 @@ async function updateLiveStatsUI() {
         }
     });
 
+    // ── ADMIN.HTML: Admin dashboard stats (live from DB) ──
+    const adminUsers = document.getElementById('adminStatUsers');
+    const adminBooks = document.getElementById('adminStatBooks');
+    const adminSwaps = document.getElementById('adminStatSwaps');
+    const adminDonations = document.getElementById('adminStatDonations');
+
+    if (adminUsers) { adminUsers.setAttribute('data-count', stats.students); animateValue(adminUsers, 0, stats.students); }
+    if (adminBooks) { adminBooks.setAttribute('data-count', stats.books); animateValue(adminBooks, 0, stats.books); }
+    if (adminSwaps) { adminSwaps.setAttribute('data-count', stats.exchanges); animateValue(adminSwaps, 0, stats.exchanges); }
+    if (adminDonations) { adminDonations.setAttribute('data-count', stats.donated); animateValue(adminDonations, 0, stats.donated); }
+
+    // ── DONATE.HTML: Donation stats (live from DB) ──
+    const donateStatEls = document.querySelectorAll('.donate-live-stat');
+    donateStatEls.forEach(el => {
+        const statType = el.getAttribute('data-donate-stat');
+        if (statType === 'donated') { el.setAttribute('data-count', stats.donated); animateValue(el, 0, stats.donated); }
+        if (statType === 'students') { el.setAttribute('data-count', stats.students); animateValue(el, 0, stats.students); }
+        if (statType === 'saved') { el.setAttribute('data-count', stats.saved); animateValue(el, 0, stats.saved); }
+    });
+
+    // ── DASHBOARD.HTML: Personal user stats ──
+    updateDashboardStats(stats);
+
+    // ── Update category counts on browse-like pages ──
     updateCategoryCountsOnly();
 }
 
+/**
+ * Dashboard personal stats (based on current logged-in user's books)
+ */
+async function updateDashboardStats(globalStats) {
+    const dashMyBooks = document.getElementById('dashMyBooks');
+    const dashWishlist = document.getElementById('dashWishlist');
+    const dashExchanges = document.getElementById('dashExchanges');
+    const dashDonations = document.getElementById('dashDonations');
+
+    if (!dashMyBooks) return; // Not on dashboard page
+
+    try {
+        let myBooks = 0, myWishlist = 0, myExchanges = 0, myDonations = 0;
+
+        const currentUser = JSON.parse(localStorage.getItem('rcti_gtu_current_user') || 'null');
+        if (currentUser) {
+            let books = [];
+            if (window.BookDB && typeof window.BookDB.getBooks === 'function') {
+                books = await window.BookDB.getBooks();
+            } else {
+                books = JSON.parse(localStorage.getItem('rcti_gtu_lab_manual_books') || '[]');
+            }
+
+            if (Array.isArray(books)) {
+                const userBooks = books.filter(b => b.seller && (b.seller.email === currentUser.email || b.seller.id === currentUser.id));
+                myBooks = userBooks.length;
+                myExchanges = userBooks.filter(b => b.mode === 'exchange').length;
+                myDonations = userBooks.filter(b => b.mode === 'donate').length;
+            }
+
+            const wishlist = JSON.parse(localStorage.getItem('rcti_gtu_wishlist') || '[]');
+            myWishlist = Array.isArray(wishlist) ? wishlist.length : 0;
+        }
+
+        animateValue(dashMyBooks, 0, myBooks);
+        animateValue(dashWishlist, 0, myWishlist);
+        animateValue(dashExchanges, 0, myExchanges);
+        animateValue(dashDonations, 0, myDonations);
+    } catch (e) {
+        console.error("Error updating dashboard stats:", e);
+    }
+}
+
+/**
+ * Update branch/department category counts on browse pages
+ */
 async function updateCategoryCountsOnly() {
     try {
         let books = [];
@@ -135,10 +240,14 @@ async function updateCategoryCountsOnly() {
     }
 }
 
-// Global hook to trigger live stats update after book additions / user registrations
+// Global hook so other scripts can trigger a stats refresh after book uploads, registrations, etc.
 window.updateLiveStatsUI = updateLiveStatsUI;
+window.getLiveStats = getLiveStats;
 
-// Run on page load
+// Run on every page load
 document.addEventListener("DOMContentLoaded", () => {
     updateLiveStatsUI();
+
+    // Auto-refresh every 15 seconds for real-time feel
+    setInterval(updateLiveStatsUI, 15000);
 });

@@ -4,24 +4,234 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin Dashboard – BookBridge</title>
+  <link rel="icon" href="logo.png.jpeg" type="image/jpeg">
+  <link rel="apple-touch-icon" href="logo.png.jpeg">
   <meta name="description" content="BookBridge administration panel for managing books, users, and platform analytics.">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
   <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    /* Admin Auth Security Gate Overlay Styles */
+    .admin-auth-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: radial-gradient(circle at center, #1e1b4b 0%, #0f172a 100%);
+      z-index: 99999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      backdrop-filter: blur(12px);
+      transition: opacity 0.3s ease, visibility 0.3s ease;
+    }
+    .admin-auth-overlay.hidden {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+    .admin-auth-card {
+      background: rgba(30, 41, 59, 0.92);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6), 0 0 30px rgba(99, 102, 241, 0.25);
+      border-radius: 20px;
+      width: 100%;
+      max-width: 440px;
+      padding: 36px 32px;
+      color: #f8fafc;
+      animation: adminCardPop 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+      position: relative;
+    }
+    @keyframes adminCardPop {
+      0% { opacity: 0; transform: scale(0.92) translateY(20px); }
+      100% { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    .admin-auth-card.shake {
+      animation: adminShake 0.4s ease-in-out;
+    }
+    @keyframes adminShake {
+      0%, 100% { transform: translateX(0); }
+      20%, 60% { transform: translateX(-10px); }
+      40%, 80% { transform: translateX(10px); }
+    }
+    .admin-auth-header {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+    .admin-shield-icon {
+      width: 68px;
+      height: 68px;
+      margin: 0 auto 16px;
+      background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      color: #ffffff;
+      box-shadow: 0 8px 24px rgba(99, 102, 241, 0.4);
+    }
+    .admin-auth-header h2 {
+      font-size: 22px;
+      font-weight: 700;
+      color: #ffffff;
+      margin-bottom: 6px;
+      letter-spacing: -0.02em;
+    }
+    .admin-auth-header p {
+      font-size: 13.5px;
+      color: #94a3b8;
+    }
+    .input-with-icon {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+    .input-with-icon .input-icon {
+      position: absolute;
+      left: 14px;
+      color: #64748b;
+      font-size: 15px;
+      pointer-events: none;
+    }
+    .input-with-icon .form-input {
+      padding-left: 42px;
+      padding-right: 42px;
+      background: rgba(15, 23, 42, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #ffffff;
+      height: 46px;
+      border-radius: 10px;
+      width: 100%;
+      font-size: 14px;
+      transition: all 0.2s ease;
+    }
+    .input-with-icon .form-input:focus {
+      border-color: #818cf8;
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25);
+      background: rgba(15, 23, 42, 0.9);
+      outline: none;
+    }
+    .btn-toggle-password {
+      position: absolute;
+      right: 12px;
+      background: none;
+      border: none;
+      color: #94a3b8;
+      cursor: pointer;
+      font-size: 16px;
+      padding: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: color 0.2s;
+    }
+    .btn-toggle-password:hover {
+      color: #ffffff;
+    }
+    .admin-hint-badge {
+      background: rgba(99, 102, 241, 0.15);
+      border: 1px solid rgba(99, 102, 241, 0.3);
+      color: #a5b4fc;
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+    .admin-hint-badge code {
+      font-family: monospace;
+      font-weight: 700;
+      color: #ffffff;
+    }
+    .admin-auth-alert {
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      color: #fca5a5;
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 13.5px;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+  </style>
 </head>
 <body>
+  <!-- ADMIN AUTH GATE OVERLAY -->
+  <div id="adminAuthOverlay" class="admin-auth-overlay">
+    <div class="admin-auth-card">
+      <div class="admin-auth-header">
+        <div class="admin-shield-icon">
+          <i class="fa-solid fa-user-shield"></i>
+        </div>
+        <h2>Admin Authentication</h2>
+        <p>BookBridge Management Console Access Gate</p>
+      </div>
+
+      <div id="adminAuthAlert" class="admin-auth-alert" style="display: none;">
+        <i class="fa-solid fa-circle-exclamation"></i>
+        <span id="adminAuthAlertText">Incorrect password. Access denied.</span>
+      </div>
+
+      <form id="adminLoginForm">
+        <div class="form-group" style="margin-bottom: 16px;">
+          <label class="form-label" for="adminEmailInput" style="color: #cbd5e1;">Admin Email / Identifier</label>
+          <div class="input-with-icon">
+            <i class="fa-solid fa-envelope input-icon"></i>
+            <input type="email" id="adminEmailInput" class="form-input" value="admin@rcti.ac.in" placeholder="admin@rcti.ac.in" required>
+          </div>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 20px;">
+          <label class="form-label" for="adminPasswordInput" style="color: #cbd5e1;">Admin Security Password *</label>
+          <div class="input-with-icon">
+            <i class="fa-solid fa-lock input-icon"></i>
+            <input type="password" id="adminPasswordInput" class="form-input" placeholder="Enter admin password..." required autofocus>
+            <button type="button" class="btn-toggle-password" id="btnToggleAdminPass" aria-label="Toggle password visibility">
+              <i class="fa-solid fa-eye" id="eyeIconAdmin"></i>
+            </button>
+          </div>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; font-size: 13px;">
+          <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: #94a3b8;">
+            <input type="checkbox" id="adminRememberCheck" checked style="accent-color: #6366f1;">
+            Keep Session Unlocked
+          </label>
+          <span class="admin-hint-badge" title="Default passcode for testing"><i class="fa-solid fa-key"></i> Passcode: <code>admin123</code></span>
+        </div>
+
+        <button type="submit" id="btnAdminUnlock" class="btn btn-primary btn-block btn-lg" style="height: 48px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 10px; background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); border: none; border-radius: 10px; width: 100%; color: white; cursor: pointer;">
+          <i class="fa-solid fa-shield-halved"></i>
+          <span>Unlock Admin Panel</span>
+        </button>
+      </form>
+
+      <div style="margin-top: 24px; text-align: center; font-size: 13px;">
+        <a href="index.html" style="color: #94a3b8; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
+          <i class="fa-solid fa-arrow-left"></i> Return to Main BookBridge Site
+        </a>
+      </div>
+    </div>
+  </div>
+
   <a href="#main-content" class="skip-link">Skip to main content</a>
 
   <header class="navbar" id="navbar">
     <div class="navbar-inner">
-      <a href="index.html" class="brand"><div class="brand-icon" style="background: linear-gradient(135deg, #1e293b, #334155);">🛡️</div><div><div class="brand-name">BookBridge Admin</div><div class="brand-tagline">Management Console</div></div></a>
+      <a href="index.html" class="brand"><div class="brand-icon"><img src="logo.png.jpeg" alt="BookBridge Logo"></div><div><div class="brand-name">BookBridge Admin</div><div class="brand-tagline">Management Console</div></div></a>
       <nav class="nav-links">
         <a href="index.html" class="nav-link">View Site</a>
         <a href="browse.html" class="nav-link">Catalog</a>
         <a href="admin.html" class="nav-link active">Dashboard</a>
       </nav>
       <div class="nav-actions" id="adminNavActions">
-        <span style="font-size: 13px; font-weight: 600; color: var(--color-primary);">Admin</span>
-        <a href="index.html" class="btn btn-ghost btn-sm">Logout</a>
+        <span style="font-size: 13px; font-weight: 600; color: var(--color-primary);">Admin Panel</span>
+        <button id="btnAdminLock" class="btn btn-secondary btn-sm" style="margin-left:8px;" title="Lock Admin Dashboard"><i class="fa-solid fa-lock"></i> Lock</button>
+        <button id="btnAdminLogout" class="btn btn-ghost btn-sm">Logout</button>
       </div>
       <button class="mobile-toggle" id="mobileMenuToggle"><i class="fa-solid fa-bars"></i></button>
     </div>
@@ -37,20 +247,19 @@
       <aside class="sidebar">
         <div class="sidebar-section-title">Overview</div>
         <nav class="sidebar-nav">
-          <a href="#" class="sidebar-link active"><i class="fa-solid fa-chart-line"></i> Analytics</a>
-          <a href="#" class="sidebar-link"><i class="fa-solid fa-book"></i> Books</a>
-          <a href="#" class="sidebar-link"><i class="fa-solid fa-users"></i> Users</a>
+          <a href="#" class="sidebar-link active" data-admin-section="analytics"><i class="fa-solid fa-chart-line"></i> Analytics</a>
+          <a href="#" class="sidebar-link" data-admin-section="books"><i class="fa-solid fa-book"></i> Books</a>
+          <a href="#" class="sidebar-link" data-admin-section="users"><i class="fa-solid fa-users"></i> Users</a>
         </nav>
         <div class="sidebar-section-title">Management</div>
         <nav class="sidebar-nav">
-          <a href="#" class="sidebar-link"><i class="fa-solid fa-upload"></i> Uploads</a>
-          <a href="#" class="sidebar-link"><i class="fa-solid fa-flag"></i> Reports</a>
-          <a href="#" class="sidebar-link"><i class="fa-solid fa-bell"></i> Notifications</a>
+          <a href="browse.html" class="sidebar-link"><i class="fa-solid fa-magnifying-glass"></i> Browse Catalog</a>
+          <a href="exchange.html" class="sidebar-link"><i class="fa-solid fa-arrows-rotate"></i> Exchange</a>
         </nav>
-        <div class="sidebar-section-title">System</div>
+        <div class="sidebar-section-title">Quick</div>
         <nav class="sidebar-nav">
-          <a href="#" class="sidebar-link"><i class="fa-solid fa-gear"></i> Settings</a>
-          <a href="#" class="sidebar-link"><i class="fa-solid fa-chart-bar"></i> Activity Log</a>
+          <a href="index.html" class="sidebar-link"><i class="fa-solid fa-house"></i> View Site</a>
+          <a href="login.html" class="sidebar-link" id="adminSidebarLogout"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
         </nav>
       </aside>
 
@@ -65,59 +274,413 @@
         <div class="grid-4" style="margin-bottom: 32px;">
           <div class="stat-card">
             <div class="stat-icon" style="background:var(--color-primary-light);color:var(--color-primary);"><i class="fa-solid fa-users"></i></div>
-            <div class="stat-value" id="adminStatUsers" data-count="10480">0</div>
+            <div class="stat-value" id="adminStatUsers" data-count="0">0</div>
             <div class="stat-label">Enrolled Students</div>
           </div>
           <div class="stat-card">
             <div class="stat-icon" style="background:var(--color-secondary-light);color:var(--color-secondary);"><i class="fa-solid fa-book"></i></div>
-            <div class="stat-value" id="adminStatBooks" data-count="50210">0</div>
+            <div class="stat-value" id="adminStatBooks" data-count="0">0</div>
             <div class="stat-label">Total Listings</div>
           </div>
           <div class="stat-card">
             <div class="stat-icon" style="background:var(--color-info-light);color:var(--color-info);"><i class="fa-solid fa-arrows-rotate"></i></div>
-            <div class="stat-value" id="adminStatSwaps" data-count="1240">0</div>
+            <div class="stat-value" id="adminStatSwaps" data-count="0">0</div>
             <div class="stat-label">Active Swaps</div>
           </div>
           <div class="stat-card">
             <div class="stat-icon" style="background:var(--color-success-light);color:var(--color-success);"><i class="fa-solid fa-gift"></i></div>
-            <div class="stat-value" id="adminStatDonations" data-count="850">0</div>
+            <div class="stat-value" id="adminStatDonations" data-count="0">0</div>
             <div class="stat-label">Free Donations</div>
           </div>
         </div>
 
-        <!-- DATA TABLE -->
-        <div class="card" style="padding: 24px;">
-          <div class="flex-between" style="margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
-            <h3>Resource Catalog</h3>
-            <button id="btnAdminAddBook" class="btn btn-primary btn-sm"><i class="fa-solid fa-plus"></i> Add Book</button>
+        <!-- CHARTS GRID -->
+        <div class="charts-grid">
+          <div class="chart-card">
+            <h4><i class="fa-solid fa-chart-pie" style="color:var(--color-primary);"></i> Department Distribution</h4>
+            <canvas id="branchChartCanvas" height="180"></canvas>
           </div>
+          <div class="chart-card">
+            <h4><i class="fa-solid fa-chart-column" style="color:var(--color-info);"></i> Listing Type Breakdown</h4>
+            <canvas id="typeChartCanvas" height="180"></canvas>
+          </div>
+        </div>
 
-          <div class="data-table-wrap">
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>ID / Code</th>
-                  <th>Book Title</th>
-                  <th>Department</th>
-                  <th>Type</th>
-                  <th>Status</th>
-                  <th style="text-align: right;">Actions</th>
-                </tr>
-              </thead>
-              <tbody id="adminBooksTableBody">
-                <!-- Dynamically populated -->
-              </tbody>
-            </table>
+        <!-- ADMIN TABS -->
+        <div class="admin-tabs">
+          <button class="admin-tab-btn active" data-admin-tab="books"><i class="fa-solid fa-book"></i> Books</button>
+          <button class="admin-tab-btn" data-admin-tab="users"><i class="fa-solid fa-users"></i> Users</button>
+        </div>
+
+        <!-- BOOKS TAB -->
+        <div id="adminTab-books" class="admin-content-tab active">
+          <div class="card" style="padding: 24px;">
+            <div class="flex-between" style="margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
+              <h3>Resource Catalog</h3>
+              <div style="display:flex;gap:8px;">
+                <button id="btnExportCsv" class="btn btn-secondary btn-sm"><i class="fa-solid fa-file-csv"></i> Export CSV</button>
+                <button id="btnAdminAddBook" class="btn btn-primary btn-sm"><i class="fa-solid fa-plus"></i> Add Book</button>
+              </div>
+            </div>
+            <div class="table-search-bar">
+              <input type="text" id="adminBookSearch" placeholder="Search books by title, author, code...">
+            </div>
+            <div class="data-table-wrap">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>GTU Code</th>
+                    <th>Book Title</th>
+                    <th>Department</th>
+                    <th>Price</th>
+                    <th>Status</th>
+                    <th style="text-align: right;">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="adminBooksTableBody">
+                  <!-- Dynamically populated -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- USERS TAB -->
+        <div id="adminTab-users" class="admin-content-tab">
+          <div class="card" style="padding: 24px;">
+            <div class="flex-between" style="margin-bottom: 16px;">
+              <h3>Registered Students</h3>
+              <span class="badge badge-primary" id="adminUserCount">Loading...</span>
+            </div>
+            <div class="admin-user-table-wrap">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Dept</th>
+                    <th>Role</th>
+                    <th>Enrollment</th>
+                    <th style="text-align:right;">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="adminUsersTableBody">
+                  <tr><td colspan="6" style="text-align:center;color:var(--color-gray);padding:24px;">Click Users tab to load...</td></tr>
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       </div>
     </div>
   </main>
 
+  <footer class="footer">
+    <div class="footer-inner">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <div class="brand" style="margin-bottom: 4px;">
+            <div class="brand-icon"><img src="logo.png.jpeg" alt="BookBridge Logo"></div>
+            <div>
+              <div class="brand-name">BookBridge</div>
+              <div class="brand-tagline">Bridge Books. Build Minds.</div>
+            </div>
+          </div>
+          <p>India's premier student platform for buying, selling, exchanging, and donating academic books across colleges.</p>
+          <div class="footer-social">
+            <a href="#" aria-label="Twitter"><i class="fa-brands fa-x-twitter"></i></a>
+            <a href="#" aria-label="Instagram"><i class="fa-brands fa-instagram"></i></a>
+            <a href="#" aria-label="LinkedIn"><i class="fa-brands fa-linkedin-in"></i></a>
+            <a href="#" aria-label="GitHub"><i class="fa-brands fa-github"></i></a>
+          </div>
+        </div>
+
+        <div class="footer-col">
+          <h4>Platform</h4>
+          <a href="browse.html">Browse Books</a>
+          <a href="exchange.html">Exchange</a>
+          <a href="donate.html">Donate</a>
+          <a href="dashboard.html">Dashboard</a>
+        </div>
+
+        <div class="footer-col">
+          <h4>Company</h4>
+          <a href="about.html">About Us</a>
+          <a href="contact.html">Contact</a>
+          <a href="privacy.html">Privacy Policy</a>
+          <a href="terms.html">Terms of Service</a>
+        </div>
+
+        <div class="footer-col">
+          <h4>Support</h4>
+          <a href="contact.html">Help Center</a>
+          <a href="contact.html#faq">FAQs</a>
+          <a href="contact.html">Report Issue</a>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <span>© 2026 BookBridge — India's Student Book Sharing Platform. All rights reserved.</span>
+        <span>Built with ❤️ by RCTI Students</span>
+      </div>
+    </div>
+  </footer>
+
   <div class="toast-container" id="toastContainer"></div>
+
+  <!-- ADMIN ADD BOOK MODAL -->
+  <div class="modal-overlay" id="adminAddBookModal">
+    <div class="modal-card" style="max-width: 620px;">
+      <div class="modal-header">
+        <h3><i class="fa-solid fa-plus" style="color: var(--color-primary);"></i> Add New Book</h3>
+        <button class="modal-close" id="closeAdminAddBookModal"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <form id="adminAddBookForm" style="padding: 0;">
+        <div class="form-row-2" style="margin-bottom: 14px;">
+          <div class="form-group">
+            <label class="form-label">Book Title *</label>
+            <input type="text" id="adminBookTitle" class="form-input" placeholder="e.g. Data Structures & Algorithms" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Author *</label>
+            <input type="text" id="adminBookAuthor" class="form-input" placeholder="Author name" required>
+          </div>
+        </div>
+        <div class="form-row-2" style="margin-bottom: 14px;">
+          <div class="form-group">
+            <label class="form-label">Department</label>
+            <select id="adminBookBranch" class="form-input">
+              <option value="CE">CE — Computer Engineering</option>
+              <option value="IT">IT — Information Technology</option>
+              <option value="EE">EE — Electrical Engineering</option>
+              <option value="ME">ME — Mechanical Engineering</option>
+              <option value="Civil">Civil Engineering</option>
+              <option value="IC">IC — Instrumentation</option>
+              <option value="All">All Departments</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Semester</label>
+            <select id="adminBookSemester" class="form-input">
+              <option value="1">Semester 1</option><option value="2">Semester 2</option>
+              <option value="3">Semester 3</option><option value="4">Semester 4</option>
+              <option value="5" selected>Semester 5</option><option value="6">Semester 6</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row-2" style="margin-bottom: 14px;">
+          <div class="form-group">
+            <label class="form-label">GTU Subject Code</label>
+            <input type="text" id="adminBookGtuCode" class="form-input" placeholder="e.g. 3350701">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Condition</label>
+            <select id="adminBookCondition" class="form-input">
+              <option value="Like New">Like New</option>
+              <option value="Good" selected>Good</option>
+              <option value="Fair">Fair</option>
+              <option value="Worn">Worn</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row-2" style="margin-bottom: 14px;">
+          <div class="form-group">
+            <label class="form-label">Mode</label>
+            <select id="adminBookMode" class="form-input">
+              <option value="sell">Sell</option>
+              <option value="exchange">Exchange</option>
+              <option value="donate">Donate (Free)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Price (₹) — 0 for Free</label>
+            <input type="number" id="adminBookPrice" class="form-input" placeholder="0" min="0" value="0">
+          </div>
+        </div>
+        <div class="form-group" style="margin-bottom: 20px;">
+          <label class="form-label">Description</label>
+          <textarea id="adminBookDesc" class="form-input" rows="3" placeholder="Brief description of the book..."></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary btn-block">
+          <i class="fa-solid fa-plus"></i> Add to Catalog
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- PDF MODAL -->
+  <div class="pdf-modal-overlay" id="pdfModalOverlay">
+    <div class="pdf-modal-card">
+      <div class="pdf-modal-header">
+        <h3 id="pdfModalTitle">Document Viewer</h3>
+        <button id="closePdfModal" style="background:none;border:none;cursor:pointer;font-size:20px;"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <iframe id="pdfIframe" class="pdf-iframe" title="PDF Viewer"></iframe>
+    </div>
+  </div>
+
+  <!-- BOOK DETAILS MODAL -->
+  <div class="modal-overlay" id="bookDetailsModal">
+    <div class="modal-card" style="max-width:560px;">
+      <div class="modal-header">
+        <h3 id="modalBookTitle">Book Details</h3>
+        <button class="modal-close" id="closeBookDetailsModal"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div id="modalBookBody"></div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:20px;">
+        <a id="btnModalWhatsapp" target="_blank" class="btn btn-primary" style="flex:1;text-decoration:none;background:#25D366;border-color:#25D366;"><i class="fa-brands fa-whatsapp"></i> WhatsApp</a>
+        <button id="btnModalActionConfirm" class="btn btn-brown" style="flex:1;">Confirm</button>
+      </div>
+    </div>
+  </div>
 
   <script src="js/database.js"></script>
   <script src="js/api.js"></script>
+  <script src="js/live-stats.js"></script>
   <script src="js/app.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const overlay = document.getElementById('adminAuthOverlay');
+      const mainContent = document.getElementById('main-content');
+      const loginForm = document.getElementById('adminLoginForm');
+      const emailInput = document.getElementById('adminEmailInput');
+      const passwordInput = document.getElementById('adminPasswordInput');
+      const btnTogglePass = document.getElementById('btnToggleAdminPass');
+      const eyeIcon = document.getElementById('eyeIconAdmin');
+      const alertBox = document.getElementById('adminAuthAlert');
+      const alertText = document.getElementById('adminAuthAlertText');
+      const unlockBtn = document.getElementById('btnAdminUnlock');
+      const btnLock = document.getElementById('btnAdminLock');
+      const card = overlay?.querySelector('.admin-auth-card');
+
+      function checkAdminSession() {
+        try {
+          const user = JSON.parse(localStorage.getItem('rcti_gtu_current_user') || 'null');
+          const token = localStorage.getItem('bb_access_token');
+          const adminMode = localStorage.getItem('admin_mode');
+          if (user && user.role === 'admin' && token && adminMode === 'true') {
+            unlockDashboard(user, false);
+            return true;
+          }
+        } catch (e) {}
+        lockDashboard();
+        return false;
+      }
+
+      function lockDashboard() {
+        if (overlay) {
+          overlay.classList.remove('hidden');
+          overlay.style.display = 'flex';
+        }
+        if (mainContent) mainContent.style.display = 'none';
+        localStorage.setItem('admin_mode', 'false');
+      }
+
+      function unlockDashboard(userObj, isNewLogin = true) {
+        if (overlay) {
+          overlay.classList.add('hidden');
+          setTimeout(() => { overlay.style.display = 'none'; }, 300);
+        }
+        if (mainContent) mainContent.style.display = 'block';
+        localStorage.setItem('admin_mode', 'true');
+        
+        // Trigger admin data load if function exists
+        if (typeof initAdminPage === 'function') {
+          initAdminPage();
+        }
+
+        if (isNewLogin && typeof showToast === 'function') {
+          showToast(`🔓 Welcome Admin (${userObj.name || userObj.email || 'Admin'})!`, 'success');
+        }
+      }
+
+      // Toggle Password Visibility
+      btnTogglePass?.addEventListener('click', () => {
+        if (passwordInput.type === 'password') {
+          passwordInput.type = 'text';
+          eyeIcon.className = 'fa-solid fa-eye-slash';
+        } else {
+          passwordInput.type = 'password';
+          eyeIcon.className = 'fa-solid fa-eye';
+        }
+      });
+
+      // Lock Button
+      btnLock?.addEventListener('click', () => {
+        lockDashboard();
+        if (typeof showToast === 'function') showToast('🔒 Admin Panel Locked', 'info');
+      });
+
+      // Login Form Submit (Password Check)
+      loginForm?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const email = emailInput.value.trim();
+        const password = passwordInput.value;
+
+        alertBox.style.display = 'none';
+        unlockBtn.disabled = true;
+        const btnSpan = unlockBtn.querySelector('span');
+        if (btnSpan) btnSpan.textContent = 'Verifying Password...';
+
+        try {
+          let authenticatedUser = null;
+
+          // Master passcode verification (admin123, admin, bookbridge2026) or API login
+          if (password === 'admin123' || password === 'admin' || password === 'bookbridge2026') {
+            authenticatedUser = {
+              id: 'usr-admin-master',
+              name: 'GTU System Admin',
+              email: email || 'admin@rcti.ac.in',
+              role: 'admin'
+            };
+            localStorage.setItem('bb_access_token', 'admin-token-' + Date.now());
+          } else if (window.BookAPI && typeof window.BookAPI.login === 'function') {
+            try {
+              const resUser = await window.BookAPI.login(email, password);
+              if (resUser && resUser.role === 'admin') {
+                authenticatedUser = resUser;
+              }
+            } catch(err) {
+              console.warn('[Admin Gate] Login API error:', err.message);
+            }
+          }
+
+          if (authenticatedUser) {
+            localStorage.setItem('rcti_gtu_current_user', JSON.stringify(authenticatedUser));
+            localStorage.setItem('admin_mode', 'true');
+            unlockDashboard(authenticatedUser, true);
+          } else {
+            // Password Error
+            alertText.textContent = 'Invalid admin password. (Default passcode: admin123)';
+            alertBox.style.display = 'flex';
+            card?.classList.add('shake');
+            setTimeout(() => card?.classList.remove('shake'), 500);
+          }
+        } catch (err) {
+          alertText.textContent = 'Authentication error: ' + err.message;
+          alertBox.style.display = 'flex';
+        } finally {
+          unlockBtn.disabled = false;
+          if (btnSpan) btnSpan.textContent = 'Unlock Admin Panel';
+        }
+      });
+
+      // Initial session check
+      checkAdminSession();
+    });
+
+    document.getElementById('btnAdminLogout')?.addEventListener('click', async () => {
+      localStorage.removeItem('admin_mode');
+      if (window.BookAPI && window.BookAPI.logout) await window.BookAPI.logout();
+      window.location.href = 'index.html';
+    });
+    document.getElementById('adminSidebarLogout')?.addEventListener('click', async (e) => {
+      e.preventDefault();
+      localStorage.removeItem('admin_mode');
+      if (window.BookAPI && window.BookAPI.logout) await window.BookAPI.logout();
+      window.location.href = 'index.html';
+    });
+  </script>
 </body>
 </html>
+

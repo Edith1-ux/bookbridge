@@ -8,24 +8,24 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <title>Browse Books | BookBridge</title>
+    <link rel="icon" href="logo.png.jpeg" type="image/jpeg">
+    <link rel="apple-touch-icon" href="logo.png.jpeg">
 
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 
-    <link
-        href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
         rel="stylesheet">
 
     <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css"
-        rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
 
     <!-- Bootstrap Icons -->
-    <link rel="stylesheet"
-        href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
 
     <!-- Custom CSS -->
+    <link rel="stylesheet" href="css/design-tokens.css">
     <link rel="stylesheet" href="browse_css/browse-books.css">
 
 </head>
@@ -39,15 +39,13 @@
         <div class="container">
 
             <!-- Logo -->
-            <a class="navbar-brand fw-bold" href="index.html">
+            <a class="navbar-brand fw-bold d-flex align-items-center gap-2" href="index.html">
+                <img src="logo.png.jpeg" alt="BookBridge Logo" style="height: 36px; width: auto; border-radius: 8px;">
                 BookBridge
             </a>
 
             <!-- Mobile Menu -->
-            <button class="navbar-toggler"
-                type="button"
-                data-bs-toggle="collapse"
-                data-bs-target="#navbarMenu">
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMenu">
 
                 <span class="navbar-toggler-icon"></span>
 
@@ -55,49 +53,42 @@
 
             <!-- Navigation -->
 
-            <div class="collapse navbar-collapse"
-                id="navbarMenu">
+            <div class="collapse navbar-collapse" id="navbarMenu">
 
                 <ul class="navbar-nav mx-auto">
 
                     <li class="nav-item">
-                        <a class="nav-link"
-                            href="index.html">
+                        <a class="nav-link" href="index.html">
                             Home
                         </a>
                     </li>
 
                     <li class="nav-item">
-                        <a class="nav-link active"
-                            href="browse.html">
+                        <a class="nav-link active" href="browse.html">
                             Browse Books
                         </a>
                     </li>
 
                     <li class="nav-item">
-                        <a class="nav-link"
-                            href="exchange.html">
+                        <a class="nav-link" href="exchange.html">
                             Exchange
                         </a>
                     </li>
 
                     <li class="nav-item">
-                        <a class="nav-link"
-                            href="donate.html">
+                        <a class="nav-link" href="donate.html">
                             Donate Book
                         </a>
                     </li>
 
                     <li class="nav-item">
-                        <a class="nav-link"
-                            href="about.html">
+                        <a class="nav-link" href="about.html">
                             About
                         </a>
                     </li>
 
                     <li class="nav-item">
-                        <a class="nav-link"
-                            href="contact.html">
+                        <a class="nav-link" href="contact.html">
                             Contact
                         </a>
                     </li>
@@ -106,15 +97,13 @@
 
                 <!-- Right Buttons -->
 
-                <div class="d-flex gap-2">
+                <div class="d-flex gap-2" id="browseNavActions">
 
-                    <a href="login.html"
-                        class="btn btn-outline-success">
+                    <a href="login.html" class="btn btn-outline-success">
                         Login
                     </a>
 
-                    <a href="register.html"
-                        class="btn btn-success">
+                    <a href="register.html" class="btn btn-success">
                         Register
                     </a>
 
@@ -142,15 +131,17 @@
                         Browse Books
                     </h1>
 
-                <p class="hero-description">
-                        Find textbooks, reference books and study materials shared by students across different departments. Buy affordable books or discover books donated by seniors.
-                </p>
+                    <p class="hero-description">
+                        Find textbooks, reference books and study materials shared by students across different
+                        departments. Buy affordable books or discover books donated by seniors.
+                    </p>
 
                     <div class="d-flex gap-3 flex-wrap mt-3">
                         <a href="#books-section" class="btn btn-success btn-lg">
                             Explore Books
                         </a>
-                        <button class="btn btn-outline-success btn-lg" type="button" data-bs-toggle="modal" data-bs-target="#uploadBookModal">
+                        <button class="btn btn-outline-success btn-lg" type="button" data-bs-toggle="modal"
+                            data-bs-target="#uploadBookModal">
                             <i class="bi bi-cloud-arrow-up me-2"></i> Upload & Exchange Offer
                         </button>
                     </div>
@@ -161,9 +152,8 @@
 
                 <div class="col-lg-6 text-center mt-4 mt-lg-0">
 
-                    <img src="browse_images/hero.png"
-                    alt="BookBridge Browse Books" 
-                    class="img-fluid hero-image rounded shadow-sm">
+                    <img src="browse_images/hero.png" alt="BookBridge Browse Books"
+                        class="img-fluid hero-image rounded shadow-sm">
 
                 </div>
 
@@ -175,7 +165,7 @@
 
 
 
-        <!-- ===================== Search & Filter Section ===================== -->
+    <!-- ===================== Search & Filter Section ===================== -->
 
     <section class="search-filter-section py-4">
 
@@ -193,10 +183,7 @@
                             <i class="bi bi-search"></i>
                         </span>
 
-                        <input
-                            type="text"
-                            id="searchInput"
-                            class="form-control"
+                        <input type="text" id="searchInput" class="form-control"
                             placeholder="Search by book title, author or subject...">
 
                     </div>
@@ -207,10 +194,7 @@
 
                 <div class="col-lg-2 d-grid">
 
-                    <button
-                        class="btn btn-outline-success"
-                        type="button"
-                        data-bs-toggle="offcanvas"
+                    <button class="btn btn-outline-success" type="button" data-bs-toggle="offcanvas"
                         data-bs-target="#filterCanvas">
 
                         <i class="bi bi-funnel me-2"></i>
@@ -221,40 +205,38 @@
 
                 </div>
 
-              <!-- Sort Dropdown -->
+                <!-- Sort Dropdown -->
 
-<div class="col-lg-3">
+                <div class="col-lg-3">
 
-    <select
-        id="sortBooks"
-        class="form-select">
+                    <select id="sortBooks" class="form-select">
 
-        <option value="default">
-            Sort By
-        </option>
+                        <option value="default">
+                            Sort By
+                        </option>
 
-        <option value="titleAZ">
-            Name (A-Z)
-        </option>
+                        <option value="titleAZ">
+                            Name (A-Z)
+                        </option>
 
-        <option value="titleZA">
-            Name (Z-A)
-        </option>
+                        <option value="titleZA">
+                            Name (Z-A)
+                        </option>
 
-        <option value="priceLowHigh">
-            Price (Low to High)
-        </option>
+                        <option value="priceLowHigh">
+                            Price (Low to High)
+                        </option>
 
-        <option value="priceHighLow">
-            Price (High to Low)
-        </option>
+                        <option value="priceHighLow">
+                            Price (High to Low)
+                        </option>
 
-    </select>
+                    </select>
 
-</div>
-</div>      <!-- row -->
-</div>      <!-- container -->
-</section>  <!-- search-filter-section -->
+                </div>
+            </div> <!-- row -->
+        </div> <!-- container -->
+    </section> <!-- search-filter-section -->
 
     <!-- ===================== Results Count ===================== -->
 
@@ -297,15 +279,11 @@
 
     <!-- ===================== Books Grid ===================== -->
 
-    <section
-        id="books-section"
-        class="books-section py-5">
+    <section id="books-section" class="books-section py-5">
 
         <div class="container">
 
-            <div
-                id="booksContainer"
-                class="row g-4">
+            <div id="booksContainer" class="row g-4">
 
                 <!-- Book Cards will be loaded here dynamically -->
 
@@ -318,11 +296,9 @@
 
 
 
-        <!-- ===================== Filter Offcanvas ===================== -->
+    <!-- ===================== Filter Offcanvas ===================== -->
 
-    <div class="offcanvas offcanvas-end"
-        tabindex="-1"
-        id="filterCanvas">
+    <div class="offcanvas offcanvas-end" tabindex="-1" id="filterCanvas">
 
         <div class="offcanvas-header">
 
@@ -330,9 +306,7 @@
                 Filters
             </h4>
 
-            <button type="button"
-                class="btn-close"
-                data-bs-dismiss="offcanvas">
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas">
             </button>
 
         </div>
@@ -443,14 +417,7 @@
                     Maximum Price
                 </h6>
 
-                <input
-                    type="range"
-                    class="form-range"
-                    min="0"
-                    max="1200"
-                    step="50"
-                    value="1200"
-                    id="priceRange">
+                <input type="range" class="form-range" min="0" max="1200" step="50" value="1200" id="priceRange">
 
                 <div class="text-end">
 
@@ -468,18 +435,13 @@
 
             <div class="d-grid gap-2">
 
-                <button
-                    class="btn btn-outline-secondary"
-                    id="clearFilterBtn">
+                <button class="btn btn-outline-secondary" id="clearFilterBtn">
 
                     Clear Filters
 
                 </button>
 
-                <button
-                    class="btn btn-success"
-                    id="applyFilterBtn"
-                    data-bs-dismiss="offcanvas">
+                <button class="btn btn-success" id="applyFilterBtn" data-bs-dismiss="offcanvas">
 
                     Apply Filters
 
@@ -497,151 +459,134 @@
      Book Details Modal
 ========================================== -->
 
-<div
-    class="modal fade"
-    id="bookDetailsModal"
-    tabindex="-1"
-    aria-labelledby="bookDetailsModalLabel"
-    aria-hidden="true">
+    <div class="modal fade" id="bookDetailsModal" tabindex="-1" aria-labelledby="bookDetailsModalLabel"
+        aria-hidden="true">
 
-    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
 
-        <div class="modal-content">
+            <div class="modal-content">
 
-            <!-- Modal Header -->
+                <!-- Modal Header -->
 
-            <div class="modal-header">
+                <div class="modal-header">
 
-                <h4
-                    class="modal-title"
-                    id="bookDetailsModalLabel">
+                    <h4 class="modal-title" id="bookDetailsModalLabel">
 
-                    Book Details
+                        Book Details
 
-                </h4>
+                    </h4>
 
-                <button
-                    type="button"
-                    class="btn-close"
-                    data-bs-dismiss="modal"
-                    aria-label="Close">
-                </button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
+                    </button>
 
-            </div>
+                </div>
 
 
-            <!-- Modal Body -->
+                <!-- Modal Body -->
 
-            <div class="modal-body">
+                <div class="modal-body">
 
-                <div class="row g-4">
+                    <div class="row g-4">
 
-                    <!-- Book Image -->
+                        <!-- Book Image -->
 
-                    <div class="col-md-4 text-center">
+                        <div class="col-md-4 text-center">
 
-                        <img
-                            id="modalBookImage"
-                            src=""
-                            alt="Book Image"
-                            class="img-fluid rounded shadow">
+                            <img id="modalBookImage" src="" alt="Book Image" class="img-fluid rounded shadow">
 
-                    </div>
+                        </div>
 
 
-                    <!-- Book Information -->
+                        <!-- Book Information -->
 
-                    <div class="col-md-8">
+                        <div class="col-md-8">
 
-                        <h3 id="modalBookTitle"></h3>
+                            <h3 id="modalBookTitle"></h3>
 
-                        <p>
+                            <p>
 
-                            <strong>Author :</strong>
+                                <strong>Author :</strong>
 
-                            <span id="modalBookAuthor"></span>
+                                <span id="modalBookAuthor"></span>
 
-                        </p>
+                            </p>
 
-                        <p>
+                            <p>
 
-                            <strong>Department :</strong>
+                                <strong>Department :</strong>
 
-                            <span id="modalBookDepartment"></span>
+                                <span id="modalBookDepartment"></span>
 
-                        </p>
+                            </p>
 
-                        <p>
+                            <p>
 
-                            <strong>Semester :</strong>
+                                <strong>Semester :</strong>
 
-                            <span id="modalBookSemester"></span>
+                                <span id="modalBookSemester"></span>
 
-                        </p>
+                            </p>
 
-                        <p>
+                            <p>
 
-                            <strong>Category :</strong>
+                                <strong>Category :</strong>
 
-                            <span id="modalBookCategory"></span>
+                                <span id="modalBookCategory"></span>
 
-                        </p>
+                            </p>
 
-                        <p>
+                            <p>
 
-                            <strong>Condition :</strong>
+                                <strong>Condition :</strong>
 
-                            <span id="modalBookCondition"></span>
+                                <span id="modalBookCondition"></span>
 
-                        </p>
+                            </p>
 
-                        <p>
+                            <p>
 
-                            <strong>Book Type :</strong>
+                                <strong>Book Type :</strong>
 
-                            <span id="modalBookType"></span>
+                                <span id="modalBookType"></span>
 
-                        </p>
+                            </p>
 
-                        <p>
+                            <p>
 
-                            <strong>Price :</strong>
+                                <strong>Price :</strong>
 
-                            <span id="modalBookPrice"></span>
+                                <span id="modalBookPrice"></span>
 
-                        </p>
+                            </p>
 
-                        <p>
+                            <p>
 
-                            <strong>Description :</strong>
+                                <strong>Description :</strong>
 
-                        </p>
+                            </p>
 
-                        <p
-                            id="modalBookDescription"
-                            class="text-muted">
+                            <p id="modalBookDescription" class="text-muted">
 
-                        </p>
+                            </p>
+
+                        </div>
 
                     </div>
 
                 </div>
 
-            </div>
 
+                <!-- Modal Footer -->
 
-            <!-- Modal Footer -->
+                <div class="modal-footer">
 
-            <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
 
-                <button
-                    type="button"
-                    class="btn btn-secondary"
-                    data-bs-dismiss="modal">
+                        Close
 
-                    Close
+                    </button>
 
-                </button>
+                </div>
 
             </div>
 
@@ -649,39 +594,44 @@
 
     </div>
 
-</div>
-
 
     <!-- ==========================================
          Upload & Exchange Book Modal
     ========================================== -->
-    <div class="modal fade" id="uploadBookModal" tabindex="-1" aria-labelledby="uploadBookModalLabel" aria-hidden="true">
+    <div class="modal fade" id="uploadBookModal" tabindex="-1" aria-labelledby="uploadBookModalLabel"
+        aria-hidden="true">
         <div class="modal-dialog modal-lg modal-dialog-centered">
             <div class="modal-content shadow-lg border-0">
                 <div class="modal-header bg-success text-white">
                     <h4 class="modal-title fw-bold" id="uploadBookModalLabel">
                         <i class="bi bi-cloud-arrow-up-fill me-2"></i> Upload Book & Exchange Offer
                     </h4>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
                 </div>
                 <form id="uploadBookForm">
                     <div class="modal-body p-4">
                         <div class="row g-3">
                             <!-- Book Title -->
                             <div class="col-md-6">
-                                <label for="uploadTitle" class="form-label fw-semibold">Book Title <span class="text-danger">*</span></label>
-                                <input type="text" id="uploadTitle" class="form-control" placeholder="e.g. Computer Programming" required>
+                                <label for="uploadTitle" class="form-label fw-semibold">Book Title <span
+                                        class="text-danger">*</span></label>
+                                <input type="text" id="uploadTitle" class="form-control"
+                                    placeholder="e.g. Computer Programming" required>
                             </div>
 
                             <!-- Author -->
                             <div class="col-md-6">
-                                <label for="uploadAuthor" class="form-label fw-semibold">Author / Publisher <span class="text-danger">*</span></label>
-                                <input type="text" id="uploadAuthor" class="form-control" placeholder="e.g. Atul Prakashan" required>
+                                <label for="uploadAuthor" class="form-label fw-semibold">Author / Publisher <span
+                                        class="text-danger">*</span></label>
+                                <input type="text" id="uploadAuthor" class="form-control"
+                                    placeholder="e.g. Atul Prakashan" required>
                             </div>
 
                             <!-- Department -->
                             <div class="col-md-4">
-                                <label for="uploadDepartment" class="form-label fw-semibold">Department <span class="text-danger">*</span></label>
+                                <label for="uploadDepartment" class="form-label fw-semibold">Department <span
+                                        class="text-danger">*</span></label>
                                 <select id="uploadDepartment" class="form-select" required>
                                     <option value="">Select Department</option>
                                     <option>Computer Engineering</option>
@@ -700,7 +650,8 @@
 
                             <!-- Semester -->
                             <div class="col-md-4">
-                                <label for="uploadSemester" class="form-label fw-semibold">Semester <span class="text-danger">*</span></label>
+                                <label for="uploadSemester" class="form-label fw-semibold">Semester <span
+                                        class="text-danger">*</span></label>
                                 <select id="uploadSemester" class="form-select" required>
                                     <option value="">Select Semester</option>
                                     <option value="1">Sem 1</option>
@@ -714,7 +665,8 @@
 
                             <!-- Category -->
                             <div class="col-md-4">
-                                <label for="uploadCategory" class="form-label fw-semibold">Category <span class="text-danger">*</span></label>
+                                <label for="uploadCategory" class="form-label fw-semibold">Category <span
+                                        class="text-danger">*</span></label>
                                 <select id="uploadCategory" class="form-select" required>
                                     <option value="">Select Category</option>
                                     <option>Programming</option>
@@ -730,7 +682,8 @@
 
                             <!-- Listing Type -->
                             <div class="col-md-4">
-                                <label for="uploadType" class="form-label fw-semibold">Offer Type <span class="text-danger">*</span></label>
+                                <label for="uploadType" class="form-label fw-semibold">Offer Type <span
+                                        class="text-danger">*</span></label>
                                 <select id="uploadType" class="form-select" required>
                                     <option value="Sell">Sell / Exchange Offer</option>
                                     <option value="Donate">Donate (Free)</option>
@@ -739,13 +692,16 @@
 
                             <!-- Original MRP -->
                             <div class="col-md-4" id="mrpContainer">
-                                <label for="uploadOriginalPrice" class="form-label fw-semibold">Original MRP (₹) <span class="text-danger">*</span></label>
-                                <input type="number" id="uploadOriginalPrice" class="form-control" placeholder="e.g. 500" min="10" value="500">
+                                <label for="uploadOriginalPrice" class="form-label fw-semibold">Original MRP (₹) <span
+                                        class="text-danger">*</span></label>
+                                <input type="number" id="uploadOriginalPrice" class="form-control"
+                                    placeholder="e.g. 500" min="10" value="500">
                             </div>
 
                             <!-- Book Condition -->
                             <div class="col-md-4">
-                                <label for="uploadCondition" class="form-label fw-semibold">Condition <span class="text-danger">*</span></label>
+                                <label for="uploadCondition" class="form-label fw-semibold">Condition <span
+                                        class="text-danger">*</span></label>
                                 <select id="uploadCondition" class="form-select" required>
                                     <option value="Like New">Like New (80% MRP Value)</option>
                                     <option value="Excellent">Excellent (65% MRP Value)</option>
@@ -756,10 +712,14 @@
 
                             <!-- Exchange Price Calculator Output -->
                             <div class="col-12" id="priceCalculatorBox">
-                                <div class="p-3 bg-light rounded border d-flex justify-content-between align-items-center">
+                                <div
+                                    class="p-3 bg-light rounded border d-flex justify-content-between align-items-center">
                                     <div>
-                                        <h6 class="mb-1 text-success fw-bold"><i class="bi bi-lightning-charge-fill me-1"></i> Exchange Offer Price Calculator</h6>
-                                        <small class="text-muted" id="priceCalcExplain">Based on condition "Good" (50% of MRP)</small>
+                                        <h6 class="mb-1 text-success fw-bold"><i
+                                                class="bi bi-lightning-charge-fill me-1"></i> Exchange Offer Price
+                                            Calculator</h6>
+                                        <small class="text-muted" id="priceCalcExplain">Based on condition "Good" (50%
+                                            of MRP)</small>
                                     </div>
                                     <div class="text-end">
                                         <span class="fs-3 fw-bold text-success" id="calculatedPrice">₹250</span>
@@ -770,10 +730,12 @@
 
                             <!-- Cover Image Upload -->
                             <div class="col-12">
-                                <label for="uploadImageFile" class="form-label fw-semibold">Book Cover Photo <span class="text-danger">*</span></label>
+                                <label for="uploadImageFile" class="form-label fw-semibold">Book Cover Photo <span
+                                        class="text-danger">*</span></label>
                                 <input type="file" id="uploadImageFile" class="form-control" accept="image/*" required>
                                 <div id="imagePreviewContainer" class="mt-3 text-center d-none">
-                                    <img id="imagePreview" src="" alt="Book Preview" class="img-thumbnail" style="max-height: 180px; object-fit: contain;">
+                                    <img id="imagePreview" src="" alt="Book Preview" class="img-thumbnail"
+                                        style="max-height: 180px; object-fit: contain;">
                                 </div>
                             </div>
                         </div>
@@ -781,7 +743,8 @@
 
                     <div class="modal-footer bg-light">
                         <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn btn-success fw-semibold"><i class="bi bi-plus-circle me-1"></i> Add Book to Catalog</button>
+                        <button type="submit" class="btn btn-success fw-semibold"><i class="bi bi-plus-circle me-1"></i>
+                            Add Book to Catalog</button>
                     </div>
                 </form>
             </div>
@@ -799,7 +762,8 @@
                     <h4 class="modal-title fw-bold" id="editBookModalLabel">
                         <i class="bi bi-pencil-square me-2 text-warning"></i> Admin Edit Book & Replace Photo
                     </h4>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
                 </div>
                 <form id="editBookForm">
                     <input type="hidden" id="editBookId">
@@ -891,11 +855,13 @@
 
                             <!-- Replace Photo -->
                             <div class="col-12">
-                                <label for="editImageFile" class="form-label fw-semibold">Replace Cover Photo (Admin Only)</label>
+                                <label for="editImageFile" class="form-label fw-semibold">Replace Cover Photo (Admin
+                                    Only)</label>
                                 <input type="file" id="editImageFile" class="form-control" accept="image/*">
                                 <small class="text-muted d-block mt-1">Leave empty to keep current cover photo.</small>
                                 <div id="editImagePreviewContainer" class="mt-2 text-center">
-                                    <img id="editImagePreview" src="" alt="Current Cover" class="img-thumbnail" style="max-height: 180px; object-fit: contain;">
+                                    <img id="editImagePreview" src="" alt="Current Cover" class="img-thumbnail"
+                                        style="max-height: 180px; object-fit: contain;">
                                 </div>
                             </div>
                         </div>
@@ -903,7 +869,8 @@
 
                     <div class="modal-footer bg-light">
                         <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn btn-warning fw-semibold"><i class="bi bi-check-circle me-1"></i> Save Changes & Photo</button>
+                        <button type="submit" class="btn btn-warning fw-semibold"><i
+                                class="bi bi-check-circle me-1"></i> Save Changes & Photo</button>
                     </div>
                 </form>
             </div>
@@ -942,13 +909,13 @@
 
                     <ul class="list-unstyled">
 
-                        <li><a href="#">Home</a></li>
+                        <li><a href="index.html">Home</a></li>
 
-                        <li><a href="#">Browse Books</a></li>
+                        <li><a href="browse.html">Browse Books</a></li>
 
-                        <li><a href="#">Sell Book</a></li>
+                        <li><a href="exchange.html">Sell Book</a></li>
 
-                        <li><a href="#">Donate Book</a></li>
+                        <li><a href="donate.html">Donate Book</a></li>
 
                     </ul>
 
@@ -964,13 +931,13 @@
 
                     <ul class="list-unstyled">
 
-                        <li><a href="#">About Us</a></li>
+                        <li><a href="about.html">About Us</a></li>
 
-                        <li><a href="#">Contact</a></li>
+                        <li><a href="contact.html">Contact</a></li>
 
-                        <li><a href="#">Privacy Policy</a></li>
+                        <li><a href="privacy.html">Privacy Policy</a></li>
 
-                        <li><a href="#">Terms & Conditions</a></li>
+                        <li><a href="terms.html">Terms & Conditions</a></li>
 
                     </ul>
 
@@ -1017,40 +984,38 @@
 
 
     <!-- ===================== JavaScript Files ===================== -->
-<!-- ===================== JavaScript Files ===================== -->
+    <!-- ===================== JavaScript Files ===================== -->
 
-<!-- Bootstrap JS -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>
 
-<!-- Book Data -->
-<script src="browse_js/browse-books-data.js"></script>
+    <!-- Book Data -->
+    <script src="browse_js/browse-books-data.js"></script>
 
-<!-- Render Books -->
-<script src="browse_js/browse-books-render.js"></script>
+    <!-- Render Books -->
+    <script src="browse_js/browse-books-render.js"></script>
 
-<!-- Search Function -->
-<script src="browse_js/browse-books-search.js"></script>
+    <!-- Search Function -->
+    <script src="browse_js/browse-books-search.js"></script>
 
-<!-- Filter Function -->
-<script src="browse_js/browse-books-filter.js"></script>
+    <!-- Filter Function -->
+    <script src="browse_js/browse-books-filter.js"></script>
 
-<!-- Sort Function -->
-<script src="browse_js/browse-books-sort.js"></script>
+    <!-- Sort Function -->
+    <script src="browse_js/browse-books-sort.js"></script>
 
-<!-- Live Stats Counter Logic -->
-<script src="js/live-stats.js"></script>
+    <!-- Live Stats Counter Logic -->
+    <script src="js/live-stats.js"></script>
 
-<!-- Upload & Exchange Offer Logic -->
-<script src="browse_js/browse-books-upload.js"></script>
+    <!-- Upload & Exchange Offer Logic -->
+    <script src="browse_js/browse-books-upload.js"></script>
 
-<!-- Admin Management Logic -->
-<script src="browse_js/browse-books-admin.js"></script>
+    <!-- Admin Management Logic -->
+    <script src="browse_js/browse-books-admin.js"></script>
 
-<!-- Main JavaScript -->
-<script src="browse_js/browse-books.js"></script>
+    <!-- Main JavaScript -->
+    <script src="browse_js/browse-books.js"></script>
 
 </body>
+
 </html>
-
-
-

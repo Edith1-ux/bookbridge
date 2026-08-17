@@ -8,23 +8,20 @@
 ========================================== */
 
 function sortBooks(bookList) {
-
-    // Get Selected Sort Option
-    const sortOption = document.getElementById("sortBooks").value;
+    const sortEl = document.getElementById("sortBooks");
+    const sortOption = sortEl ? sortEl.value : "default";
 
     // Create Copy Of Book List
-    let sortedBooks = [...bookList];
+    let sortedBooks = [...(bookList || [])];
 
     /* ==========================================
        Sort : Name (A - Z)
     ========================================== */
 
     if (sortOption === "titleAZ") {
-
         sortedBooks.sort((a, b) =>
-            a.title.localeCompare(b.title)
+            (a.title || "").localeCompare(b.title || "")
         );
-
     }
 
     /* ==========================================
@@ -32,11 +29,9 @@ function sortBooks(bookList) {
     ========================================== */
 
     else if (sortOption === "titleZA") {
-
         sortedBooks.sort((a, b) =>
-            b.title.localeCompare(a.title)
+            (b.title || "").localeCompare(a.title || "")
         );
-
     }
 
     /* ==========================================
@@ -44,11 +39,9 @@ function sortBooks(bookList) {
     ========================================== */
 
     else if (sortOption === "priceLowHigh") {
-
         sortedBooks.sort((a, b) =>
-            a.price - b.price
+            (Number(a.price) || 0) - (Number(b.price) || 0)
         );
-
     }
 
     /* ==========================================
@@ -56,25 +49,25 @@ function sortBooks(bookList) {
     ========================================== */
 
     else if (sortOption === "priceHighLow") {
-
         sortedBooks.sort((a, b) =>
-            b.price - a.price
+            (Number(b.price) || 0) - (Number(a.price) || 0)
         );
-
     }
 
     // Return Sorted Books
     return sortedBooks;
-
 }
 
 /* ==========================================
    Sort Dropdown Event
 ========================================== */
 
-document
-    .getElementById("sortBooks")
-    .addEventListener("change", applyFilters);
+document.addEventListener("DOMContentLoaded", () => {
+    const sortEl = document.getElementById("sortBooks");
+    if (sortEl) {
+        sortEl.addEventListener("change", applyFilters);
+    }
+});
 
 
 

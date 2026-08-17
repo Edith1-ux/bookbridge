@@ -140,54 +140,57 @@ function applyFilters() {
 ========================================== */
 
 function clearFilters() {
+    const searchInput = document.getElementById("searchInput");
+    if (searchInput) searchInput.value = "";
 
-    // Clear Search
-    document.getElementById("searchInput").value = "";
+    const catEl = document.getElementById("categoryFilter");
+    if (catEl) catEl.value = "";
 
-    // Reset Filters
-    document.getElementById("categoryFilter").value = "";
-    document.getElementById("departmentFilter").value = "";
-    document.getElementById("semesterFilter").value = "";
-    document.getElementById("conditionFilter").value = "";
+    const deptEl = document.getElementById("departmentFilter");
+    if (deptEl) deptEl.value = "";
 
-    // Reset Price
-    document.getElementById("priceRange").value = 1200;
-    document.getElementById("priceValue").textContent = "₹1200";
+    const semEl = document.getElementById("semesterFilter");
+    if (semEl) semEl.value = "";
+
+    const condEl = document.getElementById("conditionFilter");
+    if (condEl) condEl.value = "";
+
+    const prEl = document.getElementById("priceRange");
+    if (prEl) prEl.value = 1200;
+
+    const pvEl = document.getElementById("priceValue");
+    if (pvEl) pvEl.textContent = "₹1200";
 
     // Display All Books
     let filteredBooks = [...books];
-
-    filteredBooks = sortBooks(filteredBooks);
-
-    renderBooks(filteredBooks);
-
+    if (typeof sortBooks === "function") {
+        filteredBooks = sortBooks(filteredBooks);
+    }
+    if (typeof renderBooks === "function") {
+        renderBooks(filteredBooks);
+    }
 }
 
 /* ==========================================
-   Apply Filter Button Event
+   Attach Filter Events Safely on DOM Loaded
 ========================================== */
 
-document
-    .getElementById("applyFilterBtn")
-    .addEventListener("click", applyFilters);
+document.addEventListener("DOMContentLoaded", () => {
+    const applyBtn = document.getElementById("applyFilterBtn");
+    if (applyBtn) {
+        applyBtn.addEventListener("click", applyFilters);
+    }
 
-/* ==========================================
-   Clear Filter Button Event
-========================================== */
+    const clearBtn = document.getElementById("clearFilterBtn");
+    if (clearBtn) {
+        clearBtn.addEventListener("click", clearFilters);
+    }
 
-document
-    .getElementById("clearFilterBtn")
-    .addEventListener("click", clearFilters);
-
-/* ==========================================
-   Price Range Event
-========================================== */
-
-const priceRange = document.getElementById("priceRange");
-const priceValue = document.getElementById("priceValue");
-
-priceRange.addEventListener("input", () => {
-
-    priceValue.textContent = `₹${priceRange.value}`;
-
+    const priceRange = document.getElementById("priceRange");
+    const priceValue = document.getElementById("priceValue");
+    if (priceRange && priceValue) {
+        priceRange.addEventListener("input", () => {
+            priceValue.textContent = `₹${priceRange.value}`;
+        });
+    }
 });

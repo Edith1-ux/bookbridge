@@ -4,6 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Contact Us – BookBridge Support</title>
+  <link rel="icon" href="logo.png.jpeg" type="image/jpeg">
+  <link rel="apple-touch-icon" href="logo.png.jpeg">
   <meta name="description" content="Get in touch with the BookBridge team for support, inquiries, or feedback. We're here to help.">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
   <link rel="stylesheet" href="style.css">
@@ -13,7 +15,7 @@
 
   <header class="navbar" id="navbar">
     <div class="navbar-inner">
-      <a href="index.html" class="brand"><div class="brand-icon">📚</div><div><div class="brand-name">BookBridge</div><div class="brand-tagline">Bridge Books. Build Minds.</div></div></a>
+      <a href="index.html" class="brand"><div class="brand-icon"><img src="logo.png.jpeg" alt="BookBridge Logo"></div><div><div class="brand-name">BookBridge</div><div class="brand-tagline">Bridge Books. Build Minds.</div></div></a>
       <nav class="nav-links"><a href="index.html" class="nav-link">Home</a><a href="browse.html" class="nav-link">Browse</a><a href="exchange.html" class="nav-link">Exchange</a><a href="donate.html" class="nav-link">Donate</a><a href="about.html" class="nav-link">About</a><a href="contact.html" class="nav-link active">Contact</a></nav>
       <div class="nav-actions"><a href="login.html" class="btn btn-ghost" id="navLoginBtn">Login</a><a href="register.html" class="btn btn-primary" id="navRegisterBtn">Get Started</a></div>
       <button class="mobile-toggle" id="mobileMenuToggle"><i class="fa-solid fa-bars"></i></button>
@@ -102,7 +104,7 @@
       </div>
 
       <!-- FAQ ACCORDION -->
-      <div style="max-width: 640px; margin: 0 auto;">
+      <div style="max-width: 640px; margin: 0 auto;" id="faq">
         <h3 class="animate-on-scroll" style="margin-bottom: 20px; text-align: center;">Frequently Asked Questions</h3>
         <div class="accordion animate-on-scroll" id="faqAccordion">
           <div class="accordion-item">
@@ -133,10 +135,10 @@
   <footer class="footer">
     <div class="footer-inner">
       <div class="footer-grid">
-        <div class="footer-brand"><div class="brand" style="margin-bottom:4px;"><div class="brand-icon">📚</div><div><div class="brand-name">BookBridge</div><div class="brand-tagline">Bridge Books. Build Minds.</div></div></div><p>Student book sharing platform.</p><div class="footer-social"><a href="#"><i class="fa-brands fa-x-twitter"></i></a><a href="#"><i class="fa-brands fa-instagram"></i></a><a href="#"><i class="fa-brands fa-linkedin-in"></i></a><a href="#"><i class="fa-brands fa-github"></i></a></div></div>
+        <div class="footer-brand"><div class="brand" style="margin-bottom:4px;"><div class="brand-icon"><img src="logo.png.jpeg" alt="BookBridge Logo"></div><div><div class="brand-name">BookBridge</div><div class="brand-tagline">Bridge Books. Build Minds.</div></div></div><p>Student book sharing platform.</p><div class="footer-social"><a href="#" aria-label="Twitter"><i class="fa-brands fa-x-twitter"></i></a><a href="#" aria-label="Instagram"><i class="fa-brands fa-instagram"></i></a><a href="#" aria-label="LinkedIn"><i class="fa-brands fa-linkedin-in"></i></a><a href="#" aria-label="GitHub"><i class="fa-brands fa-github"></i></a></div></div>
         <div class="footer-col"><h4>Platform</h4><a href="browse.html">Browse</a><a href="exchange.html">Exchange</a><a href="donate.html">Donate</a><a href="dashboard.html">Dashboard</a></div>
-        <div class="footer-col"><h4>Company</h4><a href="about.html">About</a><a href="contact.html">Contact</a><a href="#">Privacy</a><a href="#">Terms</a></div>
-        <div class="footer-col"><h4>Support</h4><a href="contact.html">Help</a><a href="#">FAQs</a><a href="#">Report</a><a href="admin.html">Admin</a></div>
+        <div class="footer-col"><h4>Company</h4><a href="about.html">About</a><a href="contact.html">Contact</a><a href="privacy.html">Privacy</a><a href="terms.html">Terms</a></div>
+        <div class="footer-col"><h4>Support</h4><a href="contact.html">Help</a><a href="contact.html#faq">FAQs</a><a href="contact.html">Report</a><a href="admin.html">Admin</a></div>
       </div>
       <div class="footer-bottom"><span>© 2026 BookBridge — All rights reserved.</span><span>Built with ❤️ by RCTI Students</span></div>
     </div>
@@ -147,6 +149,7 @@
 
   <script src="js/database.js"></script>
   <script src="js/api.js"></script>
+  <script src="js/live-stats.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>

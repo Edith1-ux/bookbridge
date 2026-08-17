@@ -1,12 +1,13 @@
 /**
  * ==========================================================================
  * BOOKBRIDGE UNIFIED API LAYER
- * Django REST Framework Backend + LocalStorage Fallback
- * Django server: http://localhost:8000/api/v1/
+ * FIX: Points to the Express backend at /api (same origin), not Django port 8000
  * ==========================================================================
  */
 
-const DJANGO_API = 'http://localhost:8000/api/v1';
+// FIX: Use relative /api path so it works on any host (local, Render, Vercel, etc.)
+// Previously this was 'http://localhost:8000/api/v1' which would always fail in production
+const API_BASE = '/api';
 
 // ── Token helpers ──────────────────────────────────────────────────────────
 
@@ -22,6 +23,7 @@ function _setTokens(access, refresh) {
 function _clearTokens() {
   localStorage.removeItem('bb_access_token');
   localStorage.removeItem('bb_refresh_token');
+  localStorage.removeItem('rcti_gtu_current_user');
 }
 
 function _authHeaders(extra = {}) {
@@ -37,14 +39,14 @@ function _authHeaders(extra = {}) {
 
 async function _get(path, params = {}) {
   const qs = new URLSearchParams(params).toString();
-  const url = `${DJANGO_API}${path}${qs ? '?' + qs : ''}`;
+  const url = `${API_BASE}${path}${qs ? '?' + qs : ''}`;
   const res = await fetch(url, { headers: _authHeaders() });
   if (!res.ok) throw new Error(`GET ${url} → ${res.status}`);
   return res.json();
 }
 
 async function _post(path, body = {}) {
-  const url = `${DJANGO_API}${path}`;
+  const url = `${API_BASE}${path}`;
   const res = await fetch(url, {
     method: 'POST',
     headers: _authHeaders(),
@@ -52,19 +54,19 @@ async function _post(path, body = {}) {
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
-    throw Object.assign(new Error(`POST ${url} → ${res.status}`), { data: err });
+    throw Object.assign(new Error(`POST ${url} → ${res.status}`), { data: err, status: res.status });
   }
   return res.json();
 }
 
 async function _delete(path) {
-  const url = `${DJANGO_API}${path}`;
+  const url = `${API_BASE}${path}`;
   const res = await fetch(url, { method: 'DELETE', headers: _authHeaders() });
   if (!res.ok) throw new Error(`DELETE ${url} → ${res.status}`);
   return res.json().catch(() => null);
 }
 
-// ── Normalise a Django Book object to match frontend field names ────────────
+// ── Normalise a backend Book object to match frontend field names ────────────
 
 function _normaliseBook(b) {
   if (!b) return b;
@@ -77,7 +79,7 @@ function _normaliseBook(b) {
   };
 }
 
-function _normaliseDjangoUser(u) {
+function _normaliseUser(u) {
   if (!u) return u;
   return {
     ...u,
@@ -93,49 +95,29 @@ window.BookAPI = {
 
   async getBooks(filters = {}) {
     try {
-      const data = await _get('/books/', filters);
+      const data = await _get('/books', filters);
       const list = Array.isArray(data) ? data : (data.results || []);
       return list.map(_normaliseBook);
     } catch (e) {
-      console.warn('[BookAPI] Django offline → localStorage fallback', e.message);
+      console.warn('[BookAPI] Backend offline → localStorage fallback', e.message);
       return window.BookDB ? window.BookDB.getBooks(filters) : [];
     }
   },
 
   async getBookById(id) {
     try {
-      const b = await _get(`/books/${id}/`);
-      return _normaliseBook(b);
-    } catch (e) {
-      return window.BookDB ? window.BookDB.getBookById(id) : null;
-    }
+      // Try local first (faster, avoids extra API round trip)
+      if (window.BookDB) {
+        const local = await window.BookDB.getBookById(id);
+        if (local) return _normaliseBook(local);
+      }
+    } catch (e) {}
+    return null;
   },
 
   async addBook(bookData) {
     try {
-      const payload = {
-        title: bookData.title,
-        author: bookData.author,
-        isbn: bookData.isbn || '',
-        gtu_code: bookData.gtuCode || bookData.gtu_code || '',
-        branch: bookData.branch || 'CE',
-        semester: bookData.semester || 5,
-        condition: bookData.condition || 'Good',
-        language: bookData.language || 'English',
-        mode: bookData.mode || 'sell',
-        price: bookData.price || 0,
-        original_price: bookData.original || bookData.original_price || null,
-        resource_type: bookData.resourceType || bookData.resource_type || 'textbook',
-        genre: bookData.genre || '',
-        subject: bookData.subject || '',
-        edition: bookData.edition || '',
-        description: bookData.description || '',
-        location: bookData.location || 'RCTI Campus',
-        cover_url: bookData.cover || bookData.cover_url || '',
-        pdf_url: bookData.pdfUrl || bookData.pdf_url || '',
-        exchange_for: bookData.exchangeFor || bookData.exchange_for || '',
-      };
-      const saved = await _post('/books/', payload);
+      const saved = await _post('/books', bookData);
       return _normaliseBook(saved);
     } catch (e) {
       console.warn('[BookAPI] addBook fallback', e.message);
@@ -145,7 +127,7 @@ window.BookAPI = {
 
   async deleteBook(id) {
     try {
-      return await _delete(`/books/${id}/`);
+      return await _delete(`/books/${id}`);
     } catch (e) {
       return window.BookDB ? window.BookDB.deleteBook(id) : null;
     }
@@ -155,83 +137,86 @@ window.BookAPI = {
 
   async register(userData) {
     try {
-      const payload = {
+      // FIX: Calls /api/register on the Express backend
+      const data = await _post('/register', {
+        name: userData.name || userData.full_name,
         email: userData.email,
         password: userData.password,
-        full_name: userData.name || userData.full_name,
         enrollment: userData.enrollment || '',
         branch: userData.branch || 'CE',
         semester: userData.semester || 1,
         whatsapp: userData.whatsapp || '',
-      };
-      const data = await _post('/users/register/', payload);
-      _setTokens(data.access, data.refresh);
-      const user = _normaliseDjangoUser(data.user);
-      localStorage.setItem('rcti_gtu_current_user', JSON.stringify(user));
+      });
+
+      // Store the JWT token
+      if (data.token) _setTokens(data.token, null);
+      const user = _normaliseUser(data.user);
+      if (user) localStorage.setItem('rcti_gtu_current_user', JSON.stringify(user));
       return user;
     } catch (e) {
-      console.warn('[BookAPI] register fallback', e.message, e.data);
+      console.warn('[BookAPI] register server error → localStorage fallback', e.message, e.data);
+      // Surface the server's error message to the UI
+      if (e.data && e.data.error) throw new Error(e.data.error);
       return window.BookDB ? window.BookDB.registerUser(userData) : null;
     }
   },
 
   async login(email, password) {
     try {
-      const data = await _post('/users/login/', { email, password });
-      _setTokens(data.access, data.refresh);
-      const user = _normaliseDjangoUser(data.user);
-      localStorage.setItem('rcti_gtu_current_user', JSON.stringify(user));
+      // FIX: Calls /api/login on the Express backend — real password verification
+      const data = await _post('/login', { email, password });
+
+      // Store the JWT token
+      if (data.token) _setTokens(data.token, null);
+      const user = _normaliseUser(data.user);
+      if (user) localStorage.setItem('rcti_gtu_current_user', JSON.stringify(user));
       return user;
     } catch (e) {
-      console.warn('[BookAPI] login fallback', e.message);
+      // If status is 401/403, surface the error to the UI (wrong password)
+      if (e.status === 401 || e.status === 403) {
+        throw e; // Let the caller handle the error message
+      }
+      console.warn('[BookAPI] login server offline → localStorage fallback', e.message);
       return window.BookDB ? window.BookDB.loginUser(email, password) : null;
     }
   },
 
   async getCurrentUser() {
     const stored = localStorage.getItem('rcti_gtu_current_user');
-    if (stored) return JSON.parse(stored);
-    if (_getToken()) {
-      try {
-        const profile = await _get('/users/profile/');
-        const user = _normaliseDjangoUser(profile);
-        localStorage.setItem('rcti_gtu_current_user', JSON.stringify(user));
-        return user;
-      } catch (e) {}
+    if (stored) {
+      try { return JSON.parse(stored); } catch (e) {}
     }
     return window.BookDB ? window.BookDB.getCurrentUser() : null;
   },
 
   async logout() {
     _clearTokens();
-    localStorage.removeItem('rcti_gtu_current_user');
-    return window.BookDB ? window.BookDB.logoutUser() : null;
+    if (window.BookDB) await window.BookDB.logoutUser();
   },
 
-  // ── PUBLIC & ADMIN STATS ───────────────────────────────────────────────
+  // ── PUBLIC STATS ───────────────────────────────────────────────────────
 
   async getPublicStats() {
     try {
-      const data = await _get('/books/stats/');
+      // FIX: Calls the now-existing /api/statistics endpoint
+      const data = await _get('/statistics');
       return {
-        students: data.totalUsers || 0,
-        books: data.totalListings || 0,
-        exchanges: data.successfulExchanges || 0,
-        donated: data.freeDonations || 0,
-        saved: data.moneySaved || 0,
+        students: data.active_students || 0,
+        books: data.books_listed || 0,
+        exchanges: data.successful_exchanges || 0,
+        donated: data.books_donated || 0,
       };
     } catch (e) {
       return null;
     }
   },
 
+  // ── ADMIN STATS ────────────────────────────────────────────────────────
+
   async getAdminStats() {
     try {
-      return await _get('/users/admin/stats/');
+      return await _get('/admin/stats');
     } catch (e) {
-      try {
-        return await _get('/books/stats/');
-      } catch (e2) {}
       return window.BookDB ? window.BookDB.getAdminStats()
         : { totalUsers: 0, totalListings: 0, activeSwaps: 0, freeDonations: 0 };
     }
@@ -239,9 +224,9 @@ window.BookAPI = {
 
   async getAllUsers() {
     try {
-      const data = await _get('/users/admin/users/');
+      const data = await _get('/admin/users');
       const list = Array.isArray(data) ? data : (data.results || []);
-      return list.map(_normaliseDjangoUser);
+      return list.map(_normaliseUser);
     } catch (e) {
       return window.BookDB ? window.BookDB.getAllUsers() : [];
     }
@@ -255,7 +240,7 @@ window.BookAPI = {
 
   async sendMessage(receiverEmail, text, bookTitle) {
     try {
-      return await _post('/chat/messages/', { receiver_email: receiverEmail, text, book_title: bookTitle });
+      return await _post('/messages', { receiverEmail, text, bookTitle });
     } catch (e) {
       return window.BookDB ? window.BookDB.sendMessage(receiverEmail, text, bookTitle) : null;
     }
@@ -263,68 +248,36 @@ window.BookAPI = {
 
   async getMessages(targetEmail) {
     try {
-      return await _get('/chat/inbox/', { with: targetEmail });
+      return await _get('/messages');
     } catch (e) {
       return window.BookDB ? window.BookDB.getMessages(targetEmail) : [];
     }
   },
 
-  // ── WISHLIST ───────────────────────────────────────────────────────────
+  // ── WISHLIST (localStorage only for now) ───────────────────────────────
 
   async toggleWishlist(bookId) {
-    try {
-      const data = await _post('/books/wishlist/toggle/', { book_id: bookId });
-      return data.added;
-    } catch (e) {
-      return window.BookDB ? window.BookDB.toggleWishlist(bookId) : false;
-    }
+    return window.BookDB ? window.BookDB.toggleWishlist(bookId) : false;
   },
 
   async getWishlistIds() {
-    try {
-      const data = await _get('/books/wishlist/');
-      const list = Array.isArray(data) ? data : (data.results || []);
-      return list.map(w => w.book?.id || w.book);
-    } catch (e) {
-      return window.BookDB ? window.BookDB.getWishlistIds() : [];
-    }
+    return window.BookDB ? window.BookDB.getWishlistIds() : [];
   },
 
   async getWishlistBooks() {
-    try {
-      const data = await _get('/books/wishlist/');
-      const list = Array.isArray(data) ? data : (data.results || []);
-      return list.map(w => _normaliseBook(w.book));
-    } catch (e) {
-      return window.BookDB ? window.BookDB.getWishlistBooks() : [];
-    }
+    return window.BookDB ? window.BookDB.getWishlistBooks() : [];
   },
 
   // ── EXCHANGE ────────────────────────────────────────────────────────────
 
   async proposeExchange(swapData) {
-    try {
-      return await _post('/exchange/offers/', {
-        book_offered_id: swapData.bookOfferedId || swapData.book_offered_id,
-        book_wanted_title: swapData.bookWantedTitle || swapData.book_wanted_title || '',
-        message: swapData.message || '',
-      });
-    } catch (e) {
-      return window.BookDB ? window.BookDB.proposeExchange(swapData) : null;
-    }
+    return window.BookDB ? window.BookDB.proposeExchange(swapData) : null;
   },
 
   // ── DONATIONS ───────────────────────────────────────────────────────────
 
   async claimDonation(bookId, userDetails) {
-    try {
-      return await _post('/donations/claims/', {
-        book_id: bookId,
-        message: userDetails?.message || '',
-      });
-    } catch (e) {
-      return window.BookDB ? window.BookDB.claimDonation(bookId, userDetails) : null;
-    }
+    return window.BookDB ? window.BookDB.claimDonation(bookId, userDetails) : null;
   },
 
   // ── REVIEWS ────────────────────────────────────────────────────────────
@@ -337,14 +290,9 @@ window.BookAPI = {
     return window.BookDB ? window.BookDB.buyBook(bookId, buyerDetails) : null;
   },
 
-  // ── AI ─────────────────────────────────────────────────────────────────
+  // ── AI RECOMMENDATIONS ─────────────────────────────────────────────────
 
   async getAIRecommendations(branch, semester) {
-    try {
-      const books = await _get('/ai/recommendations/', { branch, semester });
-      return books.map(_normaliseBook);
-    } catch (e) {
-      return window.BookDB ? window.BookDB.getAIRecommendations(branch, semester) : [];
-    }
+    return window.BookDB ? window.BookDB.getAIRecommendations(branch, semester) : [];
   },
 };
