@@ -44,12 +44,22 @@ INSTALLED_APPS = [
     'channels',
 
     # BookBridge Local Apps
+    'apps.core',
     'apps.users',
+    'apps.colleges',
     'apps.books',
     'apps.exchange',
+    'apps.marketplace',
     'apps.donations',
     'apps.chat',
+    'apps.calls',
     'apps.ai',
+    'apps.notifications',
+    'apps.payments',
+    'apps.public_api',
+    'apps.analytics',
+    'apps.admin_portal',
+    'apps.search_engine',
 ]
 
 MIDDLEWARE = [

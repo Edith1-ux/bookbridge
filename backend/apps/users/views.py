@@ -96,3 +96,6 @@ class AdminStatsView(APIView):
             'activeSwaps': 0,
             'freeDonations': 0
         }, status=status.HTTP_200_OK)
+
+ProfileView = UserProfileView
+

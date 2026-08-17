@@ -28,3 +28,5 @@ class UserRegisterSerializer(serializers.ModelSerializer):
             department=validated_data.get('department'),
         )
         return user
+
+RegisterSerializer = UserRegisterSerializer
