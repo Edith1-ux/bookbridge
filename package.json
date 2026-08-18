@@ -1,18 +1,13 @@
 {
   "name": "bookbridge",
   "version": "2.0.0",
-  "description": "BookBridge — Student Book Sharing Platform (Express/Node.js + MongoDB)",
-  "main": "server.js",
+  "description": "BookBridge \u2014 Student Book Sharing Platform",
+  "main": "backend/manage.py",
   "scripts": {
-    "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
-    "dev:node": "nodemon server.js",
-    "dev:env": "node -r dotenv/config server.js",
-    "build": "tsc && node scripts/copy-assets.js",
-    "start": "node dist/server.js",
-    "prisma:generate": "prisma generate",
-    "prisma:migrate": "prisma migrate dev",
-    "prisma:seed": "ts-node prisma/seed.ts",
-    "db:mysql-seed": "mysql -u root -p bookbridge < data/schema_mysql.sql"
+    "start": "python backend/manage.py runserver 0.0.0.0:8000",
+    "dev": "python backend/manage.py runserver 0.0.0.0:8000",
+    "seed": "python backend/manage.py seed_db",
+    "migrate": "python backend/manage.py migrate"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
@@ -22,17 +17,11 @@
     "express-rate-limit": "^7.1.5",
     "helmet": "^7.1.0",
     "jsonwebtoken": "^9.0.2",
-    "bcryptjs": "^2.4.3",
-    "express-rate-limit": "^7.1.5",
-    "helmet": "^7.1.0",
-    "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.2.0",
     "mysql2": "^3.9.2",
-    "sequelize": "^6.37.1",
     "pdfkit": "^0.15.0",
     "qrcode": "^1.5.3",
-    "socket.io": "^4.7.4",
-    "zod": "^3.22.4"
+    "sequelize": "^6.37.1",
     "socket.io": "^4.7.4",
     "zod": "^3.22.4"
   },

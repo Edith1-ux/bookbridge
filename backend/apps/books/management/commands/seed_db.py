@@ -13,10 +13,7 @@ class Command(BaseCommand):
             email='admin@bookbridge.edu',
             defaults={
                 'full_name': 'System Administrator',
-                'enrollment': '200000000000',
-                'branch': 'CE',
-                'semester': 8,
-                'role': 'admin',
+                'role': 'SUPER_ADMIN',
                 'is_staff': True,
                 'is_superuser': True
             }
@@ -31,11 +28,8 @@ class Command(BaseCommand):
             email='student@rcti.ac.in',
             defaults={
                 'full_name': 'Rahul Patel',
-                'enrollment': '216400307001',
-                'branch': 'CE',
-                'semester': 5,
-                'role': 'student',
-                'whatsapp': '+919876543210'
+                'phone_number': '+919876543210',
+                'role': 'STUDENT',
             }
         )
         if created:

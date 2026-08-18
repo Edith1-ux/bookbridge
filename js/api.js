@@ -271,13 +271,21 @@ window.BookAPI = {
   // ── EXCHANGE ────────────────────────────────────────────────────────────
 
   async proposeExchange(swapData) {
-    return window.BookDB ? window.BookDB.proposeExchange(swapData) : null;
+    try {
+      return await _post('/exchanges', swapData);
+    } catch (e) {
+      return window.BookDB ? window.BookDB.proposeExchange(swapData) : null;
+    }
   },
 
   // ── DONATIONS ───────────────────────────────────────────────────────────
 
   async claimDonation(bookId, userDetails) {
-    return window.BookDB ? window.BookDB.claimDonation(bookId, userDetails) : null;
+    try {
+      return await _post('/donations', { book: bookId, ...userDetails });
+    } catch (e) {
+      return window.BookDB ? window.BookDB.claimDonation(bookId, userDetails) : null;
+    }
   },
 
   // ── REVIEWS ────────────────────────────────────────────────────────────

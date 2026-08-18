@@ -1,8 +1,13 @@
 import os
+import sys
 from pathlib import Path
 from datetime import timedelta
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
+if str(BASE_DIR / 'backend') not in sys.path:
+    sys.path.insert(0, str(BASE_DIR / 'backend'))
+if str(BASE_DIR) not in sys.path:
+    sys.path.insert(0, str(BASE_DIR))
 
 SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-prod-key-bookbridge-2026-enterprise-solution')
 
@@ -33,6 +38,9 @@ INSTALLED_APPS = [
     'apps.core.apps.CoreConfig',
     'apps.users.apps.UsersConfig',
     'apps.colleges.apps.CollegesConfig',
+    'apps.books.apps.BooksConfig',
+    'apps.exchange.apps.ExchangeConfig',
+    'apps.donations.apps.DonationsConfig',
     'apps.marketplace.apps.MarketplaceConfig',
     'apps.search_engine.apps.SearchEngineConfig',
     'apps.ai.apps.AiConfig',
