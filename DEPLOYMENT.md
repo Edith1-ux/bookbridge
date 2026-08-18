@@ -1,66 +1,63 @@
-# BookBridge Enterprise AI Chatbot Backend — Deployment & Operations Guide
+# 📚 BookBridge — Deployment & Operations Guide
 
 ## 🚀 Quick Start (Local Development)
 
 ```bash
-# 1. Install dependencies
-npm install
+# 1. Install Python backend requirements
+pip install -r backend/requirements.txt
 
-# 2. Copy environment file
-cp .env.example .env
+# 2. Run migrations
+python backend/manage.py migrate
 
-# 3. Generate Prisma client
-npx prisma generate
+# 3. Seed initial GTU textbooks and default accounts
+python backend/manage.py seed_db
 
-# 4. Start Development Server
-npm run dev
+# 4. Start Django server on port 8000
+python backend/manage.py runserver 0.0.0.0:8000
 ```
 
-The API server will run at `http://localhost:8000/api/v1` with Socket.io enabled.
+Open `http://localhost:8000/browse` in your browser.
 
 ---
 
-## 🐳 Production Docker Deployment
+## 🌐 Deploying to Render (Render.com)
+
+BookBridge includes a pre-configured [`render.yaml`](file:///c:/Users/pved9/OneDrive/Documents/GitHub/book-bridge-2/render.yaml) service specification.
+
+### Automatic Blueprint Deployment:
+1. Push this repository to GitHub.
+2. Log into [Render Dashboard](https://dashboard.render.com/).
+3. Click **New +** → **Blueprint**.
+4. Select your repository. Render will automatically detect `render.yaml` and configure:
+   - **Build Command**: `pip install -r backend/requirements.txt && python backend/manage.py migrate && python backend/manage.py seed_db`
+   - **Start Command**: `gunicorn --chdir backend config.wsgi:application --bind 0.0.0.0:$PORT`
+5. Click **Apply**.
+
+---
+
+## 🐳 Docker Deployment
 
 ```bash
-# Build and spin up all containers (Node App, PostgreSQL 16, Redis 7, Nginx)
+# Build and run container locally
 docker-compose up -d --build
 
-# View container status
-docker-compose ps
-
-# View real-time logs
-docker-compose logs -f app
+# View container logs
+docker logs -f bookbridge_app
 ```
 
 ---
 
-## 📡 REST API Documentation Summary
+## 📡 Key REST API Endpoints
 
-| Method | Endpoint | Description |
-| :--- | :--- | :--- |
-| `POST` | `/api/v1/chat` | AI Chatbot processing endpoint (Intent detection, DB query, QR/PDF output) |
-| `POST` | `/api/v1/ask` | Alternate prompt ask endpoint |
-| `POST` | `/api/v1/search` | Full-text book search endpoint |
-| `POST` | `/api/v1/recommend` | AI Course textbook recommendation endpoint |
-| `POST` | `/api/v1/generateQR` | Dynamic Base64 QR Code generation endpoint |
-| `POST` | `/api/v1/generatePDF` | PDFKit Document & Report generation endpoint |
-| `GET` | `/api/v1/books` | Get all books with pagination & filters |
-| `POST` | `/api/v1/books` | Create new textbook listing (Requires JWT) |
-| `PUT` | `/api/v1/books/:id` | Update textbook listing (Requires JWT) |
-| `DELETE`| `/api/v1/books/:id` | Delete textbook listing (Requires JWT) |
-| `POST` | `/api/v1/auth/register` | Student / Faculty / Admin Registration |
-| `POST` | `/api/v1/auth/login` | JWT Authentication Login |
-| `GET` | `/api/v1/analytics` | Admin system analytics & metrics |
-| `GET` | `/api/v1/admin/export/csv` | Export analytics CSV report |
-| `GET` | `/api/v1/admin/export/pdf` | Export analytics PDF document |
-
----
-
-## ⚡ Socket.io Real-Time Event Handlers
-
-- `join_room` `(conversationId)`
-- `user_online` `(userId)`
-- `typing_start` `{ room, userName }`
-- `typing_stop` `{ room, userName }`
-- `send_message` `{ conversationId, userId, message }` -> Broadcasts message and streams AI reply back in real-time.
+| Method | Endpoint | Auth Required | Description |
+| :--- | :--- | :--- | :--- |
+| `POST` | `/api/register` | No | User Registration |
+| `POST` | `/api/login` | No | JWT Login (returns `token`, `user`) |
+| `GET` | `/api/books` | No | List books with filters |
+| `POST` | `/api/books` | Yes (JWT) | Add a new book listing |
+| `DELETE`| `/api/books/:id` | Yes (JWT) | Delete a book listing |
+| `GET` | `/api/statistics` | No | Live platform metrics (Students, Books, Exchanges, Donated) |
+| `POST` | `/api/exchanges` | Yes (JWT) | Propose book exchange swap |
+| `POST` | `/api/donations` | Yes (JWT) | Claim free donation book |
+| `GET` | `/api/admin/stats` | Yes (Admin) | Admin portal metrics |
+| `GET` | `/api/admin/users` | Yes (Admin) | List all registered users |
