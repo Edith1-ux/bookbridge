@@ -289,13 +289,42 @@ async function updateNavUserUI() {
   const currentUser = await window.BookAPI.getCurrentUser();
   const navActions = document.querySelector('.nav-actions');
   const mobileActions = document.querySelector('.drawer-actions');
+  const navLinks = document.querySelector('.nav-links');
+  const drawerLinks = document.querySelector('.drawer-links');
   const adminNavActions = document.getElementById('adminNavActions');
 
   if (!currentUser) return;
 
+  const isDashboard = window.location.pathname.toLowerCase().includes('dashboard');
+
+  // Check and insert Dashboard link in desktop header nav-links if missing
+  if (navLinks && !navLinks.querySelector('a[href="dashboard.html"]')) {
+    const dashLink = document.createElement('a');
+    dashLink.href = 'dashboard.html';
+    dashLink.className = `nav-link ${isDashboard ? 'active' : ''}`;
+    dashLink.setAttribute('data-i18n', 'dashboard');
+    dashLink.innerHTML = `<i class="fa-solid fa-gauge" style="margin-right: 4px;"></i> Dashboard`;
+    navLinks.appendChild(dashLink);
+  } else if (navLinks && navLinks.querySelector('a[href="dashboard.html"]')) {
+    const dashLink = navLinks.querySelector('a[href="dashboard.html"]');
+    if (isDashboard) dashLink.classList.add('active');
+  }
+
+  // Check and insert Dashboard link in mobile drawer-links if missing
+  if (drawerLinks && !drawerLinks.querySelector('a[href="dashboard.html"]')) {
+    const mobileDash = document.createElement('a');
+    mobileDash.href = 'dashboard.html';
+    mobileDash.className = `drawer-link ${isDashboard ? 'active' : ''}`;
+    mobileDash.innerHTML = `Dashboard <i class="fa-solid fa-gauge" style="margin-left:auto;"></i>`;
+    drawerLinks.appendChild(mobileDash);
+  } else if (drawerLinks && drawerLinks.querySelector('a[href="dashboard.html"]')) {
+    const mobileDash = drawerLinks.querySelector('a[href="dashboard.html"]');
+    if (isDashboard) mobileDash.classList.add('active');
+  }
+
   const role = (currentUser.role || 'student').toUpperCase();
   const userHTML = `
-    <span style="font-size: 13px; font-weight: 600; color: var(--color-primary);">
+    <span style="font-size: 13px; font-weight: 600; color: var(--color-primary); display: inline-flex; align-items: center; gap: 6px;">
       <i class="fa-solid fa-user-circle"></i> ${currentUser.name}
     </span>
     <a href="dashboard.html" class="btn btn-ghost btn-sm"><i class="fa-solid fa-gauge"></i> Dashboard</a>
@@ -347,9 +376,11 @@ async function renderBooksGrid(container, books, actionLabel = 'View Details') {
   container.innerHTML = books.map(b => {
     const isWished = wishlistIds.includes(b.id);
     const ratingVal = b.rating || 4.7;
-    const typeLabel = (b.mode || 'sell').toUpperCase();
+    const mode = (b.mode || 'sell').toLowerCase();
+    const typeLabel = mode.toUpperCase();
     const initials = (b.seller?.name || 'BB').split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
-    const isDonation = b.price === 0 || b.mode === 'donate';
+    const isDonation = b.price === 0 || mode === 'donate';
+    const isSold = (b.status || '').toLowerCase() === 'sold';
     const coverImg = b.cover || 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=400&q=80';
     const isDigital = b.category === 'digital' && b.pdfUrl;
     const waNumber = ((b.seller?.whatsapp || '+919876543210')).replace(/[^0-9]/g, '');
@@ -357,8 +388,19 @@ async function renderBooksGrid(container, books, actionLabel = 'View Details') {
     const safePdfUrl = (b.pdfUrl || '').replace(/'/g, '');
     const safeTitle = (b.title || '').replace(/'/g, '');
 
+    let actionBtnHTML = '';
+    if (isSold) {
+      actionBtnHTML = `<span class="badge" style="background: var(--color-gray); color: #fff; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 600;">SOLD</span>`;
+    } else if (mode === 'sell') {
+      actionBtnHTML = `<button class="btn btn-primary btn-sm" onclick="openBuyBookModal('${b.id}')"><i class="fa-solid fa-cart-shopping"></i> Buy Now</button>`;
+    } else if (mode === 'exchange') {
+      actionBtnHTML = `<button class="btn btn-primary btn-sm" onclick="handleBookAction('${b.id}', 'Propose Swap')"><i class="fa-solid fa-arrows-rotate"></i> Swap</button>`;
+    } else {
+      actionBtnHTML = `<button class="btn btn-primary btn-sm" onclick="handleBookAction('${b.id}', 'Claim Free')"><i class="fa-solid fa-gift"></i> Claim</button>`;
+    }
+
     return `
-      <div class="book-card">
+      <div class="book-card ${isSold ? 'opacity-75' : ''}">
         <div class="book-card-actions">
           <button class="card-action-btn ${isWished ? 'active' : ''}" onclick="handleToggleWishlist(event, '${b.id}')" title="Wishlist" aria-label="Toggle wishlist">
             <i class="${isWished ? 'fa-solid' : 'fa-regular'} fa-heart"></i>
@@ -369,7 +411,7 @@ async function renderBooksGrid(container, books, actionLabel = 'View Details') {
         </div>
 
         <div class="book-cover">
-          ${isDonation ? '<span class="donation-badge"><i class="fa-solid fa-gift"></i> FREE</span>' : ''}
+          ${isSold ? '<span class="sold-badge" style="position: absolute; top: 10px; left: 10px; background: #dc2626; color: #fff; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 4px; z-index: 2;"><i class="fa-solid fa-circle-check"></i> SOLD</span>' : (isDonation ? '<span class="donation-badge"><i class="fa-solid fa-gift"></i> FREE</span>' : '')}
           <img src="${coverImg}" alt="${b.title}" loading="lazy">
         </div>
 
@@ -379,7 +421,7 @@ async function renderBooksGrid(container, books, actionLabel = 'View Details') {
             <span class="book-type">${typeLabel}</span>
           </div>
 
-          <div class="book-title">${b.title}</div>
+          <div class="book-title" onclick="handleBookAction('${b.id}', 'View Details')" style="cursor: pointer;">${b.title}</div>
           <div class="book-author">by ${b.author || 'Unknown'} · ${b.edition || 'Latest'}</div>
 
           <div class="book-details">
@@ -403,7 +445,10 @@ async function renderBooksGrid(container, books, actionLabel = 'View Details') {
               ${isDonation ? 'FREE' : '&#8377;' + b.price}
               ${b.original && b.price > 0 ? '<span class="original-price">&#8377;' + b.original + '</span>' : ''}
             </div>
-            <button class="btn btn-primary btn-sm" onclick="handleBookAction('${b.id}', '${actionLabel}')">${actionLabel}</button>
+            <div style="display: flex; gap: 6px; align-items: center;">
+              ${actionBtnHTML}
+              <button class="btn btn-ghost btn-sm" onclick="handleBookAction('${b.id}', 'View Details')" title="View details"><i class="fa-solid fa-info-circle"></i></button>
+            </div>
           </div>
 
           <div style="display:flex; gap:6px; margin-top:8px; flex-wrap:wrap;">
@@ -419,6 +464,138 @@ async function renderBooksGrid(container, books, actionLabel = 'View Details') {
     `;
   }).join('');
 }
+
+/* 🛒 BUY BOOK CHECKOUT MODAL */
+window.openBuyBookModal = async function(bookId) {
+  const book = await window.BookAPI.getBookById(bookId);
+  if (!book) {
+    showToast('Book not found', 'warning');
+    return;
+  }
+
+  const currentUser = await window.BookAPI.getCurrentUser();
+  if (!currentUser) {
+    showToast('Please login to buy books', 'warning');
+    setTimeout(() => window.location.href = 'login.html', 1000);
+    return;
+  }
+
+  let modal = document.getElementById('buyBookModal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.className = 'modal-overlay';
+    modal.id = 'buyBookModal';
+    modal.innerHTML = `
+      <div class="modal-card" style="max-width: 540px;">
+        <div class="modal-header">
+          <h3><i class="fa-solid fa-cart-shopping" style="color: var(--color-primary);"></i> Buy Book Checkout</h3>
+          <button class="modal-close" onclick="document.getElementById('buyBookModal').classList.remove('active')" aria-label="Close modal">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+        <div id="buyBookModalBody"></div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+  }
+
+  const bodyEl = document.getElementById('buyBookModalBody');
+  const seller = book.seller || { name: 'RCTI Student', whatsapp: '+919876543210', email: 'student@rcti.ac.in' };
+  const coverImg = book.cover || 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=400&q=80';
+
+  bodyEl.innerHTML = `
+    <div style="display: flex; gap: 14px; background: rgba(62,107,58,0.06); padding: 14px; border-radius: 12px; margin-bottom: 18px; border: 1px solid var(--color-border);">
+      <img src="${coverImg}" style="width: 70px; height: 95px; object-fit: cover; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.15);">
+      <div style="flex: 1;">
+        <h4 style="margin: 0 0 4px; font-size: 15px; font-weight: 700; color: var(--color-dark);">${book.title}</h4>
+        <p style="margin: 0 0 6px; font-size: 13px; color: var(--color-gray);">by ${book.author || 'Unknown'} · ${book.branch || 'CE'} (Sem ${book.semester || 1})</p>
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <span style="font-size: 18px; font-weight: 800; color: var(--color-primary);">&#8377;${book.price}</span>
+          <span style="font-size: 12px; color: var(--color-gray-dark); background: #fff; padding: 2px 8px; border-radius: 12px; border: 1px solid #e2e8f0;">Seller: ${seller.name}</span>
+        </div>
+      </div>
+    </div>
+
+    <form id="buyBookCheckoutForm">
+      <div class="form-group" style="margin-bottom: 12px;">
+        <input type="text" id="buyerFullName" class="form-input" value="${currentUser.name || ''}" placeholder=" " required>
+        <label class="form-label">Buyer Full Name *</label>
+      </div>
+
+      <div class="form-group" style="margin-bottom: 12px;">
+        <input type="tel" id="buyerPhoneNum" class="form-input" value="${currentUser.whatsapp || ''}" placeholder=" " required>
+        <label class="form-label">Phone / WhatsApp Number *</label>
+      </div>
+
+      <div class="form-group" style="margin-bottom: 12px;">
+        <select id="buyerPickupPref" class="form-select" required>
+          <option value="GTU Campus Handshake">GTU Campus Handshake (Direct Meetup)</option>
+          <option value="RCTI Library Pick-up">RCTI Library Pick-up</option>
+          <option value="Hostel / Classroom Handover">Hostel / Classroom Handover</option>
+        </select>
+      </div>
+
+      <div class="form-group" style="margin-bottom: 14px;">
+        <select id="buyerPaymentChoice" class="form-select" required>
+          <option value="Cash on Delivery (COD)">Cash on Delivery (In-Person Handover)</option>
+          <option value="UPI / Online Transfer">UPI / GPay / PhonePe Handshake Transfer</option>
+        </select>
+      </div>
+
+      <div class="form-group" style="margin-bottom: 18px;">
+        <textarea id="buyerNotesText" class="form-input" placeholder=" " style="min-height: 60px;"></textarea>
+        <label class="form-label">Notes for Seller (Optional, e.g. Prefer meeting at CE lab)</label>
+      </div>
+
+      <div style="display: flex; gap: 10px;">
+        <button type="button" class="btn btn-ghost" style="flex: 1;" onclick="document.getElementById('buyBookModal').classList.remove('active')">Cancel</button>
+        <button type="submit" class="btn btn-primary" style="flex: 2;"><i class="fa-solid fa-check"></i> Confirm Purchase (&#8377;${book.price})</button>
+      </div>
+    </form>
+  `;
+
+  modal.classList.add('active');
+
+  const closeBtn = document.getElementById('closeBuyBookModal');
+  if (closeBtn) closeBtn.onclick = () => modal.classList.remove('active');
+
+  const form = document.getElementById('buyBookCheckoutForm');
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const submitBtn = form.querySelector('[type="submit"]');
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Processing...`;
+
+    const buyerDetails = {
+      buyerId: currentUser.id,
+      buyerName: document.getElementById('buyerFullName').value.trim(),
+      buyerPhone: document.getElementById('buyerPhoneNum').value.trim(),
+      pickupLocation: document.getElementById('buyerPickupPref').value,
+      paymentMethod: document.getElementById('buyerPaymentChoice').value,
+      notes: document.getElementById('buyerNotesText').value.trim(),
+      price: book.price,
+      purchaseDate: new Date().toISOString()
+    };
+
+    try {
+      await window.BookAPI.buyBook(book.id, buyerDetails);
+      showToast(`Purchase successful! "${book.title}" is now marked as Sold.`, 'success');
+      modal.classList.remove('active');
+
+      const waNumber = (seller.whatsapp || '+919876543210').replace(/[^0-9]/g, '');
+      const waMsg = encodeURIComponent(`Hi ${seller.name}, I just purchased your book "${book.title}" for ₹${book.price} on BookBridge!\nPickup: ${buyerDetails.pickupLocation}\nPayment: ${buyerDetails.paymentMethod}\nMy Contact: ${buyerDetails.buyerPhone}`);
+      window.open(`https://wa.me/${waNumber}?text=${waMsg}`, '_blank');
+
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
+    } catch(err) {
+      showToast(err.message || 'Failed to complete purchase', 'danger');
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = `<i class="fa-solid fa-check"></i> Confirm Purchase (&#8377;${book.price})`;
+    }
+  });
+};
 
 /* ❤️ WISHLIST TOGGLE */
 window.handleToggleWishlist = async function(e, bookId) {
@@ -528,18 +705,27 @@ window.handleBookAction = async function(bookId, actionLabel) {
   `;
 
   waBtn.href = `https://wa.me/${waNumber}?text=${encodeURIComponent(`Hi ${seller.name}, I'm interested in "${book.title}" on BookBridge!`)}`;
-  confirmBtn.textContent = `${actionLabel}`;
-  confirmBtn.onclick = async () => {
-    const user = await window.BookAPI.getCurrentUser();
-    if (!user) {
-      showToast('Please login to continue', 'warning');
-      setTimeout(() => window.location.href = 'login.html', 1000);
-      return;
-    }
-    await window.BookAPI.sendMessage(seller.email, `Interested in: ${book.title}`, book.title);
-    showToast(`Request sent to ${seller.name}!`, 'success');
-    modal.classList.remove('active');
-  };
+  
+  if ((book.mode || 'sell').toLowerCase() === 'sell' && (book.status || '').toLowerCase() !== 'sold') {
+    confirmBtn.innerHTML = `<i class="fa-solid fa-cart-shopping"></i> Buy Now (₹${book.price})`;
+    confirmBtn.onclick = () => {
+      modal.classList.remove('active');
+      openBuyBookModal(book.id);
+    };
+  } else {
+    confirmBtn.textContent = `${actionLabel}`;
+    confirmBtn.onclick = async () => {
+      const user = await window.BookAPI.getCurrentUser();
+      if (!user) {
+        showToast('Please login to continue', 'warning');
+        setTimeout(() => window.location.href = 'login.html', 1000);
+        return;
+      }
+      await window.BookAPI.sendMessage(seller.email, `Interested in: ${book.title}`, book.title);
+      showToast(`Request sent to ${seller.name}!`, 'success');
+      modal.classList.remove('active');
+    };
+  }
 
   modal.classList.add('active');
 };
@@ -580,7 +766,9 @@ async function initHomePage() {
         const filter = tab.dataset.filter;
         let filtered = [...books];
 
-        if (filter === 'popular') {
+        if (filter === 'sell') {
+          filtered = filtered.filter(b => b.mode === 'sell' || (b.price && b.price > 0 && b.mode !== 'exchange' && b.mode !== 'donate'));
+        } else if (filter === 'popular') {
           filtered = filtered.filter(b => (b.rating || 0) >= 4.7);
         } else if (filter === 'exchange') {
           filtered = filtered.filter(b => b.mode === 'exchange');
@@ -1840,7 +2028,9 @@ async function initHomePage() {
         const filter = tab.dataset.filter;
         let filtered = [...books];
 
-        if (filter === 'popular') {
+        if (filter === 'sell') {
+          filtered = filtered.filter(b => b.mode === 'sell' || (b.price && b.price > 0 && b.mode !== 'exchange' && b.mode !== 'donate'));
+        } else if (filter === 'popular') {
           filtered = filtered.filter(b => (b.rating || 0) >= 4.7);
         } else if (filter === 'exchange') {
           filtered = filtered.filter(b => b.mode === 'exchange');
