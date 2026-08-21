@@ -1,5 +1,13 @@
-# Local JSON DB runtime storage
-data/
+# Python & Django
+__pycache__/
+*.py[cod]
+*$py.class
+*.sqlite3
+db.sqlite3
+/backend/staticfiles/
+staticfiles/
+media/
+backend/media/
 
 # Environment variables
 .env
@@ -17,8 +25,8 @@ yarn-error.log*
 .DS_Store
 Thumbs.db
 
-# Agent skills & config
+# Agent skills & IDE config
 .agents/
 .claude/
+.gemini/
 ui-ux-pro-max-skill/
-
