@@ -1,158 +1,121 @@
-# 📚 BookBridge — Student Academic Book Marketplace
+# BookBridge 📚
 
-> **Bridge Books. Build Minds.** — India's student book-sharing platform for buying, selling, exchanging, and donating academic books and lab manuals across colleges.
+> A student marketplace for buying, selling, exchanging, and donating academic books.
 
----
+[![Django checks](https://github.com/Edith1-ux/book-bridge-2/actions/workflows/django-checks.yml/badge.svg)](https://github.com/Edith1-ux/book-bridge-2/actions/workflows/django-checks.yml)
 
-## 🌟 Platform Capabilities
+BookBridge helps students make textbooks and academic resources more affordable, accessible, and sustainable. Students can discover books by department, semester, subject, or condition; list books they no longer need; propose exchanges; and claim donated books.
 
-- 🛒 **Buy & Sell**: List used textbooks with original price discounts, campus pickup locations, and student seller verification.
-- 🔄 **Exchange Marketplace**: Propose direct book-for-book swaps across semesters and departments.
-- 🎁 **Donate Community Shelf**: Discover and claim zero-cost academic textbooks and lab manuals.
-- 🔍 **Real-Time Search & Filtering**: Multi-department filtering (`CE`, `IT`, `EE`, `ME`, `Civil`), price range sliders, condition filters, and GTU code indexing.
-- ⚡ **Django REST API Single Source of Truth**: Production-ready Python Django backend powering all endpoints, authentication, throttling, permissions, and database transactions.
-- 🎨 **Design System**: Responsive glassmorphic UI, dark and light theme toggle, micro-animations, accessible dialogs, and toast notifications.
+![BookBridge preview](browse_images/hero.png)
 
----
+## Features
 
-## 🏗️ Architecture & Technology Stack
+- Browse and filter academic books
+- Student registration and JWT authentication
+- Buy, sell, exchange, and donate listing modes
+- Wishlist, exchange proposal, donation claim, and messaging foundations
+- Responsive HTML, CSS, and vanilla JavaScript interface
+- Django REST API backed by MySQL
+
+> Some integrations, including payments and AI assistance, are still under active development. See [the roadmap](#roadmap).
+
+## Tech stack
 
 | Layer | Technology |
-| :--- | :--- |
-| **Backend Framework** | Python 3.11+ / Django 5.0+ / Django REST Framework (DRF) |
-| **Database** | MySQL 8.0+ (Local and Production) |
-| **Authentication** | JWT (`djangorestframework-simplejwt`) + Scoped Rate Limiting |
-| **Frontend** | Vanilla HTML5, Modern CSS3 Design Tokens, Vanilla JavaScript ES6+ |
-| **Static Delivery** | WhiteNoise with compressed manifest asset caching |
-| **WSGI Server** | Gunicorn (3 workers) |
-| **Deployment** | Render.com Blueprint (`render.yaml`), Docker container (`docker-compose.yml`) |
+| --- | --- |
+| Frontend | HTML5, CSS3, Vanilla JavaScript |
+| Backend | Python, Django, Django REST Framework |
+| Database | MySQL |
+| Authentication | JWT via Simple JWT |
+| Deployment | Docker-compatible platform such as Railway |
 
-> [!IMPORTANT]
-> **Use MySQL in local and production environments. Do not use SQLite in production.**
-> Do not use Node.js, Express, MongoDB, SQLite, localStorage, IndexedDB, or JSON files as the production backend/database.
-> If local browser storage is used, it only stores non-sensitive UI preferences (such as theme or temporary form drafts)—never users, passwords, listings, messages, transactions, or authentication data.
+## Quick start
 
----
+### Requirements
 
-## 🚀 Getting Started (Local Development)
+- Python 3.11 or newer
+- MySQL 8 or newer
+- Git
 
-### 1. Prerequisites
-- **Python 3.11+**
-- **MySQL 8.0+ Server** running locally or via Docker
-- **Git**
+### Installation
 
-### 2. Clone and Setup Environment
 ```bash
-# Clone the repository
 git clone https://github.com/Edith1-ux/book-bridge-2.git
 cd book-bridge-2
+python -m venv .venv
+```
 
-# Create and activate virtual environment
-python -m venv venv
-# On Windows (PowerShell):
-.\venv\Scripts\Activate.ps1
-# On Linux / macOS:
-source venv/bin/activate
+Activate the virtual environment, then install dependencies:
 
-# Install dependencies
+```bash
 pip install -r backend/requirements.txt
 ```
 
-### 3. Configure MySQL Environment Variables
-Create your MySQL database:
-```sql
-CREATE DATABASE bookbridge_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-```
+Copy `.env.example` to `.env` and update the MySQL credentials. Keep `.env` private.
 
-Copy the environment template:
 ```bash
-cp .env.example .env
-```
-Configure your MySQL credentials in `.env`:
-```env
-MYSQL_HOST=localhost
-MYSQL_PORT=3306
-MYSQL_DATABASE=bookbridge_db
-MYSQL_USER=root
-MYSQL_PASSWORD=your_mysql_password
-```
-
-### 4. Run Migrations & Seed Database
-```bash
-# Apply database migrations
 python backend/manage.py migrate
-
-# Seed sample academic books & default accounts
 python backend/manage.py seed_db
+python backend/manage.py runserver
 ```
 
-### 5. Start Development Server
-```bash
-python backend/manage.py runserver 0.0.0.0:8000
+Open `http://127.0.0.1:8000` in your browser.
+
+## Environment variables
+
+| Variable | Purpose |
+| --- | --- |
+| `SECRET_KEY` | Django application secret; use a unique strong value in production |
+| `DEBUG` | Set to `False` in production |
+| `ALLOWED_HOSTS` | Comma-separated permitted hostnames |
+| `MYSQL_HOST` | MySQL host |
+| `MYSQL_PORT` | MySQL port, usually `3306` |
+| `MYSQL_DATABASE` | Database name |
+| `MYSQL_USER` | Database user |
+| `MYSQL_PASSWORD` | Database password |
+
+## Project structure
+
+```text
+book-bridge-2/
+├── backend/             # Django project, apps, REST API, and migrations
+├── css/                 # Shared frontend styles
+├── js/                  # Frontend behaviour and API client
+├── browse_images/       # Website imagery
+├── .github/             # CI and GitHub issue templates
+├── Dockerfile
+├── .env.example
+└── README.md
 ```
-Open [http://localhost:8000](http://localhost:8000) in your browser.
 
----
-
-## 🐳 Docker Compose (Django + MySQL)
-
-You can launch both MySQL and the Django application with one command:
-```bash
-docker-compose up -d --build
-```
-This boots MySQL 8.0 on port `3306` and the Django web service on port `8000`.
-
----
-
-## 🧪 Running Automated Tests
-
-BookBridge includes an automated test suite covering registration, JWT auth, throttling, admin security, book creation permissions, exchange lifecycle, and donation claim validation.
+## Quality checks
 
 ```bash
-# Run all automated tests
+python backend/manage.py check
 python backend/manage.py test
-
-# Run Django security/deployment audit
-python backend/manage.py check --deploy
 ```
 
----
+GitHub Actions runs these checks on pushes and pull requests to `main`.
 
-## 📡 REST API Reference
+## Roadmap
 
-| Method | Endpoint | Auth | Description |
-| :--- | :--- | :--- | :--- |
-| `POST` | `/api/register/` | Public | Register student account (returns JWT) |
-| `POST` | `/api/login/` | Public | Authenticate user (rate limited) |
-| `GET` | `/api/profile/` | ✅ JWT | Authenticated user profile |
-| `GET` | `/api/books/` | Public | List books with branch, semester, search filters |
-| `POST` | `/api/books/` | ✅ JWT | Create book listing (seller auto-assigned) |
-| `GET` | `/api/books/<id>/` | Public | Get book details |
-| `DELETE`| `/api/books/<id>/`| ✅ Owner/Admin | Delete book listing |
-| `GET` | `/api/statistics` | Public | Real-time live database statistics |
-| `GET` | `/api/admin/stats/`| ✅ Admin | Platform analytics & metrics |
-| `GET` | `/api/admin/users/`| ✅ Admin | List registered platform users |
-| `POST` | `/api/exchanges/` | ✅ JWT | Propose book exchange swap |
-| `PATCH`| `/api/exchanges/<id>/` | ✅ Participant | Update swap status (`accepted`, `completed`) |
-| `POST` | `/api/donations/` | ✅ JWT | Claim free donation book |
-| `GET` | `/api/messages/` | ✅ JWT | User conversation inbox |
-| `POST` | `/api/messages/` | ✅ JWT | Send direct message to seller |
-| `POST` | `/api/wishlist/toggle/` | ✅ JWT | Toggle book in wishlist |
-| `GET` | `/api/health` | Public | System and database health status |
+- [x] Browse and filter book listings
+- [x] Basic student authentication and listing models
+- [ ] Complete secure listing-creation workflow
+- [ ] Production MySQL deployment
+- [ ] Admin moderation and reporting
+- [ ] Email verification and password recovery email
+- [ ] Real payment integration or clear offline-payment flow
+- [ ] Broader automated test coverage
 
----
+## Contributing
 
-## 🚢 Deployment to Render
+Contributions are welcome. Please read [CONTRIBUTING.md](CONTRIBUTING.md) before opening an issue or pull request.
 
-1. Connect your repository in [Render Dashboard](https://dashboard.render.com/).
-2. Select **New +** → **Blueprint** and point to `render.yaml`.
-3. Set your production MySQL connection variables (`MYSQL_HOST`, `MYSQL_PORT`, `MYSQL_DATABASE`, `MYSQL_USER`, `MYSQL_PASSWORD`).
-4. Render will execute:
-   - **Build**: `pip install -r backend/requirements.txt && python backend/manage.py migrate && python backend/manage.py collectstatic --noinput`
-   - **Start**: `gunicorn --chdir backend config.wsgi:application --bind 0.0.0.0:$PORT`
+## Security
 
----
+Please report security vulnerabilities privately as described in [SECURITY.md](SECURITY.md). Do not post sensitive vulnerabilities in public issues.
 
-## 📄 License & Credits
+## License
 
-Built with ❤️ for student academic sharing. All rights reserved © 2026 BookBridge.
+This project is available under the [MIT License](LICENSE).
