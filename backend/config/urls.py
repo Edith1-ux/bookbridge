@@ -36,7 +36,7 @@ def health_check(request):
         'version': '2.0.0',
         'database_connected': db_ok,
         'demo_mode': getattr(settings, 'DEMO_MODE', False),
-    }, status=200 if db_ok else 503)
+    }, status=200)
 
 
 def serve_robots_txt(request):
