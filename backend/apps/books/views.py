@@ -4,6 +4,10 @@ from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
 from .models import Book, Wishlist
 from .serializers import BookSerializer, BookCreateSerializer, WishlistSerializer
+from .permissions import IsOwnerOrAdmin
+from apps.users.models import User
+from apps.exchange.models import ExchangeProposal
+from apps.donations.models import DonationClaim
 
 
 class StatisticsAPIView(APIView):
@@ -15,46 +19,67 @@ class StatisticsAPIView(APIView):
     permission_classes = [permissions.AllowAny]
 
     def get(self, request):
-        try:
-            from apps.users.models import User
-            try:
-                from apps.exchange.models import ExchangeOffer
-            except ImportError:
-                ExchangeOffer = None
+        active_students = User.objects.filter(is_active=True, role__iexact='STUDENT').count()
+        books_listed = Book.objects.filter(status='Available').count()
+        successful_exchanges = ExchangeProposal.objects.filter(status='completed').count()
+        books_donated = Book.objects.filter(mode='donate').count()
+        completed_donations = DonationClaim.objects.filter(status__in=['approved', 'completed']).count()
 
-            # 1. Active Students: Count of active users with role="student"
-            active_students = User.objects.filter(is_active=True, role='student').count()
+        return Response({
+            "active_students": active_students,
+            "books_listed": books_listed,
+            "successful_exchanges": successful_exchanges,
+            "books_donated": books_donated,
+            "completed_donations": completed_donations,
+            "students": active_students,
+            "books": books_listed,
+            "exchanges": successful_exchanges,
+            "donated": books_donated,
+        }, status=status.HTTP_200_OK)
 
-            # 2. Books Listed: Total books available
-            books_listed = Book.objects.filter(status='Available').count()
 
-            # 3. Successful Exchanges: Total completed transactions from Exchange model where status="completed"
-            if ExchangeOffer is not None:
-                successful_exchanges = ExchangeOffer.objects.filter(status='completed').count()
-            else:
-                successful_exchanges = 0
+class BookStatsView(APIView):
+    permission_classes = [permissions.AllowAny]
 
-            return Response({
-                "active_students": active_students,
-                "books_listed": books_listed,
-                "successful_exchanges": successful_exchanges
-            }, status=status.HTTP_200_OK)
+    def get(self, request):
+        active_students = User.objects.filter(is_active=True, role__iexact='STUDENT').count()
+        books_listed = Book.objects.filter(status='Available').count()
+        successful_exchanges = ExchangeProposal.objects.filter(status='completed').count()
+        books_donated = Book.objects.filter(mode='donate').count()
 
-        except Exception as e:
-            return Response({
-                "active_students": 0,
-                "books_listed": 0,
-                "successful_exchanges": 0
-            }, status=status.HTTP_200_OK)
+        return Response({
+            'active_students': active_students,
+            'books_listed': books_listed,
+            'successful_exchanges': successful_exchanges,
+            'books_donated': books_donated,
+            'totalUsers': User.objects.count(),
+            'totalListings': Book.objects.count(),
+            'successfulExchanges': successful_exchanges,
+            'students': active_students,
+            'books': books_listed,
+            'exchanges': successful_exchanges,
+            'donated': books_donated,
+        }, status=status.HTTP_200_OK)
 
 
 class BookListCreateView(generics.ListCreateAPIView):
-    queryset = Book.objects.select_related('seller').filter(status='Available')
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['branch', 'semester', 'mode', 'condition', 'resource_type']
-    search_fields = ['title', 'author', 'gtu_code', 'isbn', 'subject', 'genre']
-    ordering_fields = ['price', 'rating', 'created_at', 'semester']
+    filterset_fields = ['branch', 'semester', 'mode', 'condition', 'resource_type', 'status']
+    search_fields = ['title', 'author', 'gtu_code', 'isbn', 'subject', 'genre', 'description']
+    ordering_fields = ['price', 'rating', 'created_at', 'semester', 'views_count']
     ordering = ['-created_at']
+
+    def get_queryset(self):
+        # Support optional status filter or default to Available unless all is requested
+        status_param = self.request.query_params.get('status')
+        all_param = self.request.query_params.get('all', '').lower() in ('true', '1')
+
+        qs = Book.objects.select_related('seller', 'seller__college', 'seller__department')
+        if not all_param and not status_param:
+            qs = qs.filter(status='Available')
+        elif status_param:
+            qs = qs.filter(status__iexact=status_param)
+        return qs
 
     def get_serializer_class(self):
         if self.request.method == 'POST':
@@ -66,17 +91,20 @@ class BookListCreateView(generics.ListCreateAPIView):
             return [permissions.IsAuthenticated()]
         return [permissions.AllowAny()]
 
-    def get_serializer_context(self):
-        ctx = super().get_serializer_context()
-        ctx['request'] = self.request
-        return ctx
+    def perform_create(self, serializer):
+        serializer.save(seller=self.request.user)
 
-
-from .permissions import IsOwnerOrAdmin
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        # Return full BookSerializer representation with seller_name
+        response_serializer = BookSerializer(serializer.instance, context=self.get_serializer_context())
+        return Response(response_serializer.data, status=status.HTTP_201_CREATED)
 
 
 class BookDetailView(generics.RetrieveUpdateDestroyAPIView):
-    queryset = Book.objects.select_related('seller').all()
+    queryset = Book.objects.select_related('seller', 'seller__college', 'seller__department').all()
     serializer_class = BookSerializer
 
     def get_permissions(self):
@@ -90,28 +118,23 @@ class BookDetailView(generics.RetrieveUpdateDestroyAPIView):
         instance.save(update_fields=['views_count'])
         return super().retrieve(request, *args, **kwargs)
 
-    def get_serializer_context(self):
-        ctx = super().get_serializer_context()
-        ctx['request'] = self.request
-        return ctx
-
 
 class WishlistToggleView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request):
-        book_id = request.data.get('book_id')
+        book_id = request.data.get('book_id') or request.data.get('book')
         if not book_id:
             return Response({'error': 'book_id is required'}, status=status.HTTP_400_BAD_REQUEST)
         try:
             book = Book.objects.get(pk=book_id)
-        except Book.DoesNotExist:
+        except (Book.DoesNotExist, ValueError):
             return Response({'error': 'Book not found'}, status=status.HTTP_404_NOT_FOUND)
 
         wishlist_item, created = Wishlist.objects.get_or_create(user=request.user, book=book)
         if not created:
             wishlist_item.delete()
-            return Response({'added': False, 'message': 'Removed from wishlist'})
+            return Response({'added': False, 'message': 'Removed from wishlist'}, status=status.HTTP_200_OK)
         return Response({'added': True, 'message': 'Added to wishlist'}, status=status.HTTP_201_CREATED)
 
 
@@ -120,33 +143,6 @@ class WishlistListView(generics.ListAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        return Wishlist.objects.filter(user=self.request.user).select_related('book', 'book__seller')
-
-    def get_serializer_context(self):
-        ctx = super().get_serializer_context()
-        ctx['request'] = self.request
-        return ctx
-
-
-class BookStatsView(APIView):
-    permission_classes = [permissions.AllowAny]
-
-    def get(self, request):
-        from apps.users.models import User
-        try:
-            from apps.exchange.models import ExchangeOffer
-        except ImportError:
-            ExchangeOffer = None
-
-        total_users = User.objects.filter(is_active=True, role='student').count()
-        total_books = Book.objects.filter(status='Available').count()
-        successful_exchanges = ExchangeOffer.objects.filter(status='completed').count() if ExchangeOffer else 0
-
-        return Response({
-            'active_students': total_users,
-            'books_listed': total_books,
-            'successful_exchanges': successful_exchanges,
-            'totalUsers': total_users,
-            'totalListings': total_books,
-            'successfulExchanges': successful_exchanges,
-        })
+        return Wishlist.objects.filter(user=self.request.user).select_related(
+            'book', 'book__seller', 'book__seller__college', 'book__seller__department'
+        ).order_by('-created_at')

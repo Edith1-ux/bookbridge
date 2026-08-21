@@ -2,11 +2,13 @@ import os
 from django.conf import settings
 from django.http import HttpResponse, Http404, JsonResponse
 
+
 def _get_root_dir():
     base = settings.BASE_DIR
     if os.path.basename(str(base)) == 'backend':
         return os.path.dirname(str(base))
     return str(base)
+
 
 def serve_html_page(filename):
     def view(request):
@@ -18,26 +20,29 @@ def serve_html_page(filename):
         raise Http404(f"Page {filename} not found at {file_path}")
     return view
 
+
 def statistics_api(request):
+    """
+    Returns real-time platform statistics computed purely from Django ORM database records.
+    No fake or hardcoded baseline numbers.
+    """
     from apps.books.models import Book
     from apps.users.models import User
+    from apps.exchange.models import ExchangeProposal
+    from apps.donations.models import DonationClaim
 
-    db_students = User.objects.filter(role='STUDENT').count()
-    db_books = Book.objects.count()
-    db_exchanges = Book.objects.filter(status='Sold', mode='exchange').count()
-    db_donated = Book.objects.filter(mode='donate').count()
-
-    # Community baseline stats + real-time live additions
-    active_students = 1250 + db_students
-    books_listed = 480 + db_books
-    successful_exchanges = 310 + db_exchanges
-    books_donated = 140 + db_donated
+    active_students = User.objects.filter(is_active=True, role__iexact='STUDENT').count()
+    books_listed = Book.objects.filter(status='Available').count()
+    successful_exchanges = ExchangeProposal.objects.filter(status='completed').count()
+    books_donated = Book.objects.filter(mode='donate').count()
+    completed_donations = DonationClaim.objects.filter(status__in=['approved', 'completed']).count()
 
     return JsonResponse({
         'active_students': active_students,
         'books_listed': books_listed,
         'successful_exchanges': successful_exchanges,
         'books_donated': books_donated,
+        'completed_donations': completed_donations,
         'students': active_students,
         'books': books_listed,
         'exchanges': successful_exchanges,

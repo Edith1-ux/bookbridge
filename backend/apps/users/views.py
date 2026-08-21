@@ -1,18 +1,16 @@
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework import generics, permissions, status
-from rest_framework.response import Response
-from rest_framework.views import APIView
-from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+from rest_framework.throttling import ScopedRateThrottle
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate
+
 from .models import User
-from .serializers import UserSerializer, RegisterSerializer, UserRegisterSerializer
+from .serializers import UserSerializer, RegisterSerializer, PublicUserSerializer
+from .permissions import IsBookBridgeAdmin
 from apps.books.models import Book
-
-
-from rest_framework.throttling import ScopedRateThrottle
+from apps.exchange.models import ExchangeProposal
+from apps.donations.models import DonationClaim
 
 
 class RegisterView(generics.CreateAPIView):
@@ -42,23 +40,27 @@ class CustomLoginView(APIView):
     throttle_scope = 'auth'
 
     def post(self, request):
-        email = request.data.get('email')
-        password = request.data.get('password')
+        email = request.data.get('email', '').strip()
+        password = request.data.get('password', '')
 
         if not email or not password:
             return Response({'error': 'Email and password are required.'}, status=status.HTTP_400_BAD_REQUEST)
 
         user = authenticate(request, email=email, password=password)
         if user is None:
+            # Check if user exists but case differs
             try:
-                u = User.objects.get(email=email)
+                u = User.objects.get(email__iexact=email)
                 if u.check_password(password):
                     user = u
             except User.DoesNotExist:
                 user = None
 
         if user is None:
-            return Response({'error': 'Invalid credentials.'}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response({'error': 'Invalid email or password.'}, status=status.HTTP_401_UNAUTHORIZED)
+
+        if not user.is_active:
+            return Response({'error': 'Account is inactive. Please contact support.'}, status=status.HTTP_403_FORBIDDEN)
 
         refresh = RefreshToken.for_user(user)
         return Response({
@@ -67,7 +69,6 @@ class CustomLoginView(APIView):
             'refresh': str(refresh),
             'user': UserSerializer(user).data
         }, status=status.HTTP_200_OK)
-
 
 
 class UserProfileView(generics.RetrieveUpdateAPIView):
@@ -79,25 +80,37 @@ class UserProfileView(generics.RetrieveUpdateAPIView):
 
 
 class UserListView(generics.ListAPIView):
-    queryset = User.objects.all()
+    """Admin-only endpoint to list all registered users."""
+    queryset = User.objects.all().select_related('college', 'department').order_by('-date_joined')
     serializer_class = UserSerializer
-    permission_classes = (permissions.AllowAny,)
+    permission_classes = [permissions.IsAuthenticated, IsBookBridgeAdmin]
 
 
 class AdminStatsView(APIView):
-    permission_classes = (permissions.AllowAny,)
+    """Admin-only endpoint returning accurate platform statistics."""
+    permission_classes = [permissions.IsAuthenticated, IsBookBridgeAdmin]
 
     def get(self, request):
         total_users = User.objects.count()
+        student_users = User.objects.filter(role__iexact='STUDENT').count()
         total_books = Book.objects.count()
+        available_books = Book.objects.filter(status='Available').count()
+        active_swaps = ExchangeProposal.objects.filter(status='pending').count()
+        completed_swaps = ExchangeProposal.objects.filter(status='completed').count()
+        total_claims = DonationClaim.objects.count()
+        approved_donations = DonationClaim.objects.filter(status__in=['approved', 'completed']).count()
+
         return Response({
             'totalUsers': total_users,
+            'studentUsers': student_users,
             'totalListings': total_books,
-            'totalTransactions': 0,
-            'totalOffers': 0,
-            'activeSwaps': 0,
-            'freeDonations': 0
+            'availableListings': available_books,
+            'activeSwaps': active_swaps,
+            'completedSwaps': completed_swaps,
+            'freeDonations': total_claims,
+            'approvedDonations': approved_donations,
+            'totalTransactions': completed_swaps + approved_donations,
         }, status=status.HTTP_200_OK)
 
-ProfileView = UserProfileView
 
+ProfileView = UserProfileView

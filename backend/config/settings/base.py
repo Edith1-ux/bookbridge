@@ -3,21 +3,46 @@ import sys
 from pathlib import Path
 from datetime import timedelta
 
+# ---------------------------------------------------------------------------
+# PATH SETUP
+# ---------------------------------------------------------------------------
+# BASE_DIR = backend/
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
-if str(BASE_DIR / 'backend') not in sys.path:
-    sys.path.insert(0, str(BASE_DIR / 'backend'))
+
+# Ensure 'backend/' is on sys.path so 'apps.*' and 'config.*' imports work.
 if str(BASE_DIR) not in sys.path:
     sys.path.insert(0, str(BASE_DIR))
 
-SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-prod-key-bookbridge-2026-enterprise-solution')
+# PROJECT_ROOT = repo root (parent of backend/)
+PROJECT_ROOT = BASE_DIR.parent
 
+# ---------------------------------------------------------------------------
+# SECURITY
+# ---------------------------------------------------------------------------
+SECRET_KEY = os.environ.get('SECRET_KEY', '')
 DEBUG = os.environ.get('DEBUG', 'True').lower() in ('true', '1', 'yes')
 
-ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '*').split(',')
+if not DEBUG and not SECRET_KEY:
+    raise RuntimeError(
+        'SECRET_KEY environment variable is required when DEBUG=False. '
+        'Generate one with: python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"'
+    )
 
-# -----------------------------------------------------------------------------
+# Fallback for local development only
+if not SECRET_KEY:
+    SECRET_KEY = 'django-insecure-dev-only-do-not-use-in-production'
+
+ALLOWED_HOSTS = [
+    h.strip() for h in os.environ.get('ALLOWED_HOSTS', '*').split(',') if h.strip()
+]
+# Auto-add Render hostname
+_render_host = os.environ.get('RENDER_EXTERNAL_HOSTNAME')
+if _render_host and _render_host not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append(_render_host)
+
+# ---------------------------------------------------------------------------
 # APPLICATION DEFINITION
-# -----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -25,16 +50,15 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    
-    # Third party packages
+
+    # Third-party
     'rest_framework',
     'rest_framework_simplejwt',
     'rest_framework_simplejwt.token_blacklist',
     'corsheaders',
-    'channels',
     'django_filters',
-    
-    # Core Enterprise Apps
+
+    # BookBridge apps
     'apps.core.apps.CoreConfig',
     'apps.users.apps.UsersConfig',
     'apps.colleges.apps.CollegesConfig',
@@ -55,6 +79,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -69,7 +94,7 @@ ROOT_URLCONF = 'config.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / 'templates'],
+        'DIRS': [BASE_DIR / 'templates', PROJECT_ROOT],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -83,33 +108,54 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'config.wsgi.application'
-ASGI_APPLICATION = 'config.asgi.application'
 
-# -----------------------------------------------------------------------------
-# DATABASE CONFIGURATION
-# -----------------------------------------------------------------------------
-MYSQL_HOST = os.environ.get('MYSQL_HOST', '')
+# ---------------------------------------------------------------------------
+# DATABASE — MySQL only for local and production environments
+# Mandatory environment variables:
+#   MYSQL_HOST, MYSQL_PORT, MYSQL_DATABASE, MYSQL_USER, MYSQL_PASSWORD
+# Use MySQL in local and production environments. Do not use SQLite in production.
+# ---------------------------------------------------------------------------
+_mysql_host = os.environ.get('MYSQL_HOST', os.environ.get('MYSQLHOST', '127.0.0.1'))
+_mysql_port = str(os.environ.get('MYSQL_PORT', os.environ.get('MYSQLPORT', '3306')))
+_mysql_db = os.environ.get('MYSQL_DATABASE', os.environ.get('MYSQLDATABASE', 'bookbridge_db'))
+_mysql_user = os.environ.get('MYSQL_USER', os.environ.get('MYSQLUSER', 'root'))
+_mysql_password = os.environ.get('MYSQL_PASSWORD', os.environ.get('MYSQLPASSWORD', ''))
 
-if MYSQL_HOST:
+# Support cloud MySQL provider URLs (e.g., mysql://user:pass@host:port/dbname)
+_database_url = os.environ.get('MYSQL_URL', os.environ.get('DATABASE_URL', ''))
+if _database_url and ('mysql://' in _database_url or 'mariadb://' in _database_url):
+    import urllib.parse
+    parsed = urllib.parse.urlparse(_database_url)
+    _mysql_host = parsed.hostname or _mysql_host
+    _mysql_port = str(parsed.port or _mysql_port)
+    _mysql_db = parsed.path.lstrip('/') or _mysql_db
+    _mysql_user = parsed.username or _mysql_user
+    _mysql_password = parsed.password or _mysql_password
+
+_is_testing = 'test' in sys.argv or os.environ.get('DJANGO_TEST', '').lower() == 'true'
+
+if _is_testing and not os.environ.get('FORCE_MYSQL_TEST'):
+    # In-memory test runner for CI / offline test suite execution
     DATABASES = {
         'default': {
-            'ENGINE': 'django.db.backends.mysql',
-            'NAME': os.environ.get('MYSQL_DATABASE', 'bookbridge_db'),
-            'USER': os.environ.get('MYSQL_USER', 'bookbridge_user'),
-            'PASSWORD': os.environ.get('MYSQL_PASSWORD', 'bookbridge_secure_pass'),
-            'HOST': MYSQL_HOST,
-            'PORT': os.environ.get('MYSQL_PORT', '3306'),
-            'OPTIONS': {
-                'charset': 'utf8mb4',
-                'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
-            },
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': ':memory:',
         }
     }
 else:
     DATABASES = {
         'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
+            'ENGINE': 'django.db.backends.mysql',
+            'NAME': _mysql_db,
+            'USER': _mysql_user,
+            'PASSWORD': _mysql_password,
+            'HOST': _mysql_host,
+            'PORT': _mysql_port,
+            'OPTIONS': {
+                'charset': 'utf8mb4',
+                'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
+            },
+            'CONN_MAX_AGE': 600,
         }
     }
 
@@ -124,43 +170,64 @@ AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
 ]
 
-# Internationalization & i18n
+# ---------------------------------------------------------------------------
+# INTERNATIONALIZATION
+# ---------------------------------------------------------------------------
 LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'Asia/Kolkata'
 USE_I18N = True
 USE_TZ = True
 
-# Static & Media Files
+# ---------------------------------------------------------------------------
+# STATIC & MEDIA FILES
+# ---------------------------------------------------------------------------
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATICFILES_DIRS = [PROJECT_ROOT]  # Serve HTML/CSS/JS from repo root
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
-# Default Primary Key Field
+# WhiteNoise static file compression
+STORAGES = {
+    'staticfiles': {
+        'BACKEND': 'whitenoise.storage.CompressedManifestStaticFilesStorage',
+    },
+}
+
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# -----------------------------------------------------------------------------
-# REST FRAMEWORK & JWT CONFIGURATION
-# -----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# REST FRAMEWORK & JWT
+# ---------------------------------------------------------------------------
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
     'DEFAULT_PERMISSION_CLASSES': (
-        'rest_framework.permissions.IsAuthenticated',
+        'rest_framework.permissions.IsAuthenticatedOrReadOnly',
     ),
-    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
-    'PAGE_SIZE': 20,
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.AnonRateThrottle',
+        'rest_framework.throttling.UserRateThrottle',
+        'rest_framework.throttling.ScopedRateThrottle',
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '300/hour',
+        'user': '3000/hour',
+        'auth': '10/minute',     # Login & registration
+    },
     'DEFAULT_FILTER_BACKENDS': (
         'django_filters.rest_framework.DjangoFilterBackend',
         'rest_framework.filters.SearchFilter',
         'rest_framework.filters.OrderingFilter',
     ),
-    'DEFAULT_VERSIONING_CLASS': 'rest_framework.versioning.NamespaceVersioning',
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 20,
+    'EXCEPTION_HANDLER': 'rest_framework.views.exception_handler',
 }
 
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
+    'ACCESS_TOKEN_LIFETIME': timedelta(hours=2),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
     'ROTATE_REFRESH_TOKENS': True,
     'BLACKLIST_AFTER_ROTATION': True,
@@ -170,31 +237,96 @@ SIMPLE_JWT = {
     'AUTH_HEADER_TYPES': ('Bearer',),
 }
 
-# CORS Configuration
+# ---------------------------------------------------------------------------
+# CORS
+# ---------------------------------------------------------------------------
 CORS_ALLOW_ALL_ORIGINS = DEBUG
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-]
 
-# -----------------------------------------------------------------------------
-# REDIS & CHANNELS CONFIGURATION
-# -----------------------------------------------------------------------------
-REDIS_URL = os.environ.get('REDIS_URL', 'redis://localhost:6379/0')
+_cors_origins = os.environ.get('CORS_ALLOWED_ORIGINS', '')
+if _cors_origins:
+    CORS_ALLOWED_ORIGINS = [o.strip() for o in _cors_origins.split(',') if o.strip()]
+elif not DEBUG:
+    # In production with no explicit config, allow same-origin only
+    CORS_ALLOWED_ORIGINS = []
+    if _render_host:
+        CORS_ALLOWED_ORIGINS.append(f'https://{_render_host}')
+else:
+    CORS_ALLOWED_ORIGINS = [
+        'http://localhost:8000',
+        'http://127.0.0.1:8000',
+        'http://localhost:3000',
+        'http://127.0.0.1:3000',
+    ]
 
-CHANNEL_LAYERS = {
-    'default': {
-        'BACKEND': 'channels_redis.core.RedisChannelLayer',
-        'CONFIG': {
-            "hosts": [REDIS_URL],
+CORS_ALLOW_CREDENTIALS = True
+
+# ---------------------------------------------------------------------------
+# SECURITY HARDENING (production only)
+# ---------------------------------------------------------------------------
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+if not DEBUG:
+    SECURE_SSL_REDIRECT = os.environ.get('SECURE_SSL_REDIRECT', 'True').lower() in ('true', '1')
+    SECURE_HSTS_SECONDS = 31536000
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_BROWSER_XSS_FILTER = True
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    X_FRAME_OPTIONS = 'DENY'
+    SECURE_REFERRER_POLICY = 'strict-origin-when-cross-origin'
+
+    # CSRF trusted origins
+    CSRF_TRUSTED_ORIGINS = []
+    _csrf_origins = os.environ.get('CSRF_TRUSTED_ORIGINS', '')
+    if _csrf_origins:
+        CSRF_TRUSTED_ORIGINS = [o.strip() for o in _csrf_origins.split(',') if o.strip()]
+    if _render_host:
+        CSRF_TRUSTED_ORIGINS.append(f'https://{_render_host}')
+else:
+    SECURE_BROWSER_XSS_FILTER = True
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    X_FRAME_OPTIONS = 'DENY'
+    SECURE_REFERRER_POLICY = 'strict-origin-when-cross-origin'
+
+# ---------------------------------------------------------------------------
+# LOGGING
+# ---------------------------------------------------------------------------
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'structured': {
+            'format': '{asctime} [{levelname}] {name}: {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'structured',
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'INFO' if not DEBUG else 'DEBUG',
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console'],
+            'level': 'WARNING' if not DEBUG else 'INFO',
+            'propagate': False,
+        },
+        'apps': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': False,
         },
     },
 }
 
-# Celery Broker & Result Backend
-CELERY_BROKER_URL = REDIS_URL
-CELERY_RESULT_BACKEND = REDIS_URL
-CELERY_ACCEPT_CONTENT = ['json']
-CELERY_TASK_SERIALIZER = 'json'
-CELERY_RESULT_SERIALIZER = 'json'
-CELERY_TIMEZONE = TIME_ZONE
+# ---------------------------------------------------------------------------
+# DEMO MODE — controls whether localStorage fallback is allowed in frontend
+# ---------------------------------------------------------------------------
+DEMO_MODE = os.environ.get('DEMO_MODE', 'false').lower() in ('true', '1', 'yes')

@@ -1,208 +1,158 @@
-# 📚 BookBridge
+# 📚 BookBridge — Student Academic Book Marketplace
 
-> **Bridge Books. Build Minds.** — India's student book-sharing platform.
-
-BookBridge lets students **buy, sell, exchange, and donate** academic books across all college departments.
+> **Bridge Books. Build Minds.** — India's student book-sharing platform for buying, selling, exchanging, and donating academic books and lab manuals across colleges.
 
 ---
 
-## 🚀 Quick Start
+## 🌟 Platform Capabilities
 
-- 🛒 **Buy & Sell**: Browse items listed for sale, add items to cart, checkout with instant order confirmation.
-- 🔄 **Exchange Marketplace**: Propose trade swaps by offering books from your collection for listed titles.
-- 🎁 **Donate Community Shelf**: Discover free book giveaways and claim books at zero cost.
-- 🔍 **Real-Time Search & Filtering**:
-  - Instant live keyword search across titles, authors, ISBNs, and descriptions.
-  - Multi-category chips (Tech, Sci-Fi, Fiction, Non-Fiction, Academic, Thriller, Kids).
-  - Mode selectors (All, Buy/Sell, Exchange, Donate).
-  - Book Condition filtering (New, Like New, Good, Fair).
-  - Interactive Price Range slider.
-  - Sorting (Newest, Price Low/High, Seller Rating).
-- 💾 **Dual Database & API Architecture**:
-  - **Embedded Client Database (`js/database.js`)**: Built on IndexedDB + LocalStorage sync for zero-dependency execution in any browser. Pre-populated with rich seed books.
-  - **Python Django REST Framework (`backend/`)**: Enterprise backend implementation with MySQL database ORM integration providing REST endpoints (`/api/v1/books/`, `/api/v1/users/`, `/api/v1/exchange/`, `/api/v1/donations/`, `/api/v1/chat/`, `/api/v1/ai/`) and full admin capabilities.
-- 🎨 **Premium UI/UX Design System**:
-  - Dark Mode and Light Mode theme toggle.
-  - Glassmorphic navigation and card containers.
-  - Distinct action color coding (Emerald = Buy, Indigo = Sell, Amber = Exchange, Rose = Donate).
-  - Micro-animations, responsive layout, and toast notification alerts.
+- 🛒 **Buy & Sell**: List used textbooks with original price discounts, campus pickup locations, and student seller verification.
+- 🔄 **Exchange Marketplace**: Propose direct book-for-book swaps across semesters and departments.
+- 🎁 **Donate Community Shelf**: Discover and claim zero-cost academic textbooks and lab manuals.
+- 🔍 **Real-Time Search & Filtering**: Multi-department filtering (`CE`, `IT`, `EE`, `ME`, `Civil`), price range sliders, condition filters, and GTU code indexing.
+- ⚡ **Django REST API Single Source of Truth**: Production-ready Python Django backend powering all endpoints, authentication, throttling, permissions, and database transactions.
+- 🎨 **Design System**: Responsive glassmorphic UI, dark and light theme toggle, micro-animations, accessible dialogs, and toast notifications.
 
 ---
 
-### Prerequisites
-- **Node.js** v18+ — [Download here](https://nodejs.org/)
-- **MongoDB** (optional) — falls back to local `data/db.json` if MongoDB is not running
-
-### 1. Clone and Install
-```bash
-git clone <your-repo-url>
-cd book-bridge
-npm install
-```
-
-### 2. Set Environment Variables
-```bash
-# Copy the example file
-copy .env.example .env
-
-# Open .env and set:
-# JWT_SECRET=<generate with: node -e "console.log(require('crypto').randomBytes(64).toString('hex'))">
-# MONGO_URI=mongodb://127.0.0.1:27017/bookbridge  (optional)
-```
-
-### 3. Run the Server
-```bash
-npm start           # Production
-npm run dev         # Development (with auto-reload via nodemon)
-```
-
-Then open **http://localhost:8000** in your browser.
-
----
-
-## 🚀 How to Run
-
-### Option 1: Double-Click Launcher (`run-server.bat`)
-Double click `run-server.bat`. It will automatically install Python dependencies, apply Django database migrations, seed initial GTU textbooks/users, and launch the Django server on port 8000.
-
-### Option 2: Python Django Backend Server
-If Python is installed on your machine:
-```bash
-# 1. Install dependencies
-pip install -r backend/requirements.txt
-
-# 2. Run migrations & seed data
-python backend/manage.py makemigrations
-python backend/manage.py migrate
-python backend/manage.py seed_db
-
-# 3. Start Django server
-python backend/manage.py runserver 0.0.0.0:8000
-```
-3. Open your browser to `http://localhost:8000/browse`
-
----
-
-## 🏗️ Project Structure
-
-```
-book bridge/
-├── 📄 HTML Pages
-│   ├── index.html          — Home
-│   ├── browse.html         — Browse books
-│   ├── exchange.html       — Exchange
-│   ├── donate.html         — Donate
-│   ├── login.html          — Login
-│   ├── register.html       — Register
-│   ├── admin.html          — Admin panel (auth-protected)
-│   ├── dashboard.html      — User dashboard
-│   ├── privacy.html        — Privacy Policy
-│   ├── terms.html          — Terms of Service
-│   └── forgot-password.html— Password recovery
-│
-├── 🎨 Styling
-│   ├── style.css           — Main CSS
-│   └── login.css           — Login page CSS
-│
-├── ⚡ Frontend JS (js/)
-│   ├── database.js         — Browser localStorage engine
-│   ├── api.js              — API client (calls /api endpoints)
-│   ├── app.js              — Page controllers & UI logic
-│   └── live-stats.js       — Real-time statistics
-│
-├── 🔧 Backend (Node.js / Express)
-│   ├── server.js           — Main server entry point
-│   ├── config/db.js        — MongoDB + JSON fallback
-│   ├── controllers/        — authController, bookController
-│   ├── middleware/         — JWT auth, CORS, rate limiting, validation
-│   └── models/             — Mongoose User & Book schemas
-│
-├── 💾 Data
-│   └── data/db.json        — JSON fallback database
-│
-├── 🖼️ Assets
-│   ├── browse_images/      — Hero + 25 book covers
-│   └── logo.png.jpeg       — Logo
-│
-└── ⚙️ Config / Deploy
-    ├── package.json        — npm config (start: node server.js)
-    ├── pm2.config.js       — PM2 process manager
-    ├── Dockerfile          — Docker container
-    ├── nginx.conf          — Nginx reverse proxy
-    ├── netlify.toml        — Netlify deploy config
-    └── _redirects          — URL routing rules
-```
-
----
-
-## 🔐 Authentication
-
-BookBridge uses **JWT + bcrypt** for secure authentication:
-- Passwords are hashed with **bcrypt (12 rounds)** on the server / SHA-256 in localStorage fallback
-- Tokens expire in **7 days**
-- Admin routes require both a valid JWT and `role: 'admin'`
-
----
-
-## 🌐 API Endpoints
-
-| Method | Endpoint | Auth | Description |
-|--------|----------|------|-------------|
-| POST | `/api/register` | — | Create account |
-| POST | `/api/login` | — | Login (returns JWT) |
-| GET | `/api/books` | — | List books with filters |
-| POST | `/api/books` | ✅ JWT | Add a book listing |
-| DELETE | `/api/books/:id` | ✅ JWT | Remove a listing |
-| GET | `/api/statistics` | — | Platform stats |
-| GET | `/api/admin/stats` | ✅ Admin | Admin analytics |
-| GET | `/api/admin/users` | ✅ Admin | All users |
-| POST | `/api/messages` | ✅ JWT | Send a message |
-
----
-
-## 🚢 Deployment
-
-**Netlify (Recommended — free)**
-```bash
-# Just push to GitHub and connect to Netlify
-# netlify.toml and _redirects are already configured
-```
-
-**Docker**
-```bash
-docker-compose up -d
-```
-
-**PM2 (VPS)**
-```bash
-npm install pm2 -g
-pm2 start pm2.config.js
-```
-
----
-
-## 📝 Environment Variables
-
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `JWT_SECRET` | **Yes** | 64+ char random string |
-| `PORT` | No | Default: 8000 |
-| `MONGO_URI` | No | MongoDB connection (falls back to JSON) |
-| `NODE_ENV` | No | `development` or `production` |
-
----
-
-## 🛠️ Tech Stack
+## 🏗️ Architecture & Technology Stack
 
 | Layer | Technology |
-|-------|-----------|
-| Frontend | HTML5, Vanilla CSS, Vanilla JS |
-| Backend | Node.js + Express.js |
-| Database | MongoDB (Mongoose) + JSON fallback |
-| Auth | JWT + bcrypt |
-| Real-time | Socket.IO |
-| Security | Helmet + CORS + Rate Limiting (express-rate-limit) |
+| :--- | :--- |
+| **Backend Framework** | Python 3.11+ / Django 5.0+ / Django REST Framework (DRF) |
+| **Database** | MySQL 8.0+ (Local and Production) |
+| **Authentication** | JWT (`djangorestframework-simplejwt`) + Scoped Rate Limiting |
+| **Frontend** | Vanilla HTML5, Modern CSS3 Design Tokens, Vanilla JavaScript ES6+ |
+| **Static Delivery** | WhiteNoise with compressed manifest asset caching |
+| **WSGI Server** | Gunicorn (3 workers) |
+| **Deployment** | Render.com Blueprint (`render.yaml`), Docker container (`docker-compose.yml`) |
+
+> [!IMPORTANT]
+> **Use MySQL in local and production environments. Do not use SQLite in production.**
+> Do not use Node.js, Express, MongoDB, SQLite, localStorage, IndexedDB, or JSON files as the production backend/database.
+> If local browser storage is used, it only stores non-sensitive UI preferences (such as theme or temporary form drafts)—never users, passwords, listings, messages, transactions, or authentication data.
 
 ---
 
-Built with ❤️ by RCTI GTU Students
+## 🚀 Getting Started (Local Development)
+
+### 1. Prerequisites
+- **Python 3.11+**
+- **MySQL 8.0+ Server** running locally or via Docker
+- **Git**
+
+### 2. Clone and Setup Environment
+```bash
+# Clone the repository
+git clone https://github.com/Edith1-ux/book-bridge-2.git
+cd book-bridge-2
+
+# Create and activate virtual environment
+python -m venv venv
+# On Windows (PowerShell):
+.\venv\Scripts\Activate.ps1
+# On Linux / macOS:
+source venv/bin/activate
+
+# Install dependencies
+pip install -r backend/requirements.txt
+```
+
+### 3. Configure MySQL Environment Variables
+Create your MySQL database:
+```sql
+CREATE DATABASE bookbridge_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+```
+
+Copy the environment template:
+```bash
+cp .env.example .env
+```
+Configure your MySQL credentials in `.env`:
+```env
+MYSQL_HOST=localhost
+MYSQL_PORT=3306
+MYSQL_DATABASE=bookbridge_db
+MYSQL_USER=root
+MYSQL_PASSWORD=your_mysql_password
+```
+
+### 4. Run Migrations & Seed Database
+```bash
+# Apply database migrations
+python backend/manage.py migrate
+
+# Seed sample academic books & default accounts
+python backend/manage.py seed_db
+```
+
+### 5. Start Development Server
+```bash
+python backend/manage.py runserver 0.0.0.0:8000
+```
+Open [http://localhost:8000](http://localhost:8000) in your browser.
+
+---
+
+## 🐳 Docker Compose (Django + MySQL)
+
+You can launch both MySQL and the Django application with one command:
+```bash
+docker-compose up -d --build
+```
+This boots MySQL 8.0 on port `3306` and the Django web service on port `8000`.
+
+---
+
+## 🧪 Running Automated Tests
+
+BookBridge includes an automated test suite covering registration, JWT auth, throttling, admin security, book creation permissions, exchange lifecycle, and donation claim validation.
+
+```bash
+# Run all automated tests
+python backend/manage.py test
+
+# Run Django security/deployment audit
+python backend/manage.py check --deploy
+```
+
+---
+
+## 📡 REST API Reference
+
+| Method | Endpoint | Auth | Description |
+| :--- | :--- | :--- | :--- |
+| `POST` | `/api/register/` | Public | Register student account (returns JWT) |
+| `POST` | `/api/login/` | Public | Authenticate user (rate limited) |
+| `GET` | `/api/profile/` | ✅ JWT | Authenticated user profile |
+| `GET` | `/api/books/` | Public | List books with branch, semester, search filters |
+| `POST` | `/api/books/` | ✅ JWT | Create book listing (seller auto-assigned) |
+| `GET` | `/api/books/<id>/` | Public | Get book details |
+| `DELETE`| `/api/books/<id>/`| ✅ Owner/Admin | Delete book listing |
+| `GET` | `/api/statistics` | Public | Real-time live database statistics |
+| `GET` | `/api/admin/stats/`| ✅ Admin | Platform analytics & metrics |
+| `GET` | `/api/admin/users/`| ✅ Admin | List registered platform users |
+| `POST` | `/api/exchanges/` | ✅ JWT | Propose book exchange swap |
+| `PATCH`| `/api/exchanges/<id>/` | ✅ Participant | Update swap status (`accepted`, `completed`) |
+| `POST` | `/api/donations/` | ✅ JWT | Claim free donation book |
+| `GET` | `/api/messages/` | ✅ JWT | User conversation inbox |
+| `POST` | `/api/messages/` | ✅ JWT | Send direct message to seller |
+| `POST` | `/api/wishlist/toggle/` | ✅ JWT | Toggle book in wishlist |
+| `GET` | `/api/health` | Public | System and database health status |
+
+---
+
+## 🚢 Deployment to Render
+
+1. Connect your repository in [Render Dashboard](https://dashboard.render.com/).
+2. Select **New +** → **Blueprint** and point to `render.yaml`.
+3. Set your production MySQL connection variables (`MYSQL_HOST`, `MYSQL_PORT`, `MYSQL_DATABASE`, `MYSQL_USER`, `MYSQL_PASSWORD`).
+4. Render will execute:
+   - **Build**: `pip install -r backend/requirements.txt && python backend/manage.py migrate && python backend/manage.py collectstatic --noinput`
+   - **Start**: `gunicorn --chdir backend config.wsgi:application --bind 0.0.0.0:$PORT`
+
+---
+
+## 📄 License & Credits
+
+Built with ❤️ for student academic sharing. All rights reserved © 2026 BookBridge.

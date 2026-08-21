@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /api/admin
+Disallow: /django-admin/
+
+Sitemap: https://bookbridge.onrender.com/sitemap.xml

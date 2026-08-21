@@ -1,56 +1,42 @@
 /* ==========================================
    BookBridge - Unified Live Stats Counter Engine
-   Real-time animated counters from database across ALL pages
+   Real-time animated counters purely from the Django database
 ========================================== */
 
 /**
- * Get live statistics by querying the actual database/localStorage
+ * Get live statistics by querying the actual backend API
  * Returns: { students, books, exchanges, donated, saved }
  */
 async function getLiveStats() {
     try {
-        if (window.BookDB && typeof window.BookDB.init === 'function') {
-            await window.BookDB.init();
-        }
-
         // 1. Try public stats endpoint from API first
         if (window.BookAPI && typeof window.BookAPI.getPublicStats === 'function') {
             const apiStats = await window.BookAPI.getPublicStats();
             if (apiStats) return apiStats;
         }
 
-        // 2. Local Storage / Client Database calculation fallback
-        let users = [];
-        let books = [];
+        // 2. Client fallback only if in demo mode
+        if (window.BOOKBRIDGE_DEMO_MODE && window.BookDB) {
+            const users = await window.BookDB.getAllUsers();
+            const books = await window.BookDB.getBooks();
+            const studentUsers = Array.isArray(users) ? users.filter(u => (u.role || '').toUpperCase() === 'STUDENT') : [];
+            const exchangeBooks = Array.isArray(books) ? books.filter(b => b.mode === 'exchange' || Boolean(b.exchange_for)) : [];
+            const donatedBooks = Array.isArray(books) ? books.filter(b => b.mode === 'donate' || b.price === 0) : [];
+            const totalSaved = Array.isArray(books) ? books.reduce((sum, b) => sum + (parseFloat(b.original || b.original_price) || 0), 0) : 0;
 
-        if (window.BookDB && typeof window.BookDB.getAllUsers === 'function') {
-            users = await window.BookDB.getAllUsers();
-            books = await window.BookDB.getBooks();
-        } else {
-            users = JSON.parse(localStorage.getItem('rcti_gtu_users') || '[]');
-            books = JSON.parse(localStorage.getItem('rcti_gtu_lab_manual_books') || '[]');
+            return {
+                students: studentUsers.length,
+                books: books.length,
+                exchanges: exchangeBooks.length,
+                donated: donatedBooks.length,
+                saved: totalSaved
+            };
         }
 
-        const offers = JSON.parse(localStorage.getItem('rcti_gtu_offers') || '[]');
-        const transactions = JSON.parse(localStorage.getItem('rcti_gtu_txs') || '[]');
-
-        const studentUsers = Array.isArray(users) ? users.filter(u => u.role === 'student') : [];
-        const realUsersCount = 1250 + studentUsers.length;
-        const realBooksCount = 480 + ((Array.isArray(books) && books.length > 0) ? books.length : 0);
-        const exchangeBooks = 310 + (Array.isArray(books) ? books.filter(b => b.mode === 'exchange' || Boolean(b.exchangeFor)).length : 0);
-        const donatedBooks = 140 + (Array.isArray(books) ? books.filter(b => b.mode === 'donate' || b.price === 0).length : 0);
-        const totalSaved = Array.isArray(books) ? books.reduce((sum, b) => sum + (parseFloat(b.original || b.original_price) || 0), 0) : 185000;
-
-        return {
-            students: realUsersCount,
-            books: realBooksCount,
-            exchanges: exchangeBooks,
-            donated: donatedBooks,
-            saved: totalSaved
-        };
+        return { students: 0, books: 0, exchanges: 0, donated: 0, saved: 0 };
     } catch (e) {
-        console.error("Error calculating real-time live stats:", e);
-        return { students: 1250, books: 480, exchanges: 310, donated: 140, saved: 185000 };
+        console.error("Error fetching live platform statistics:", e);
+        return { students: 0, books: 0, exchanges: 0, donated: 0, saved: 0 };
     }
 }
 
@@ -64,8 +50,8 @@ function formatStatNumber(num) {
 /**
  * Animate a counter element from start to end value with easing
  */
-function animateValue(element, start, end, duration = 1200) {
-    if (typeof end !== 'number' || isNaN(end)) return;
+function animateValue(element, start, end, duration = 1000) {
+    if (!element || typeof end !== 'number' || isNaN(end)) return;
     if (isNaN(start)) start = 0;
 
     const startTimestamp = performance.now();
@@ -73,7 +59,6 @@ function animateValue(element, start, end, duration = 1200) {
     function step(currentTime) {
         const elapsed = currentTime - startTimestamp;
         const progress = Math.min(elapsed / duration, 1);
-        // Ease-out cubic for smooth deceleration
         const eased = 1 - Math.pow(1 - progress, 3);
         const currentVal = Math.floor(eased * (end - start) + start);
         element.textContent = formatStatNumber(currentVal);
@@ -88,7 +73,6 @@ function animateValue(element, start, end, duration = 1200) {
 
 /**
  * Master function: Update ALL stat counter elements on ANY page with real live data
- * Handles: index.html, about.html, donate.html, exchange.html, dashboard.html, admin.html, etc.
  */
 async function updateLiveStatsUI() {
     const stats = await getLiveStats();
@@ -102,7 +86,6 @@ async function updateLiveStatsUI() {
     if (heroBooksEl) animateValue(heroBooksEl, 0, stats.books);
     if (heroExchangesEl) animateValue(heroExchangesEl, 0, stats.exchanges);
 
-    // Also update data-count attribute for counter animation system
     if (heroStudentsEl) heroStudentsEl.setAttribute('data-count', stats.students);
     if (heroBooksEl) heroBooksEl.setAttribute('data-count', stats.books);
     if (heroExchangesEl) heroExchangesEl.setAttribute('data-count', stats.exchanges);
@@ -157,7 +140,7 @@ async function updateLiveStatsUI() {
 }
 
 /**
- * Dashboard personal stats (based on current logged-in user's books)
+ * Dashboard personal stats
  */
 async function updateDashboardStats(globalStats) {
     const dashMyBooks = document.getElementById('dashMyBooks');
@@ -165,18 +148,18 @@ async function updateDashboardStats(globalStats) {
     const dashExchanges = document.getElementById('dashExchanges');
     const dashDonations = document.getElementById('dashDonations');
 
-    if (!dashMyBooks) return; // Not on dashboard page
+    if (!dashMyBooks) return;
 
     try {
         let myBooks = 0, myWishlist = 0, myExchanges = 0, myDonations = 0;
 
-        const currentUser = JSON.parse(localStorage.getItem('rcti_gtu_current_user') || 'null');
+        const currentUser = await window.BookAPI?.getCurrentUser();
         if (currentUser) {
             let books = [];
-            if (window.BookDB && typeof window.BookDB.getBooks === 'function') {
-                books = await window.BookDB.getBooks();
-            } else {
-                books = JSON.parse(localStorage.getItem('rcti_gtu_lab_manual_books') || '[]');
+            try {
+                books = await window.BookAPI.getBooks({ all: true });
+            } catch (e) {
+                books = [];
             }
 
             if (Array.isArray(books)) {
@@ -186,8 +169,12 @@ async function updateDashboardStats(globalStats) {
                 myDonations = userBooks.filter(b => b.mode === 'donate').length;
             }
 
-            const wishlist = JSON.parse(localStorage.getItem('rcti_gtu_wishlist') || '[]');
-            myWishlist = Array.isArray(wishlist) ? wishlist.length : 0;
+            try {
+                const wishlist = await window.BookAPI.getWishlistIds();
+                myWishlist = Array.isArray(wishlist) ? wishlist.length : 0;
+            } catch (e) {
+                myWishlist = 0;
+            }
         }
 
         animateValue(dashMyBooks, 0, myBooks);
@@ -206,11 +193,7 @@ async function updateCategoryCountsOnly() {
     try {
         let books = [];
         if (window.BookAPI && typeof window.BookAPI.getBooks === 'function') {
-            books = await window.BookAPI.getBooks();
-        } else if (window.BookDB && typeof window.BookDB.getBooks === 'function') {
-            books = await window.BookDB.getBooks();
-        } else {
-            books = JSON.parse(localStorage.getItem('rcti_gtu_lab_manual_books') || '[]');
+            books = await window.BookAPI.getBooks().catch(() => []);
         }
 
         if (Array.isArray(books)) {
@@ -238,14 +221,10 @@ async function updateCategoryCountsOnly() {
     }
 }
 
-// Global hook so other scripts can trigger a stats refresh after book uploads, registrations, etc.
 window.updateLiveStatsUI = updateLiveStatsUI;
 window.getLiveStats = getLiveStats;
 
-// Run on every page load
 document.addEventListener("DOMContentLoaded", () => {
     updateLiveStatsUI();
-
-    // Auto-refresh every 15 seconds for real-time feel
-    setInterval(updateLiveStatsUI, 15000);
+    setInterval(updateLiveStatsUI, 20000);
 });
