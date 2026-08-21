@@ -19,22 +19,21 @@ PROJECT_ROOT = BASE_DIR.parent
 # ---------------------------------------------------------------------------
 # SECURITY
 # ---------------------------------------------------------------------------
-SECRET_KEY = os.environ.get('SECRET_KEY', '')
-DEBUG = os.environ.get('DEBUG', 'True').lower() in ('true', '1', 'yes')
-
-if not DEBUG and not SECRET_KEY:
-    raise RuntimeError(
-        'SECRET_KEY environment variable is required when DEBUG=False. '
-        'Generate one with: python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"'
-    )
-
-# Fallback for local development only
+SECRET_KEY = os.environ.get('SECRET_KEY', '') or os.environ.get('DJANGO_SECRET_KEY', '')
 if not SECRET_KEY:
-    SECRET_KEY = 'django-insecure-dev-only-do-not-use-in-production'
+    import secrets
+    SECRET_KEY = secrets.token_urlsafe(50)
+
+DEBUG = os.environ.get('DEBUG', 'False').lower() in ('true', '1', 'yes')
 
 ALLOWED_HOSTS = [
     h.strip() for h in os.environ.get('ALLOWED_HOSTS', '*').split(',') if h.strip()
 ]
+if '.onrender.com' not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append('.onrender.com')
+if 'book-bridge-2.onrender.com' not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append('book-bridge-2.onrender.com')
+
 # Auto-add Render hostname
 _render_host = os.environ.get('RENDER_EXTERNAL_HOSTNAME')
 if _render_host and _render_host not in ALLOWED_HOSTS:
@@ -183,14 +182,26 @@ USE_TZ = True
 # ---------------------------------------------------------------------------
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
-STATICFILES_DIRS = [PROJECT_ROOT]  # Serve HTML/CSS/JS from repo root
+STATICFILES_DIRS = []
+if (PROJECT_ROOT / 'js').exists():
+    STATICFILES_DIRS.append(('js', PROJECT_ROOT / 'js'))
+if (PROJECT_ROOT / 'css').exists():
+    STATICFILES_DIRS.append(('css', PROJECT_ROOT / 'css'))
+if (PROJECT_ROOT / 'browse_images').exists():
+    STATICFILES_DIRS.append(('browse_images', PROJECT_ROOT / 'browse_images'))
+
+# Root files for direct WhiteNoise serving (e.g. style.css, favicon, logo)
+WHITENOISE_ROOT = PROJECT_ROOT
+WHITENOISE_AUTOREFRESH = DEBUG
+WHITENOISE_USE_FINDERS = True
+
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
-# WhiteNoise static file compression
+# WhiteNoise robust compression storage (avoids missing manifest asset build failures)
 STORAGES = {
     'staticfiles': {
-        'BACKEND': 'whitenoise.storage.CompressedManifestStaticFilesStorage',
+        'BACKEND': 'whitenoise.storage.CompressedStaticFilesStorage',
     },
 }
 
@@ -266,7 +277,7 @@ CORS_ALLOW_CREDENTIALS = True
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 if not DEBUG:
-    SECURE_SSL_REDIRECT = os.environ.get('SECURE_SSL_REDIRECT', 'True').lower() in ('true', '1')
+    SECURE_SSL_REDIRECT = os.environ.get('SECURE_SSL_REDIRECT', 'False').lower() in ('true', '1')
     SECURE_HSTS_SECONDS = 31536000
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
@@ -278,11 +289,11 @@ if not DEBUG:
     SECURE_REFERRER_POLICY = 'strict-origin-when-cross-origin'
 
     # CSRF trusted origins
-    CSRF_TRUSTED_ORIGINS = []
+    CSRF_TRUSTED_ORIGINS = ['https://*.onrender.com', 'https://book-bridge-2.onrender.com']
     _csrf_origins = os.environ.get('CSRF_TRUSTED_ORIGINS', '')
     if _csrf_origins:
-        CSRF_TRUSTED_ORIGINS = [o.strip() for o in _csrf_origins.split(',') if o.strip()]
-    if _render_host:
+        CSRF_TRUSTED_ORIGINS.extend([o.strip() for o in _csrf_origins.split(',') if o.strip()])
+    if _render_host and f'https://{_render_host}' not in CSRF_TRUSTED_ORIGINS:
         CSRF_TRUSTED_ORIGINS.append(f'https://{_render_host}')
 else:
     SECURE_BROWSER_XSS_FILTER = True
