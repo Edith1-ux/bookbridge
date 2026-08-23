@@ -109,29 +109,19 @@ TEMPLATES = [
 WSGI_APPLICATION = 'config.wsgi.application'
 
 # ---------------------------------------------------------------------------
-# DATABASE — MySQL only for local and production environments
-# Mandatory environment variables:
-#   MYSQL_HOST, MYSQL_PORT, MYSQL_DATABASE, MYSQL_USER, MYSQL_PASSWORD
-# Use MySQL in local and production environments. Do not use SQLite in production.
+# DATABASE — Automatic Multi-Engine Support (MySQL / PostgreSQL / SQLite)
+# Supports MYSQL_HOST, DATABASE_URL, or clean SQLite fallback for Render/Cloud deployments.
 # ---------------------------------------------------------------------------
-_mysql_host = os.environ.get('MYSQL_HOST', os.environ.get('MYSQLHOST', '127.0.0.1'))
-_mysql_port = str(os.environ.get('MYSQL_PORT', os.environ.get('MYSQLPORT', '3306')))
-_mysql_db = os.environ.get('MYSQL_DATABASE', os.environ.get('MYSQLDATABASE', 'bookbridge_db'))
-_mysql_user = os.environ.get('MYSQL_USER', os.environ.get('MYSQLUSER', 'root'))
+_database_url = os.environ.get('DATABASE_URL', '') or os.environ.get('MYSQL_URL', '')
+_mysql_host = os.environ.get('MYSQL_HOST', os.environ.get('MYSQLHOST', '')).strip()
+_mysql_port = str(os.environ.get('MYSQL_PORT', os.environ.get('MYSQLPORT', '3306'))).strip()
+_mysql_db = os.environ.get('MYSQL_DATABASE', os.environ.get('MYSQLDATABASE', 'bookbridge_db')).strip()
+_mysql_user = os.environ.get('MYSQL_USER', os.environ.get('MYSQLUSER', 'root')).strip()
 _mysql_password = os.environ.get('MYSQL_PASSWORD', os.environ.get('MYSQLPASSWORD', ''))
 
-# Support cloud MySQL provider URLs (e.g., mysql://user:pass@host:port/dbname)
-_database_url = os.environ.get('MYSQL_URL', os.environ.get('DATABASE_URL', ''))
-if _database_url and ('mysql://' in _database_url or 'mariadb://' in _database_url):
-    import urllib.parse
-    parsed = urllib.parse.urlparse(_database_url)
-    _mysql_host = parsed.hostname or _mysql_host
-    _mysql_port = str(parsed.port or _mysql_port)
-    _mysql_db = parsed.path.lstrip('/') or _mysql_db
-    _mysql_user = parsed.username or _mysql_user
-    _mysql_password = parsed.password or _mysql_password
-
 _is_testing = 'test' in sys.argv or os.environ.get('DJANGO_TEST', '').lower() == 'true'
+_force_mysql = os.environ.get('FORCE_MYSQL', '').lower() in ('true', '1', 'yes')
+_use_sqlite = os.environ.get('USE_SQLITE', '').lower() in ('true', '1', 'yes')
 
 if _is_testing and not os.environ.get('FORCE_MYSQL_TEST'):
     # In-memory test runner for CI / offline test suite execution
@@ -141,13 +131,53 @@ if _is_testing and not os.environ.get('FORCE_MYSQL_TEST'):
             'NAME': ':memory:',
         }
     }
-else:
+elif _use_sqlite:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
+elif _database_url and ('postgres://' in _database_url or 'postgresql://' in _database_url):
+    import urllib.parse
+    parsed = urllib.parse.urlparse(_database_url)
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': parsed.path.lstrip('/') or 'bookbridge_db',
+            'USER': parsed.username or '',
+            'PASSWORD': parsed.password or '',
+            'HOST': parsed.hostname or '',
+            'PORT': str(parsed.port or '5432'),
+            'CONN_MAX_AGE': 600,
+        }
+    }
+elif _database_url and ('mysql://' in _database_url or 'mariadb://' in _database_url):
+    import urllib.parse
+    parsed = urllib.parse.urlparse(_database_url)
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.mysql',
-            'NAME': _mysql_db,
-            'USER': _mysql_user,
-            'PASSWORD': _mysql_password,
+            'NAME': parsed.path.lstrip('/') or 'bookbridge_db',
+            'USER': parsed.username or 'root',
+            'PASSWORD': parsed.password or '',
+            'HOST': parsed.hostname or '127.0.0.1',
+            'PORT': str(parsed.port or '3306'),
+            'OPTIONS': {
+                'charset': 'utf8mb4',
+                'connect_timeout': 5,
+                'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
+            },
+            'CONN_MAX_AGE': 600,
+        }
+    }
+elif _mysql_host and (_force_mysql or _mysql_host not in ('127.0.0.1', 'localhost', '')):
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.mysql',
+            'NAME': _mysql_db or 'bookbridge_db',
+            'USER': _mysql_user or 'root',
+            'PASSWORD': _mysql_password or '',
             'HOST': _mysql_host,
             'PORT': _mysql_port,
             'OPTIONS': {
@@ -156,6 +186,14 @@ else:
                 'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
             },
             'CONN_MAX_AGE': 600,
+        }
+    }
+else:
+    # Default to SQLite if external MySQL is not specified/provided
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
         }
     }
 

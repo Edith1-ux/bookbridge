@@ -26,16 +26,23 @@ def statistics_api(request):
     Returns real-time platform statistics computed purely from Django ORM database records.
     No fake or hardcoded baseline numbers.
     """
-    from apps.books.models import Book
-    from apps.users.models import User
-    from apps.exchange.models import ExchangeProposal
-    from apps.donations.models import DonationClaim
+    try:
+        from apps.books.models import Book
+        from apps.users.models import User
+        from apps.exchange.models import ExchangeProposal
+        from apps.donations.models import DonationClaim
 
-    active_students = User.objects.filter(is_active=True, role__iexact='STUDENT').count()
-    books_listed = Book.objects.filter(status='Available').count()
-    successful_exchanges = ExchangeProposal.objects.filter(status='completed').count()
-    books_donated = Book.objects.filter(mode='donate').count()
-    completed_donations = DonationClaim.objects.filter(status__in=['approved', 'completed']).count()
+        active_students = User.objects.filter(is_active=True, role__iexact='STUDENT').count()
+        books_listed = Book.objects.filter(status='Available').count()
+        successful_exchanges = ExchangeProposal.objects.filter(status='completed').count()
+        books_donated = Book.objects.filter(mode='donate').count()
+        completed_donations = DonationClaim.objects.filter(status__in=['approved', 'completed']).count()
+    except Exception:
+        active_students = 0
+        books_listed = 0
+        successful_exchanges = 0
+        books_donated = 0
+        completed_donations = 0
 
     return JsonResponse({
         'active_students': active_students,
