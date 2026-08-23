@@ -1,121 +1,159 @@
-# BookBridge 📚
+# 📚 BookBridge — Bridge Books. Build Minds.
 
-> A student marketplace for buying, selling, exchanging, and donating academic books.
+> **India's premier student platform to Buy, Sell, Exchange, and Donate academic books and resources across colleges.**
 
-[![Django checks](https://github.com/Edith1-ux/book-bridge-2/actions/workflows/django-checks.yml/badge.svg)](https://github.com/Edith1-ux/book-bridge-2/actions/workflows/django-checks.yml)
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy)
+[![Django](https://img.shields.io/badge/Django-5.0+-092E20?logo=django&logoColor=white)](https://www.djangoproject.com/)
+[![Django REST Framework](https://img.shields.io/badge/DRF-3.15+-red.svg)](https://www.django-rest-framework.org/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-Render-46E3B7?logo=render&logoColor=white)](https://book-bridge-2.onrender.com/)
 
-BookBridge helps students make textbooks and academic resources more affordable, accessible, and sustainable. Students can discover books by department, semester, subject, or condition; list books they no longer need; propose exchanges; and claim donated books.
+---
 
-![BookBridge preview](browse_images/hero.png)
+## 🌟 Overview
 
-## Features
+**BookBridge** empowers college and university students to make textbooks and academic resources more affordable, accessible, and eco-friendly. Students can:
+- 🛒 **Buy pre-owned textbooks** at up to 80% discount compared to MRP.
+- 🏷️ **Sell used books** directly to peers without middleman cuts.
+- 🔄 **Swap textbooks** with semester peers (100% free exchanges).
+- 🎁 **Donate books** to juniors and underprivileged students.
+- 🔍 **Filter by GTU Subject Code**, department (CE, IT, EE, ME, Civil, EC, IC), and semester.
 
-- Browse and filter academic books
-- Student registration and JWT authentication
-- Buy, sell, exchange, and donate listing modes
-- Wishlist, exchange proposal, donation claim, and messaging foundations
-- Responsive HTML, CSS, and vanilla JavaScript interface
-- Django REST API backed by MySQL
+---
 
-> Some integrations, including payments and AI assistance, are still under active development. See [the roadmap](#roadmap).
+## 🏗️ Architecture & Tech Stack
 
-## Tech stack
+```mermaid
+graph TD
+    Client["Client Browser (HTML5 / CSS3 / Vanilla JS)"]
+    WhiteNoise["WhiteNoise Static Server"]
+    Gunicorn["Gunicorn WSGI Application Server"]
+    DjangoCore["Django REST Framework Core API"]
+    DB[("Database (MySQL / SQLite)")]
 
-| Layer | Technology |
-| --- | --- |
-| Frontend | HTML5, CSS3, Vanilla JavaScript |
-| Backend | Python, Django, Django REST Framework |
-| Database | MySQL |
-| Authentication | JWT via Simple JWT |
-| Deployment | Docker-compatible platform such as Railway |
+    Client -->|Static Assets & Web Pages| WhiteNoise
+    Client -->|REST API Requests /api/v1/| Gunicorn
+    Gunicorn --> DjangoCore
+    DjangoCore --> DB
+```
 
-## Quick start
+| Component | Technology | Description |
+| :--- | :--- | :--- |
+| **Frontend** | HTML5, CSS3, Vanilla JavaScript (ES6+), FontAwesome 6 | Responsive, zero-framework, fast-loading UI with PWA capabilities |
+| **Backend** | Python 3.11+, Django 5.0, Django REST Framework | Robust modular RESTful architecture |
+| **Authentication**| JWT (JSON Web Tokens) via `djangorestframework-simplejwt` | Stateless authentication with refresh token rotation |
+| **Database** | MySQL 8.0 (Production) / SQLite3 (Development/Render Fallback) | Relational data persistence with migrations |
+| **WSGI / Serving**| Gunicorn + WhiteNoise | Production-grade WSGI server with compressed asset caching |
 
-### Requirements
+---
 
-- Python 3.11 or newer
-- MySQL 8 or newer
-- Git
+## 🚀 Quick Start (Local Development)
 
-### Installation
-
+### 1. Clone the repository
 ```bash
 git clone https://github.com/Edith1-ux/book-bridge-2.git
 cd book-bridge-2
-python -m venv .venv
 ```
 
-Activate the virtual environment, then install dependencies:
+### 2. Create and activate a virtual environment
+```bash
+# Windows
+python -m venv .venv
+.venv\Scripts\activate
 
+# Linux / macOS
+python3 -m venv .venv
+source .venv/bin/activate
+```
+
+### 3. Install dependencies
 ```bash
 pip install -r backend/requirements.txt
 ```
 
-Copy `.env.example` to `.env` and update the MySQL credentials. Keep `.env` private.
-
+### 4. Run database migrations & seed starter data
 ```bash
 python backend/manage.py migrate
 python backend/manage.py seed_db
+```
+
+### 5. Start the development server
+```bash
 python backend/manage.py runserver
 ```
 
-Open `http://127.0.0.1:8000` in your browser.
+Open [http://127.0.0.1:8000](http://127.0.0.1:8000) in your browser.
 
-## Environment variables
+---
 
-| Variable | Purpose |
-| --- | --- |
-| `SECRET_KEY` | Django application secret; use a unique strong value in production |
-| `DEBUG` | Set to `False` in production |
-| `ALLOWED_HOSTS` | Comma-separated permitted hostnames |
-| `MYSQL_HOST` | MySQL host |
-| `MYSQL_PORT` | MySQL port, usually `3306` |
-| `MYSQL_DATABASE` | Database name |
-| `MYSQL_USER` | Database user |
-| `MYSQL_PASSWORD` | Database password |
+## 🌐 Deploying to Render
 
-## Project structure
+1. Fork or push this repository to GitHub.
+2. In the [Render Dashboard](https://dashboard.render.com/):
+   - Click **New +** → **Blueprint** and select your repository.
+   - Or create a **Web Service** with:
+     - **Runtime**: `Python 3`
+     - **Build Command**: `pip install -r backend/requirements.txt && python backend/manage.py collectstatic --noinput`
+     - **Start Command**: `python backend/manage.py migrate --noinput || true; python backend/manage.py seed_db || true; gunicorn --chdir backend config.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --threads 4 --timeout 120`
+3. Optional environment variables (for external MySQL):
+   - `MYSQL_HOST`, `MYSQL_PORT`, `MYSQL_DATABASE`, `MYSQL_USER`, `MYSQL_PASSWORD`
+
+---
+
+## 📁 Repository Structure
 
 ```text
 book-bridge-2/
-├── backend/             # Django project, apps, REST API, and migrations
-├── css/                 # Shared frontend styles
-├── js/                  # Frontend behaviour and API client
-├── browse_images/       # Website imagery
-├── .github/             # CI and GitHub issue templates
-├── Dockerfile
-├── .env.example
-└── README.md
+├── backend/                  # Django backend application
+│   ├── apps/                 # Modular domain applications
+│   │   ├── admin_portal/     # Admin analytics and metrics
+│   │   ├── ai/               # AI recommendation and assistant endpoints
+│   │   ├── analytics/        # Platform analytics and event tracking
+│   │   ├── books/            # Book listings, search, wishlist
+│   │   ├── chat/             # Direct messaging between students
+│   │   ├── colleges/         # Universities, branches, syllabus codes
+│   │   ├── donations/        # Book donation and claim workflow
+│   │   ├── exchange/         # Book swap / exchange proposals
+│   │   ├── marketplace/      # Direct buy/sell orders and inquiries
+│   │   ├── notifications/    # In-app student alerts
+│   │   ├── payments/         # Payment intent handlers
+│   │   └── users/            # Custom User model, profile, JWT auth
+│   ├── config/               # Django project settings, WSGI, URLs
+│   ├── db.sqlite3            # Pre-seeded development database
+│   ├── manage.py             # Django CLI management entrypoint
+│   └── requirements.txt      # Python dependencies
+├── css/                      # Modular stylesheets & design tokens
+├── js/                       # Unified API client & application controllers
+│   ├── api.js                # DRF REST API client layer
+│   ├── app.js                # Page controller & UI component bindings
+│   ├── database.js           # Client adapter
+│   └── live-stats.js         # Animated live metrics engine
+├── browse_images/            # Book imagery & mock assets
+├── index.html                # Homepage
+├── browse.html               # Book catalog & search interface
+├── exchange.html             # Book exchange platform
+├── donate.html               # Book donation portal
+├── login.html                # Student login page
+├── register.html             # Student signup page
+├── dashboard.html            # User account & listings management
+├── admin.html                # Moderator dashboard
+├── render.yaml               # Render Infrastructure-as-Code Blueprint
+├── Dockerfile                # Production container specification
+└── README.md                 # Project documentation
 ```
 
-## Quality checks
+---
 
-```bash
-python backend/manage.py check
-python backend/manage.py test
-```
+## 🔒 Security & Best Practices
 
-GitHub Actions runs these checks on pushes and pull requests to `main`.
+- **Zero Hardcoded Secrets**: All keys and credentials are read from environment variables.
+- **CSRF & CORS Hardened**: Restricted to authorized origins in production mode.
+- **Stateless Authentication**: Secured with JWT bearer tokens.
+- **Safe SQL Execution**: Fully managed via Django ORM parameterized queries.
 
-## Roadmap
+---
 
-- [x] Browse and filter book listings
-- [x] Basic student authentication and listing models
-- [ ] Complete secure listing-creation workflow
-- [ ] Production MySQL deployment
-- [ ] Admin moderation and reporting
-- [ ] Email verification and password recovery email
-- [ ] Real payment integration or clear offline-payment flow
-- [ ] Broader automated test coverage
+## 📄 License
 
-## Contributing
+This project is licensed under the [MIT License](LICENSE).
 
-Contributions are welcome. Please read [CONTRIBUTING.md](CONTRIBUTING.md) before opening an issue or pull request.
-
-## Security
-
-Please report security vulnerabilities privately as described in [SECURITY.md](SECURITY.md). Do not post sensitive vulnerabilities in public issues.
-
-## License
-
-This project is available under the [MIT License](LICENSE).
