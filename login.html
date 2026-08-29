@@ -28,7 +28,8 @@
       </a>
       <nav class="nav-links" aria-label="Main Navigation">
         <a href="index.html" class="nav-link">Home</a>
-        <a href="browse.html" class="nav-link">Browse</a>
+        <a href="browse.html" class="nav-link">Buy Books</a>
+        <a href="sell.html" class="nav-link">Sell Books</a>
         <a href="exchange.html" class="nav-link">Exchange</a>
         <a href="donate.html" class="nav-link">Donate</a>
         <a href="about.html" class="nav-link">About</a>
@@ -47,7 +48,8 @@
   <div class="mobile-drawer" id="mobileNavDrawer" role="navigation" aria-label="Mobile Navigation">
     <div class="drawer-links">
       <a href="index.html" class="drawer-link">Home <i class="fa-solid fa-chevron-right"></i></a>
-      <a href="browse.html" class="drawer-link">Browse Books <i class="fa-solid fa-chevron-right"></i></a>
+      <a href="browse.html" class="drawer-link">Buy Books <i class="fa-solid fa-chevron-right"></i></a>
+      <a href="sell.html" class="drawer-link">Sell Books <i class="fa-solid fa-chevron-right"></i></a>
       <a href="exchange.html" class="drawer-link">Exchange <i class="fa-solid fa-chevron-right"></i></a>
       <a href="donate.html" class="drawer-link">Donate <i class="fa-solid fa-chevron-right"></i></a>
       <a href="about.html" class="drawer-link">About <i class="fa-solid fa-chevron-right"></i></a>
@@ -91,9 +93,15 @@
       <!-- RIGHT FORM PANEL -->
       <div class="auth-form-panel">
         <div class="auth-form-card">
-          <span class="section-tag">👋 Student Portal</span>
+          <span class="section-tag">🛡️ Verified Campus Login</span>
           <h2>Sign In to Account</h2>
-          <p class="text-small" style="color: var(--color-gray); margin-bottom: 24px;">Enter your credentials to manage your listings and messages</p>
+          <p class="text-small" style="color: var(--color-gray); margin-bottom: 16px;">Enter your credentials to access your student dashboard</p>
+
+          <!-- College Verification Banner -->
+          <div style="display: flex; align-items: center; gap: 10px; background: rgba(62,107,58,0.07); border: 1px solid rgba(62,107,58,0.2); border-radius: 10px; padding: 10px 14px; margin-bottom: 20px; font-size: 13px; color: var(--color-primary-dark);">
+            <i class="fa-solid fa-shield-halved" style="font-size: 16px; color: var(--color-primary); flex-shrink: 0;"></i>
+            <span><strong>Verified Campus Network:</strong> Secure access for verified students and faculty.</span>
+          </div>
 
           <form id="dedicatedLoginForm">
             <!-- Email Field -->

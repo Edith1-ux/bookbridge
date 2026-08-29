@@ -25,6 +25,7 @@ class UserSerializer(serializers.ModelSerializer):
         fields = (
             'id', 'email', 'full_name', 'phone_number',
             'college', 'college_name', 'department', 'department_name',
+            'enrollment_number', 'semester',
             'role', 'avatar_url', 'is_college_verified', 'is_2fa_enabled',
             'date_joined', 'is_active', 'is_staff'
         )
@@ -32,13 +33,16 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class UserRegisterSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(write_only=True, min_length=8)
+    password = serializers.CharField(write_only=True, min_length=6)
     name = serializers.CharField(write_only=True, required=False, allow_blank=True)
     full_name = serializers.CharField(required=False, allow_blank=True)
+    enrollment = serializers.CharField(write_only=True, required=False, allow_blank=True)
+    college_name = serializers.CharField(write_only=True, required=False, allow_blank=True)
+    branch = serializers.CharField(write_only=True, required=False, allow_blank=True)
 
     class Meta:
         model = User
-        fields = ('email', 'password', 'full_name', 'name', 'college', 'department', 'phone_number')
+        fields = ('email', 'password', 'full_name', 'name', 'enrollment', 'college_name', 'branch', 'college', 'department', 'phone_number')
 
     def validate_email(self, value):
         normalized = value.strip().lower()
@@ -55,21 +59,44 @@ class UserRegisterSerializer(serializers.ModelSerializer):
         attrs.pop('name', None)
 
         password = attrs.get('password')
-        if password:
-            try:
-                validate_password(password)
-            except DjangoValidationError as exc:
-                raise serializers.ValidationError({'password': list(exc.messages)})
+        if password and len(password) < 6:
+            raise serializers.ValidationError({'password': 'Password must be at least 6 characters.'})
 
         return attrs
 
     def create(self, validated_data):
+        enrollment = validated_data.pop('enrollment', '').strip()
+        college_name = validated_data.pop('college_name', '').strip()
+        branch = validated_data.pop('branch', '').strip()
+
+        college = validated_data.get('college')
+        department = validated_data.get('department')
+
+        from apps.colleges.models import College, Department
+        if not college and college_name:
+            college, _ = College.objects.get_or_create(
+                name=college_name,
+                defaults={'code': college_name[:10].upper().replace(' ', ''), 'city': 'Gujarat', 'state': 'Gujarat'}
+            )
+
+        if not department and branch and college:
+            department, _ = Department.objects.get_or_create(
+                college=college,
+                code=branch.upper(),
+                defaults={'name': f'{branch.upper()} Department'}
+            )
+
+        # Verified college student if enrollment or college is provided
+        is_verified = bool(enrollment or college)
+
         user = User.objects.create_user(
             email=validated_data['email'],
             password=validated_data['password'],
             full_name=validated_data['full_name'],
-            college=validated_data.get('college'),
-            department=validated_data.get('department'),
+            college=college,
+            department=department,
+            enrollment_number=enrollment or None,
+            is_college_verified=is_verified,
             phone_number=validated_data.get('phone_number', '')
         )
         return user

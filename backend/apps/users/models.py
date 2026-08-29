@@ -40,6 +40,8 @@ class User(AbstractUser):
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='STUDENT', db_index=True)
     
     avatar_url = models.URLField(blank=True, null=True)
+    enrollment_number = models.CharField(max_length=50, blank=True, null=True, db_index=True)
+    semester = models.PositiveIntegerField(default=1, blank=True, null=True)
     is_college_verified = models.BooleanField(default=False, db_index=True)
     is_2fa_enabled = models.BooleanField(default=False)
 

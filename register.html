@@ -19,7 +19,8 @@
       <a href="index.html" class="brand"><div class="brand-icon"><img src="logo.png.jpeg" alt="BookBridge Logo"></div><div><div class="brand-name">BookBridge</div><div class="brand-tagline">Bridge Books. Build Minds.</div></div></a>
       <nav class="nav-links">
         <a href="index.html" class="nav-link">Home</a>
-        <a href="browse.html" class="nav-link">Browse</a>
+        <a href="browse.html" class="nav-link">Buy Books</a>
+        <a href="sell.html" class="nav-link">Sell Books</a>
         <a href="exchange.html" class="nav-link">Exchange</a>
         <a href="donate.html" class="nav-link">Donate</a>
         <a href="about.html" class="nav-link">About</a>
@@ -35,7 +36,8 @@
   <div class="mobile-drawer" id="mobileNavDrawer">
     <div class="drawer-links">
       <a href="index.html" class="drawer-link">Home <i class="fa-solid fa-chevron-right"></i></a>
-      <a href="browse.html" class="drawer-link">Browse <i class="fa-solid fa-chevron-right"></i></a>
+      <a href="browse.html" class="drawer-link">Buy Books <i class="fa-solid fa-chevron-right"></i></a>
+      <a href="sell.html" class="drawer-link">Sell Books <i class="fa-solid fa-chevron-right"></i></a>
       <a href="exchange.html" class="drawer-link">Exchange <i class="fa-solid fa-chevron-right"></i></a>
       <a href="donate.html" class="drawer-link">Donate <i class="fa-solid fa-chevron-right"></i></a>
       <a href="about.html" class="drawer-link">About <i class="fa-solid fa-chevron-right"></i></a>
@@ -50,24 +52,24 @@
       <div class="auth-illustration">
         <div class="auth-illustration-content">
           <span class="auth-emoji">🎓</span>
-          <h2>Join the Community</h2>
-          <p>Create your free account and start exchanging books with thousands of students across India.</p>
+          <h2>Join the Student Community</h2>
+          <p>Create your verified college account to buy, sell, exchange and donate textbooks with zero commission.</p>
           <div style="margin-top: 32px; text-align: left; max-width: 280px; margin-left: auto; margin-right: auto;">
             <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
-              <i class="fa-solid fa-check-circle" style="color: rgba(255,255,255,0.8);"></i>
-              <span style="font-size: 14px; opacity: 0.9;">Free to register and use</span>
+              <i class="fa-solid fa-circle-check" style="color: rgba(255,255,255,0.9);"></i>
+              <span style="font-size: 14px; opacity: 0.95;">Verified College Student Network</span>
             </div>
             <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
-              <i class="fa-solid fa-check-circle" style="color: rgba(255,255,255,0.8);"></i>
-              <span style="font-size: 14px; opacity: 0.9;">Buy, sell, exchange & donate</span>
+              <i class="fa-solid fa-circle-check" style="color: rgba(255,255,255,0.9);"></i>
+              <span style="font-size: 14px; opacity: 0.95;">Direct Campus Handover & UPI</span>
             </div>
             <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
-              <i class="fa-solid fa-check-circle" style="color: rgba(255,255,255,0.8);"></i>
-              <span style="font-size: 14px; opacity: 0.9;">Connect with college community</span>
+              <i class="fa-solid fa-circle-check" style="color: rgba(255,255,255,0.9);"></i>
+              <span style="font-size: 14px; opacity: 0.95;">100% Free Swap & Donations</span>
             </div>
             <div style="display: flex; align-items: center; gap: 12px;">
-              <i class="fa-solid fa-check-circle" style="color: rgba(255,255,255,0.8);"></i>
-              <span style="font-size: 14px; opacity: 0.9;">AI-powered recommendations</span>
+              <i class="fa-solid fa-circle-check" style="color: rgba(255,255,255,0.9);"></i>
+              <span style="font-size: 14px; opacity: 0.95;">GTU & University Syllabus Match</span>
             </div>
           </div>
         </div>
@@ -76,9 +78,20 @@
       <!-- RIGHT FORM -->
       <div class="auth-form-panel">
         <div class="auth-form-card">
-          <span class="section-tag">🆕 Free Account</span>
+          <span class="section-tag">🛡️ Verified Student Account</span>
           <h2>Create Student Account</h2>
-          <p class="text-small" style="color: var(--color-gray);">Fill in your details to get started</p>
+          <p class="text-small" style="color: var(--color-gray); margin-bottom: 20px;">Complete college verification to access student book market</p>
+
+          <!-- Verification Badge -->
+          <div style="background: rgba(62,107,58,0.07); border: 1px solid var(--color-primary-light); border-radius: 12px; padding: 12px 14px; margin-bottom: 20px; display: flex; align-items: center; gap: 12px;">
+            <div style="width: 36px; height: 36px; border-radius: 50%; background: var(--color-primary); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0;">
+              <i class="fa-solid fa-graduation-cap"></i>
+            </div>
+            <div>
+              <div style="font-size: 13px; font-weight: 700; color: var(--color-dark);">Campus Verification Active</div>
+              <div style="font-size: 12px; color: var(--color-gray);" id="collegeVerifyHelpText">Enter your College & Enrollment ID to receive a Verified Student Badge.</div>
+            </div>
+          </div>
 
           <form id="dedicatedRegisterForm">
             <div class="form-group">
@@ -88,29 +101,66 @@
               <div class="form-error">Full name is required</div>
             </div>
 
+            <!-- College Selection -->
+            <div class="form-group">
+              <select id="regCollege" class="form-select" required>
+                <option value="" disabled selected>Select Your College / University *</option>
+                <option value="R. C. Technical Institute (RCTI), Ahmedabad">R. C. Technical Institute (RCTI), Ahmedabad</option>
+                <option value="L. D. College of Engineering (LDCE), Ahmedabad">L. D. College of Engineering (LDCE), Ahmedabad</option>
+                <option value="Vishwakarma Govt Engineering College (VGEC), Chandkheda">Vishwakarma Govt Engg College (VGEC), Chandkheda</option>
+                <option value="Birla Vishvakarma Mahavidyalaya (BVM), Anand">Birla Vishvakarma Mahavidyalaya (BVM), Anand</option>
+                <option value="Govt Engineering College (GEC), Gandhinagar">Govt Engineering College (GEC), Gandhinagar</option>
+                <option value="Dharmsinh Desai University (DDU), Nadiad">Dharmsinh Desai University (DDU), Nadiad</option>
+                <option value="DA-IICT, Gandhinagar">DA-IICT, Gandhinagar</option>
+                <option value="Nirma University, Ahmedabad">Nirma University, Ahmedabad</option>
+                <option value="Gujarat Technological University (GTU) Affiliated">Gujarat Technological University (GTU) Affiliated</option>
+                <option value="Other Engineering College / University">Other Engineering College / University</option>
+              </select>
+            </div>
+
+            <!-- Enrollment Number (College ID) -->
             <div class="form-group">
               <i class="fa-solid fa-id-card form-icon"></i>
               <input type="text" id="regEnrollment" class="form-input form-icon-left" placeholder=" " required>
-              <label class="form-label" style="left: 44px;">Enrollment Number *</label>
-              <div class="form-error">Enter your GTU enrollment number</div>
+              <label class="form-label" style="left: 44px;">College Enrollment / Student ID *</label>
+              <div class="form-error">Enter your GTU or College Enrollment Number</div>
             </div>
 
-            <div class="form-group">
-              <select id="regBranch" class="form-select" required>
-                <option value="" disabled selected>Select Department *</option>
-                <option value="CE">Computer Engineering (CE)</option>
-                <option value="IT">Information Technology (IT)</option>
-                <option value="ICT">ICT</option>
-                <option value="EE">Electrical Engineering (EE)</option>
-                <option value="ME">Mechanical Engineering (ME)</option>
-                <option value="Civil">Civil Engineering</option>
-              </select>
+            <!-- Department & Semester Row -->
+            <div style="display: grid; grid-template-columns: 1.5fr 1fr; gap: 12px;">
+              <div class="form-group">
+                <select id="regBranch" class="form-select" required>
+                  <option value="" disabled selected>Department *</option>
+                  <option value="CE">Computer Engineering (CE)</option>
+                  <option value="IT">Information Technology (IT)</option>
+                  <option value="ICT">ICT</option>
+                  <option value="EE">Electrical Engineering (EE)</option>
+                  <option value="ME">Mechanical Engineering (ME)</option>
+                  <option value="Civil">Civil Engineering</option>
+                  <option value="EC">Electronics & Comm (EC)</option>
+                  <option value="IC">Instrumentation & Control</option>
+                  <option value="General">General / First Year</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <select id="regSemester" class="form-select" required>
+                  <option value="1" selected>Sem 1</option>
+                  <option value="2">Sem 2</option>
+                  <option value="3">Sem 3</option>
+                  <option value="4">Sem 4</option>
+                  <option value="5">Sem 5</option>
+                  <option value="6">Sem 6</option>
+                  <option value="7">Sem 7</option>
+                  <option value="8">Sem 8</option>
+                </select>
+              </div>
             </div>
 
             <div class="form-group">
               <i class="fa-solid fa-envelope form-icon"></i>
               <input type="email" id="regEmail" class="form-input form-icon-left" placeholder=" " required autocomplete="email">
-              <label class="form-label" style="left: 44px;">Email Address *</label>
+              <label class="form-label" style="left: 44px;">College / Personal Email Address *</label>
               <div class="form-error">Enter a valid email address</div>
             </div>
 
@@ -139,12 +189,12 @@
             </label>
 
             <button type="submit" class="btn btn-primary btn-block btn-lg" id="registerSubmitBtn">
-              <i class="fa-solid fa-rocket"></i> Create Account
+              <i class="fa-solid fa-user-check"></i> Verify & Register Account
             </button>
           </form>
 
           <div class="auth-footer-text">
-            Already have an account? <a href="login.html">Login here</a>
+            Already have a verified account? <a href="login.html">Login here</a>
           </div>
         </div>
       </div>

@@ -14,6 +14,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   const path = window.location.pathname.toLowerCase();
   if (path.includes('admin')) initAdminPage();
+  else if (path.includes('sell')) initSellPage();
   else if (path.includes('browse')) initBrowsePage();
   else if (path.includes('exchange')) initExchangePage();
   else if (path.includes('donate')) initDonatePage();
@@ -38,17 +39,17 @@ function registerPWA() {
 /* 🌐 i18n MULTI-LANGUAGE SWITCHER (EN / GU / HI) */
 const I18N_DICTIONARY = {
   en: {
-    home: 'Home', browse: 'Browse', exchange: 'Exchange', donate: 'Donate', about: 'About', contact: 'Contact',
+    home: 'Home', buy: 'Buy Books', sell: 'Sell Books', browse: 'Browse', exchange: 'Exchange', donate: 'Donate', about: 'About', contact: 'Contact',
     welcome: 'Bridge Books. Build Minds.', upload: 'Upload Book', login: 'Login', register: 'Get Started',
     verified: 'Verified Student'
   },
   gu: {
-    home: 'હોમ', browse: 'બ્રાઉઝ કરો', exchange: 'એક્સચેન્જ', donate: 'દાન કરો', about: 'અમારા વિશે', contact: 'સંપર્ક',
+    home: 'હોમ', buy: 'પુસ્તકો ખરીદો', sell: 'પુસ્તકો વેચો', browse: 'બ્રાઉઝ કરો', exchange: 'એક્સચેન્જ', donate: 'દાન કરો', about: 'અમારા વિશે', contact: 'સંપર્ક',
     welcome: 'પુસ્તકો જોડો. મન બનાવો.', upload: 'અપલોડ કરો', login: 'લોગિન', register: 'શરૂ કરો',
     verified: 'પ્રમાણિત વિદ્યાર્થી'
   },
   hi: {
-    home: 'होम', browse: 'ब्राउज़ करें', exchange: 'एक्सचेंज', donate: 'दान करें', about: 'हमारे बारे में', contact: 'संपर्क',
+    home: 'होम', buy: 'किताबें खरीदें', sell: 'किताबें बेचें', browse: 'ब्राउज़ करें', exchange: 'एक्सचेंज', donate: 'दान करें', about: 'हमारे बारे में', contact: 'संपर्क',
     welcome: 'किताबें जोड़ें। विचार बनाएं।', upload: 'अपलोड करें', login: 'लॉगिन', register: 'शुरू करें',
     verified: 'सत्यापित छात्र'
   }
@@ -885,6 +886,88 @@ async function initBrowsePage() {
   fetchAndRender();
 }
 
+/* 🏷️ SELL PAGE */
+async function initSellPage() {
+  const form = document.getElementById('sellPageBookForm');
+  if (!form) return;
+
+  const modeCards = document.querySelectorAll('.sell-mode-card');
+  const priceGroup = document.getElementById('sellPriceGroup');
+  const exchangeGroup = document.getElementById('sellExchangeForGroup');
+  const priceInput = document.getElementById('sellPrice');
+
+  modeCards.forEach(card => {
+    card.addEventListener('click', () => {
+      modeCards.forEach(c => {
+        c.classList.remove('active');
+        c.style.borderColor = 'var(--color-border)';
+        c.style.background = '#fff';
+      });
+      card.classList.add('active');
+      card.style.borderColor = 'var(--color-primary)';
+      card.style.background = 'rgba(62,107,58,0.06)';
+
+      const radio = card.querySelector('input[type="radio"]');
+      if (radio) {
+        radio.checked = true;
+        const val = radio.value;
+        if (val === 'sell') {
+          if (priceGroup) priceGroup.style.display = 'block';
+          if (exchangeGroup) exchangeGroup.style.display = 'none';
+          if (priceInput) priceInput.value = '150';
+        } else if (val === 'exchange') {
+          if (priceGroup) priceGroup.style.display = 'none';
+          if (exchangeGroup) exchangeGroup.style.display = 'block';
+          if (priceInput) priceInput.value = '0';
+        } else if (val === 'donate') {
+          if (priceGroup) priceGroup.style.display = 'none';
+          if (exchangeGroup) exchangeGroup.style.display = 'none';
+          if (priceInput) priceInput.value = '0';
+        }
+      }
+    });
+  });
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const currentUser = await window.BookAPI.getCurrentUser();
+    if (!currentUser) {
+      showToast('Please login to publish your book listing.', 'warning');
+      setTimeout(() => window.location.href = 'login.html?redirect=sell.html', 1000);
+      return;
+    }
+
+    const submitBtn = document.getElementById('btnSubmitSellBook');
+    if (submitBtn) submitBtn.classList.add('btn-loading');
+
+    const selectedMode = form.querySelector('input[name="sellMode"]:checked')?.value || 'sell';
+    const bookData = {
+      title: document.getElementById('sellTitle')?.value.trim() || '',
+      author: document.getElementById('sellAuthor')?.value.trim() || '',
+      branch: document.getElementById('sellBranch')?.value || 'CE',
+      semester: parseInt(document.getElementById('sellSemester')?.value, 10) || 1,
+      gtu_code: document.getElementById('sellGtuCode')?.value.trim() || '',
+      condition: document.getElementById('sellCondition')?.value || 'Good',
+      price: selectedMode === 'sell' ? (parseFloat(priceInput?.value) || 0) : 0,
+      mode: selectedMode,
+      exchange_for: document.getElementById('sellExchangeFor')?.value.trim() || '',
+      location: document.getElementById('sellLocation')?.value || 'Campus Central Library',
+      cover_url: document.getElementById('sellCover')?.value.trim() || '',
+      description: document.getElementById('sellDescription')?.value.trim() || '',
+    };
+
+    try {
+      const saved = await window.BookAPI.addBook(bookData);
+      if (submitBtn) submitBtn.classList.remove('btn-loading');
+      showToast(`Success! "${saved?.title || bookData.title}" is now live on campus.`, 'success');
+      setTimeout(() => window.location.href = 'browse.html', 1200);
+    } catch (err) {
+      if (submitBtn) submitBtn.classList.remove('btn-loading');
+      showToast(err.message || 'Failed to list book. Please check details.', 'danger');
+    }
+  });
+}
+
 /* 🔄 EXCHANGE */
 async function initExchangePage() {
   const grid = document.getElementById('exchangeGrid');
@@ -1033,6 +1116,24 @@ function initLoginPage() {
 function initRegisterPage() {
   const form = document.getElementById('dedicatedRegisterForm');
   const passwordInput = document.getElementById('regPassword');
+  const enrollmentInput = document.getElementById('regEnrollment');
+  const collegeSelect = document.getElementById('regCollege');
+  const helpText = document.getElementById('collegeVerifyHelpText');
+
+  if (enrollmentInput) {
+    enrollmentInput.addEventListener('input', () => {
+      const val = enrollmentInput.value.trim();
+      if (val.length >= 10) {
+        if (helpText) {
+          helpText.innerHTML = '<span style="color: var(--color-primary); font-weight: 600;"><i class="fa-solid fa-circle-check"></i> Valid College Student Enrollment Detected</span>';
+        }
+      } else {
+        if (helpText) {
+          helpText.textContent = 'Enter your College & Enrollment ID to receive a Verified Student Badge.';
+        }
+      }
+    });
+  }
 
   if (passwordInput) {
     passwordInput.addEventListener('input', () => {
@@ -1071,12 +1172,14 @@ function initRegisterPage() {
       full_name: document.getElementById('regName')?.value.trim() || '',
       email: document.getElementById('regEmail')?.value.trim() || '',
       password: document.getElementById('regPassword')?.value.trim() || '',
-      enrollment: document.getElementById('regEnrollment')?.value.trim() || '',
+      college_name: collegeSelect?.value || 'GTU Affiliated College',
+      enrollment: enrollmentInput?.value.trim() || '',
       branch: document.getElementById('regBranch')?.value || 'CE',
+      semester: parseInt(document.getElementById('regSemester')?.value, 10) || 1,
     };
 
     let valid = true;
-    ['regName', 'regEmail', 'regPassword'].forEach(id => {
+    ['regName', 'regEmail', 'regPassword', 'regEnrollment'].forEach(id => {
       const input = document.getElementById(id);
       if (!input || !input.value.trim()) {
         input?.closest('.form-group')?.classList.add('error');
@@ -1084,29 +1187,35 @@ function initRegisterPage() {
       }
     });
 
+    if (collegeSelect && !collegeSelect.value) {
+      collegeSelect.closest('.form-group')?.classList.add('error');
+      valid = false;
+    }
+
     if (!document.getElementById('regTerms')?.checked) {
-      showToast('Please accept the Terms of Service', 'warning');
+      showToast('Please accept the Terms of Service and Privacy Policy', 'warning');
       return;
     }
 
     if (!valid) return;
 
-    submitBtn?.classList.add('btn-loading');
+    if (submitBtn) submitBtn.classList.add('btn-loading');
     try {
       const user = await window.BookAPI.register(userData);
-      submitBtn?.classList.remove('btn-loading');
+      if (submitBtn) submitBtn.classList.remove('btn-loading');
       if (user) {
-        showToast(`Welcome, ${user.name}! Account registered successfully.`, 'success');
+        showToast(`🎉 Verified! Welcome, ${user.name}! Your college account is active.`, 'success');
         setTimeout(() => window.location.href = 'browse.html', 1000);
       }
     } catch (err) {
-      submitBtn?.classList.remove('btn-loading');
+      if (submitBtn) submitBtn.classList.remove('btn-loading');
       showToast(err.message || 'Registration failed. Please check your details.', 'danger');
     }
   });
 
-  document.querySelectorAll('#dedicatedRegisterForm .form-input').forEach(input => {
+  document.querySelectorAll('#dedicatedRegisterForm .form-input, #dedicatedRegisterForm .form-select').forEach(input => {
     input.addEventListener('focus', () => input.closest('.form-group')?.classList.remove('error'));
+    input.addEventListener('change', () => input.closest('.form-group')?.classList.remove('error'));
   });
 }
 
