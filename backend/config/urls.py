@@ -16,6 +16,7 @@ from apps.donations.views import DonationClaimListCreateView, DonationClaimDetai
 from apps.chat.views import ChatMessageListCreateView, ChatInboxView
 from apps.payments.views import CreatePaymentIntentView, WalletBalanceView
 from apps.ai.views import AIRecommendationView, AIAssistantView
+from apps.analytics.views import ActivityLogListView
 
 
 PROJECT_ROOT = Path(settings.BASE_DIR).parent if os.path.basename(str(settings.BASE_DIR)) == 'backend' else Path(settings.BASE_DIR)
@@ -141,6 +142,8 @@ urlpatterns = [
     path('api/admin/stats/', AdminStatsView.as_view()),
     path('api/admin/users', UserListView.as_view(), name='api-admin-users'),
     path('api/admin/users/', UserListView.as_view()),
+    path('api/admin/logs', ActivityLogListView.as_view(), name='api-admin-logs'),
+    path('api/admin/logs/', ActivityLogListView.as_view()),
     path('api/exchanges', ExchangeProposalListCreateView.as_view(), name='api-exchanges'),
     path('api/exchanges/', ExchangeProposalListCreateView.as_view()),
     path('api/exchanges/<uuid:pk>/', ExchangeProposalDetailView.as_view(), name='api-exchange-detail'),

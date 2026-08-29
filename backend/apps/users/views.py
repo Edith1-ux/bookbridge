@@ -24,6 +24,16 @@ class RegisterView(generics.CreateAPIView):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
+        
+        from apps.analytics.models import log_activity
+        log_activity(
+            request=request,
+            user=user,
+            action='REGISTER',
+            title=f"New student registration: {user.full_name or user.email}",
+            details={'email': user.email, 'role': user.role}
+        )
+
         refresh = RefreshToken.for_user(user)
         user_data = UserSerializer(user).data
         return Response({
@@ -61,6 +71,15 @@ class CustomLoginView(APIView):
 
         if not user.is_active:
             return Response({'error': 'Account is inactive. Please contact support.'}, status=status.HTTP_403_FORBIDDEN)
+
+        from apps.analytics.models import log_activity
+        log_activity(
+            request=request,
+            user=user,
+            action='LOGIN',
+            title=f"Student login: {user.full_name or user.email}",
+            details={'email': user.email}
+        )
 
         refresh = RefreshToken.for_user(user)
         return Response({

@@ -94,6 +94,22 @@ class CreatePaymentIntentView(APIView):
         pickup_location = getattr(book, 'location', 'Campus Student Center') if book else 'Designated Campus Meeting Point'
         seller_contact = getattr(book.seller, 'phone_number', None) if book and book.seller else None
 
+        from apps.analytics.models import log_activity
+        log_activity(
+            request=request,
+            user=request.user,
+            action='BUY_REQUEST',
+            title=f"Buy / Handover request for: {book.title if book else 'Academic Resource'} (₹{amount})",
+            details={
+                'book_id': getattr(book, 'id', None),
+                'book_title': getattr(book, 'title', None),
+                'seller_email': getattr(book.seller, 'email', None) if book and book.seller else None,
+                'amount': amount,
+                'gateway': gateway,
+                'pickup_location': pickup_location
+            }
+        )
+
         return Response({
             'status': 'DIRECT_HANDOVER_CONFIRMED',
             'gateway': 'OFFLINE_DIRECT',

@@ -98,6 +98,30 @@ class BookListCreateView(generics.ListCreateAPIView):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
+        book = serializer.instance
+
+        from apps.analytics.models import log_activity
+        action_type = 'BOOK_SELL'
+        if book.mode == 'exchange':
+            action_type = 'BOOK_EXCHANGE'
+        elif book.mode == 'donate':
+            action_type = 'BOOK_DONATE'
+
+        log_activity(
+            request=request,
+            user=request.user,
+            action=action_type,
+            title=f"Book listed ({book.mode.upper()}): {book.title} (₹{book.price})",
+            details={
+                'book_id': book.id,
+                'title': book.title,
+                'mode': book.mode,
+                'price': float(book.price),
+                'branch': book.branch,
+                'semester': book.semester
+            }
+        )
+
         # Return full BookSerializer representation with seller_name
         response_serializer = BookSerializer(serializer.instance, context=self.get_serializer_context())
         return Response(response_serializer.data, status=status.HTTP_201_CREATED)

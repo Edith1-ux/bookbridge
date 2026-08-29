@@ -24,7 +24,20 @@ class ExchangeProposalListCreateView(generics.ListCreateAPIView):
         ).order_by('-created_at')
 
     def perform_create(self, serializer):
-        serializer.save(proposer=self.request.user)
+        instance = serializer.save(proposer=self.request.user)
+        from apps.analytics.models import log_activity
+        log_activity(
+            request=self.request,
+            user=self.request.user,
+            action='EXCHANGE_PROPOSAL',
+            title=f"Exchange proposed for: {instance.target_book.title}",
+            details={
+                'proposal_id': str(instance.id),
+                'target_book_id': instance.target_book.id,
+                'target_book_title': instance.target_book.title,
+                'offered_book_title': instance.offered_book_title or (instance.offered_book.title if instance.offered_book else None)
+            }
+        )
 
 
 class ExchangeProposalDetailView(generics.RetrieveUpdateDestroyAPIView):
@@ -46,6 +59,20 @@ class ExchangeProposalDetailView(generics.RetrieveUpdateDestroyAPIView):
 
     def perform_update(self, serializer):
         instance = serializer.save()
+        
+        from apps.analytics.models import log_activity
+        log_activity(
+            request=self.request,
+            user=self.request.user,
+            action='EXCHANGE_STATUS',
+            title=f"Exchange proposal {instance.status.upper()} for: {instance.target_book.title}",
+            details={
+                'proposal_id': str(instance.id),
+                'status': instance.status,
+                'target_book_title': instance.target_book.title
+            }
+        )
+
         if instance.status == 'completed':
             # Mark the target book and offered book as Exchanged/Sold if appropriate
             target_book = instance.target_book
