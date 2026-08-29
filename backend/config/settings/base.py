@@ -33,6 +33,8 @@ if '.onrender.com' not in ALLOWED_HOSTS:
     ALLOWED_HOSTS.append('.onrender.com')
 if 'book-bridge-2.onrender.com' not in ALLOWED_HOSTS:
     ALLOWED_HOSTS.append('book-bridge-2.onrender.com')
+if 'book-bridge-2-5dbv.onrender.com' not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append('book-bridge-2-5dbv.onrender.com')
 
 # Auto-add Render hostname
 _render_host = os.environ.get('RENDER_EXTERNAL_HOSTNAME')
@@ -328,7 +330,11 @@ if not DEBUG:
     SECURE_REFERRER_POLICY = 'strict-origin-when-cross-origin'
 
     # CSRF trusted origins
-    CSRF_TRUSTED_ORIGINS = ['https://*.onrender.com', 'https://book-bridge-2.onrender.com']
+    CSRF_TRUSTED_ORIGINS = [
+        'https://*.onrender.com',
+        'https://book-bridge-2.onrender.com',
+        'https://book-bridge-2-5dbv.onrender.com'
+    ]
     _csrf_origins = os.environ.get('CSRF_TRUSTED_ORIGINS', '')
     if _csrf_origins:
         CSRF_TRUSTED_ORIGINS.extend([o.strip() for o in _csrf_origins.split(',') if o.strip()])
