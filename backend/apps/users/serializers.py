@@ -89,10 +89,11 @@ class UserRegisterSerializer(serializers.ModelSerializer):
         # Verified college student if enrollment or college is provided
         is_verified = bool(enrollment or college)
 
+        clean_email = validated_data['email'].strip().lower()
         user = User.objects.create_user(
-            email=validated_data['email'],
+            email=clean_email,
             password=validated_data['password'],
-            full_name=validated_data['full_name'],
+            full_name=validated_data['full_name'].strip(),
             college=college,
             department=department,
             enrollment_number=enrollment or None,

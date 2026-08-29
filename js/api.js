@@ -276,12 +276,17 @@ window.BookAPI = {
   // ── AUTH ───────────────────────────────────────────────────────────────
 
   async register(userData) {
-    const fullName = userData.full_name || userData.name || '';
+    const fullName = (userData.full_name || userData.name || '').trim();
+    const cleanEmail = (userData.email || '').trim().toLowerCase();
     const payload = {
       full_name: fullName,
       name: fullName,
-      email: userData.email,
+      email: cleanEmail,
       password: userData.password,
+      college_name: userData.college_name || '',
+      enrollment: userData.enrollment || '',
+      branch: userData.branch || 'CE',
+      semester: userData.semester || 1,
       phone_number: userData.phone_number || userData.phone || userData.whatsapp || '',
     };
 
@@ -303,8 +308,10 @@ window.BookAPI = {
   },
 
   async login(email, password) {
+    const cleanEmail = (email || '').trim().toLowerCase();
+    const cleanPassword = (password || '').trim();
     try {
-      const data = await _post('/login/', { email, password });
+      const data = await _post('/login/', { email: cleanEmail, password: cleanPassword });
       if (data.token || data.access) {
         _setTokens(data.access || data.token, data.refresh);
       }
@@ -314,7 +321,7 @@ window.BookAPI = {
     } catch (e) {
       if (isDemoMode() && window.BookDB) {
         console.warn('[BookAPI] Demo mode login fallback', e.message);
-        return window.BookDB.login(email, password);
+        return window.BookDB.login(cleanEmail, cleanPassword);
       }
       throw e;
     }

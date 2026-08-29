@@ -56,18 +56,22 @@ class CustomLoginView(APIView):
         if not email or not password:
             return Response({'error': 'Email and password are required.'}, status=status.HTTP_400_BAD_REQUEST)
 
-        user = authenticate(request, email=email, password=password)
-        if user is None:
-            # Check if user exists but case differs
-            try:
-                u = User.objects.get(email__iexact=email)
-                if u.check_password(password):
-                    user = u
-            except User.DoesNotExist:
-                user = None
+        # Robust case-insensitive user lookup and authentication
+        user = None
+        try:
+            u = User.objects.filter(email__iexact=email).first()
+            if u and u.check_password(password):
+                user = u
+        except Exception:
+            user = None
 
         if user is None:
-            return Response({'error': 'Invalid email or password.'}, status=status.HTTP_401_UNAUTHORIZED)
+            user = authenticate(request, email=email, password=password)
+        if user is None:
+            user = authenticate(request, username=email, password=password)
+
+        if user is None:
+            return Response({'error': 'Invalid email or password. Please check your credentials.'}, status=status.HTTP_401_UNAUTHORIZED)
 
         if not user.is_active:
             return Response({'error': 'Account is inactive. Please contact support.'}, status=status.HTTP_403_FORBIDDEN)
