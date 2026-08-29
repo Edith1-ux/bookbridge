@@ -3,7 +3,7 @@ services:
     name: book-bridge-2
     env: python
     buildCommand: "pip install -r backend/requirements.txt && python backend/manage.py collectstatic --noinput"
-    startCommand: "python backend/manage.py migrate --noinput || true; python backend/manage.py seed_db || true; gunicorn --chdir backend config.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --threads 4 --timeout 120"
+    startCommand: "python backend/manage.py migrate --noinput || true; gunicorn --chdir backend config.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --threads 4 --timeout 120"
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.0
