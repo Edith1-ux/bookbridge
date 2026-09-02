@@ -19,3 +19,7 @@ PyMySQL>=1.1.0
 
 # Required by Django ImageField.
 Pillow>=10.3.0
+
+# Cloud Object Storage (S3 / R2 / S3-compatible)
+django-storages>=1.14.2
+boto3>=1.34.0

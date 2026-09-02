@@ -131,3 +131,46 @@ class BookAPITests(TestCase):
         data = res.json()
         self.assertEqual(data['active_students'], 2)
         self.assertEqual(data['books_listed'], 1)
+
+    def test_valid_image_upload_success(self):
+        import io
+        from PIL import Image
+        from django.core.files.uploadedfile import SimpleUploadedFile
+
+        image_io = io.BytesIO()
+        image = Image.new('RGB', (100, 100), color='blue')
+        image.save(image_io, format='JPEG')
+        image_file = SimpleUploadedFile("cover.jpg", image_io.getvalue(), content_type="image/jpeg")
+
+        self.client.force_authenticate(user=self.seller)
+        payload = {
+            'title': 'Computer Networks 6th Edition',
+            'author': 'Andrew S. Tanenbaum',
+            'branch': 'CE',
+            'semester': 5,
+            'price': 450,
+            'mode': 'sell',
+            'cover_image': image_file,
+        }
+        res = self.client.post(self.books_url, payload, format='multipart')
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+        data = res.json()
+        self.assertTrue(data['cover_image'])
+
+    def test_invalid_file_extension_rejected(self):
+        from django.core.files.uploadedfile import SimpleUploadedFile
+
+        fake_exe = SimpleUploadedFile("malicious.exe", b"binary content", content_type="application/octet-stream")
+        self.client.force_authenticate(user=self.seller)
+        payload = {
+            'title': 'Test Book',
+            'author': 'Test Author',
+            'branch': 'CE',
+            'semester': 1,
+            'price': 100,
+            'mode': 'sell',
+            'cover_image': fake_exe,
+        }
+        res = self.client.post(self.books_url, payload, format='multipart')
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('cover_image', res.json())
