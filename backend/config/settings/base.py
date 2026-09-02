@@ -19,7 +19,9 @@ PROJECT_ROOT = BASE_DIR.parent
 # ---------------------------------------------------------------------------
 # SECURITY
 # ---------------------------------------------------------------------------
-DEBUG = os.environ.get('DEBUG', 'False').lower() in ('true', '1', 'yes')
+# Default to True in local development; default to False in production (Render/Cloud)
+_is_prod = bool(os.environ.get('RENDER') or os.environ.get('RENDER_EXTERNAL_HOSTNAME') or os.environ.get('PRODUCTION'))
+DEBUG = os.environ.get('DEBUG', 'False' if _is_prod else 'True').lower() in ('true', '1', 'yes')
 
 SECRET_KEY = os.environ.get('SECRET_KEY', '') or os.environ.get('DJANGO_SECRET_KEY', '')
 if not SECRET_KEY:
