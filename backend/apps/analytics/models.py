@@ -32,6 +32,10 @@ class ActivityLog(models.Model):
     class Meta:
         db_table = 'activity_logs'
         ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['action', 'created_at'], name='actlog_act_created_idx'),
+            models.Index(fields=['user', 'created_at'], name='actlog_usr_created_idx'),
+        ]
 
     def __str__(self):
         return f"[{self.action}] {self.user_email or 'Anonymous'}: {self.title} ({self.created_at})"

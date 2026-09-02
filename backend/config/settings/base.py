@@ -243,6 +243,37 @@ else:
         },
     }
 
+# ---------------------------------------------------------------------------
+# CACHE CONFIGURATION (Redis with LocMemCache fallback)
+# ---------------------------------------------------------------------------
+if _redis_url:
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+            'LOCATION': _redis_url,
+            'KEY_PREFIX': 'bookbridge',
+            'TIMEOUT': 300,
+        }
+    }
+elif _redis_host:
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+            'LOCATION': f'redis://{_redis_host}:{_redis_port}/1',
+            'KEY_PREFIX': 'bookbridge',
+            'TIMEOUT': 300,
+        }
+    }
+else:
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+            'LOCATION': 'bookbridge-locmem-cache',
+            'KEY_PREFIX': 'bookbridge',
+            'TIMEOUT': 300,
+        }
+    }
+
 
 # Custom User Model
 AUTH_USER_MODEL = 'users.User'

@@ -24,6 +24,11 @@ class ExchangeProposal(models.Model):
     class Meta:
         db_table = 'exchange_proposals'
         ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['status', 'created_at'], name='exch_status_created_idx'),
+            models.Index(fields=['proposer', 'status'], name='exch_proposer_status_idx'),
+            models.Index(fields=['target_book', 'status'], name='exch_target_status_idx'),
+        ]
 
     def __str__(self):
         return f"Swap proposal by {self.proposer.full_name} for {self.target_book.title} ({self.status})"

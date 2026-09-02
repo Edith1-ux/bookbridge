@@ -176,8 +176,26 @@ async function _request(method, path, body = null, params = {}, retryOn401 = tru
   return await res.json().catch(() => ({ success: true }));
 }
 
+const _inFlightGetRequests = new Map();
+
 async function _get(path, params = {}) {
-  return await _request('GET', path, null, params);
+  const qs = new URLSearchParams(params).toString();
+  const cacheKey = `${path}${qs ? '?' + qs : ''}`;
+
+  if (_inFlightGetRequests.has(cacheKey)) {
+    return _inFlightGetRequests.get(cacheKey);
+  }
+
+  const promise = (async () => {
+    try {
+      return await _request('GET', path, null, params);
+    } finally {
+      _inFlightGetRequests.delete(cacheKey);
+    }
+  })();
+
+  _inFlightGetRequests.set(cacheKey, promise);
+  return promise;
 }
 
 async function _post(path, body = {}) {

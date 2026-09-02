@@ -53,6 +53,11 @@ class User(AbstractUser):
     class Meta:
         db_table = 'users'
         ordering = ['-date_joined']
+        indexes = [
+            models.Index(fields=['role', 'is_active'], name='user_role_active_idx'),
+            models.Index(fields=['college', 'is_active'], name='user_college_active_idx'),
+            models.Index(fields=['date_joined'], name='user_date_joined_idx'),
+        ]
 
     def __str__(self):
         return f"{self.full_name} ({self.email}) - {self.role}"

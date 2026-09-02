@@ -90,6 +90,11 @@ class Listing(models.Model):
     class Meta:
         db_table = 'marketplace_listings'
         ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['listing_type', 'status'], name='mkt_type_status_idx'),
+            models.Index(fields=['resource', 'status'], name='mkt_resource_status_idx'),
+            models.Index(fields=['seller', 'status'], name='mkt_seller_status_idx'),
+        ]
 
     def __str__(self):
         return f"Listing: {self.resource.title} ({self.listing_type}) - ₹{self.price}"

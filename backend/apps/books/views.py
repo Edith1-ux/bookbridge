@@ -10,22 +10,36 @@ from apps.exchange.models import ExchangeProposal
 from apps.donations.models import DonationClaim
 
 
+from django.core.cache import cache
+from django.db.models import Count, Q
+
+
 class StatisticsAPIView(APIView):
     """
     GET /api/statistics/
     GET /api/v1/statistics/
-    Production-ready endpoint returning real-time platform statistics from Django ORM.
+    Production-ready endpoint returning real-time platform statistics from Django ORM with caching.
     """
     permission_classes = [permissions.AllowAny]
 
     def get(self, request):
+        cache_key = 'bookbridge_public_platform_statistics'
+        cached_data = cache.get(cache_key)
+        if cached_data:
+            return Response(cached_data, status=status.HTTP_200_OK)
+
         active_students = User.objects.filter(is_active=True, role__iexact='STUDENT').count()
-        books_listed = Book.objects.filter(status='Available').count()
+        book_stats = Book.objects.aggregate(
+            books_listed=Count('id', filter=Q(status='Available')),
+            books_donated=Count('id', filter=Q(mode='donate'))
+        )
+        books_listed = book_stats['books_listed'] or 0
+        books_donated = book_stats['books_donated'] or 0
+
         successful_exchanges = ExchangeProposal.objects.filter(status='completed').count()
-        books_donated = Book.objects.filter(mode='donate').count()
         completed_donations = DonationClaim.objects.filter(status__in=['approved', 'completed']).count()
 
-        return Response({
+        payload = {
             "active_students": active_students,
             "books_listed": books_listed,
             "successful_exchanges": successful_exchanges,
@@ -35,31 +49,52 @@ class StatisticsAPIView(APIView):
             "books": books_listed,
             "exchanges": successful_exchanges,
             "donated": books_donated,
-        }, status=status.HTTP_200_OK)
+        }
+        cache.set(cache_key, payload, timeout=30)
+        return Response(payload, status=status.HTTP_200_OK)
 
 
 class BookStatsView(APIView):
     permission_classes = [permissions.AllowAny]
 
     def get(self, request):
-        active_students = User.objects.filter(is_active=True, role__iexact='STUDENT').count()
-        books_listed = Book.objects.filter(status='Available').count()
-        successful_exchanges = ExchangeProposal.objects.filter(status='completed').count()
-        books_donated = Book.objects.filter(mode='donate').count()
+        cache_key = 'bookbridge_book_stats_overview'
+        cached_data = cache.get(cache_key)
+        if cached_data:
+            return Response(cached_data, status=status.HTTP_200_OK)
 
-        return Response({
+        user_stats = User.objects.aggregate(
+            total_users=Count('id'),
+            active_students=Count('id', filter=Q(is_active=True, role__iexact='STUDENT'))
+        )
+        book_stats = Book.objects.aggregate(
+            total_books=Count('id'),
+            books_listed=Count('id', filter=Q(status='Available')),
+            books_donated=Count('id', filter=Q(mode='donate'))
+        )
+        successful_exchanges = ExchangeProposal.objects.filter(status='completed').count()
+
+        active_students = user_stats['active_students'] or 0
+        books_listed = book_stats['books_listed'] or 0
+        books_donated = book_stats['books_donated'] or 0
+        total_users = user_stats['total_users'] or 0
+        total_listings = book_stats['total_books'] or 0
+
+        payload = {
             'active_students': active_students,
             'books_listed': books_listed,
             'successful_exchanges': successful_exchanges,
             'books_donated': books_donated,
-            'totalUsers': User.objects.count(),
-            'totalListings': Book.objects.count(),
+            'totalUsers': total_users,
+            'totalListings': total_listings,
             'successfulExchanges': successful_exchanges,
             'students': active_students,
             'books': books_listed,
             'exchanges': successful_exchanges,
             'donated': books_donated,
-        }, status=status.HTTP_200_OK)
+        }
+        cache.set(cache_key, payload, timeout=30)
+        return Response(payload, status=status.HTTP_200_OK)
 
 
 class BookListCreateView(generics.ListCreateAPIView):

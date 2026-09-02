@@ -44,6 +44,16 @@ class Book(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['status', 'mode'], name='book_status_mode_idx'),
+            models.Index(fields=['branch', 'semester'], name='book_branch_sem_idx'),
+            models.Index(fields=['gtu_code'], name='book_gtu_code_idx'),
+            models.Index(fields=['created_at'], name='book_created_at_idx'),
+            models.Index(fields=['seller'], name='book_seller_idx'),
+        ]
+
     def __str__(self):
         return f"{self.title} - {self.branch} ({self.mode.upper()})"
 

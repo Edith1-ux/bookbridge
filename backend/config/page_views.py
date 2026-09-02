@@ -23,19 +23,31 @@ def serve_html_page(filename):
 
 def statistics_api(request):
     """
-    Returns real-time platform statistics computed purely from Django ORM database records.
+    Returns real-time platform statistics computed purely from Django ORM database records with caching.
     No fake or hardcoded baseline numbers.
     """
+    from django.core.cache import cache
+    cache_key = 'bookbridge_public_platform_statistics'
+    cached = cache.get(cache_key)
+    if cached:
+        return JsonResponse(cached)
+
     try:
+        from django.db.models import Count, Q
         from apps.books.models import Book
         from apps.users.models import User
         from apps.exchange.models import ExchangeProposal
         from apps.donations.models import DonationClaim
 
         active_students = User.objects.filter(is_active=True, role__iexact='STUDENT').count()
-        books_listed = Book.objects.filter(status='Available').count()
+        book_stats = Book.objects.aggregate(
+            books_listed=Count('id', filter=Q(status='Available')),
+            books_donated=Count('id', filter=Q(mode='donate'))
+        )
+        books_listed = book_stats['books_listed'] or 0
+        books_donated = book_stats['books_donated'] or 0
+
         successful_exchanges = ExchangeProposal.objects.filter(status='completed').count()
-        books_donated = Book.objects.filter(mode='donate').count()
         completed_donations = DonationClaim.objects.filter(status__in=['approved', 'completed']).count()
     except Exception:
         active_students = 0
@@ -44,7 +56,7 @@ def statistics_api(request):
         books_donated = 0
         completed_donations = 0
 
-    return JsonResponse({
+    payload = {
         'active_students': active_students,
         'books_listed': books_listed,
         'successful_exchanges': successful_exchanges,
@@ -54,4 +66,7 @@ def statistics_api(request):
         'books': books_listed,
         'exchanges': successful_exchanges,
         'donated': books_donated,
-    })
+    }
+    cache.set(cache_key, payload, timeout=30)
+    return JsonResponse(payload)
+

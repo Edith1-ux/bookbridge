@@ -74,6 +74,7 @@ class Course(models.Model):
     class Meta:
         db_table = 'courses'
         unique_together = ('department', 'code')
+        ordering = ['department', 'semester', 'code']
 
     def __str__(self):
         return f"{self.code}: {self.name} (Sem {self.semester})"

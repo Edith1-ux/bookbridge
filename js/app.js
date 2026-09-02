@@ -1287,8 +1287,17 @@ async function initAdminPage() {
     });
   });
 
-  // ── Tab Router ────────────────────────────────────────────────────────────
-  window._loadAdminTab = function(tabName) {
+  // ── Tab Router with 30s Caching ──────────────────────────────────────────
+  const _adminTabLastLoaded = {};
+  const TAB_CACHE_TTL_MS = 30000;
+
+  window._loadAdminTab = function(tabName, force = false) {
+    const now = Date.now();
+    if (!force && _adminTabLastLoaded[tabName] && (now - _adminTabLastLoaded[tabName] < TAB_CACHE_TTL_MS)) {
+      return; // Already loaded and fresh
+    }
+    _adminTabLastLoaded[tabName] = now;
+
     switch (tabName) {
       case 'dashboard':
         loadDashboardStats();

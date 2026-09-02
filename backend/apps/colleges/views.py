@@ -21,7 +21,7 @@ class DepartmentViewSet(viewsets.ModelViewSet):
 
 
 class CourseViewSet(viewsets.ModelViewSet):
-    queryset = Course.objects.select_related('department').all()
+    queryset = Course.objects.select_related('department', 'department__college').all()
     serializer_class = CourseSerializer
     permission_classes = [IsAdminOrReadOnly]
     filterset_fields = ['department', 'semester', 'code']

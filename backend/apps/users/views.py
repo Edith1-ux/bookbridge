@@ -193,27 +193,56 @@ class AdminStatsView(APIView):
     permission_classes = [permissions.IsAuthenticated, IsBookBridgeAdmin]
 
     def get(self, request):
-        total_users = User.objects.count()
-        active_users = User.objects.filter(is_active=True).count()
-        inactive_users = User.objects.filter(is_active=False).count()
-        student_users = User.objects.filter(role__iexact='STUDENT').count()
-        faculty_users = User.objects.filter(role__iexact='FACULTY').count()
-        admin_users = User.objects.filter(role__in=['SUPER_ADMIN', 'COLLEGE_ADMIN', 'DEPT_ADMIN', 'ADMIN']).count()
+        from django.db.models import Count, Q
 
-        total_books = Book.objects.count()
-        available_books = Book.objects.filter(status='Available').count()
-        sold_books = Book.objects.filter(status__iexact='Sold').count()
-        exchanged_books = Book.objects.filter(status__iexact='Exchanged').count()
-        donated_books = Book.objects.filter(status__iexact='Donated').count()
+        user_stats = User.objects.aggregate(
+            total_users=Count('id'),
+            active_users=Count('id', filter=Q(is_active=True)),
+            inactive_users=Count('id', filter=Q(is_active=False)),
+            student_users=Count('id', filter=Q(role__iexact='STUDENT')),
+            faculty_users=Count('id', filter=Q(role__iexact='FACULTY')),
+            admin_users=Count('id', filter=Q(role__in=['SUPER_ADMIN', 'COLLEGE_ADMIN', 'DEPT_ADMIN', 'ADMIN'])),
+        )
 
-        active_swaps = ExchangeProposal.objects.filter(status='pending').count()
-        completed_swaps = ExchangeProposal.objects.filter(status='completed').count()
-        total_claims = DonationClaim.objects.count()
-        approved_donations = DonationClaim.objects.filter(status__in=['approved', 'completed']).count()
+        book_stats = Book.objects.aggregate(
+            total_books=Count('id'),
+            available_books=Count('id', filter=Q(status='Available')),
+            sold_books=Count('id', filter=Q(status__iexact='Sold')),
+            exchanged_books=Count('id', filter=Q(status__iexact='Exchanged')),
+            donated_books=Count('id', filter=Q(status__iexact='Donated')),
+        )
+
+        swap_stats = ExchangeProposal.objects.aggregate(
+            active_swaps=Count('id', filter=Q(status='pending')),
+            completed_swaps=Count('id', filter=Q(status='completed')),
+        )
+
+        donation_stats = DonationClaim.objects.aggregate(
+            total_claims=Count('id'),
+            approved_donations=Count('id', filter=Q(status__in=['approved', 'completed'])),
+        )
 
         total_colleges = College.objects.count()
         total_departments = Department.objects.count()
         total_courses = Course.objects.count()
+
+        total_users = user_stats['total_users']
+        active_users = user_stats['active_users']
+        inactive_users = user_stats['inactive_users']
+        student_users = user_stats['student_users']
+        faculty_users = user_stats['faculty_users']
+        admin_users = user_stats['admin_users']
+
+        total_books = book_stats['total_books']
+        available_books = book_stats['available_books']
+        sold_books = book_stats['sold_books']
+        exchanged_books = book_stats['exchanged_books']
+        donated_books = book_stats['donated_books']
+
+        active_swaps = swap_stats['active_swaps']
+        completed_swaps = swap_stats['completed_swaps']
+        total_claims = donation_stats['total_claims']
+        approved_donations = donation_stats['approved_donations']
 
         # Recent records
         recent_users = list(User.objects.order_by('-date_joined')[:5].values('id', 'full_name', 'email', 'role', 'is_active', 'date_joined'))
