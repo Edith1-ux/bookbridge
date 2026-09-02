@@ -58,28 +58,30 @@ class ExchangeProposalDetailView(generics.RetrieveUpdateDestroyAPIView):
         )
 
     def perform_update(self, serializer):
-        instance = serializer.save()
-        
-        from apps.analytics.models import log_activity
-        log_activity(
-            request=self.request,
-            user=self.request.user,
-            action='EXCHANGE_STATUS',
-            title=f"Exchange proposal {instance.status.upper()} for: {instance.target_book.title}",
-            details={
-                'proposal_id': str(instance.id),
-                'status': instance.status,
-                'target_book_title': instance.target_book.title
-            }
-        )
+        from django.db import transaction
+        with transaction.atomic():
+            instance = serializer.save()
+            
+            from apps.analytics.models import log_activity
+            log_activity(
+                request=self.request,
+                user=self.request.user,
+                action='EXCHANGE_STATUS',
+                title=f"Exchange proposal {instance.status.upper()} for: {instance.target_book.title}",
+                details={
+                    'proposal_id': str(instance.id),
+                    'status': instance.status,
+                    'target_book_title': instance.target_book.title
+                }
+            )
 
-        if instance.status == 'completed':
-            # Mark the target book and offered book as Exchanged/Sold if appropriate
-            target_book = instance.target_book
-            target_book.status = 'Exchanged'
-            target_book.save(update_fields=['status'])
+            if instance.status == 'completed':
+                # Mark the target book and offered book as Exchanged/Sold if appropriate
+                target_book = instance.target_book
+                target_book.status = 'Exchanged'
+                target_book.save(update_fields=['status'])
 
-            if instance.offered_book:
-                offered_book = instance.offered_book
-                offered_book.status = 'Exchanged'
-                offered_book.save(update_fields=['status'])
+                if instance.offered_book:
+                    offered_book = instance.offered_book
+                    offered_book.status = 'Exchanged'
+                    offered_book.save(update_fields=['status'])

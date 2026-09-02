@@ -54,22 +54,24 @@ class DonationClaimDetailView(generics.RetrieveUpdateDestroyAPIView):
         ).select_related('claimer', 'book', 'book__seller')
 
     def perform_update(self, serializer):
-        instance = serializer.save()
-        
-        from apps.analytics.models import log_activity
-        log_activity(
-            request=self.request,
-            user=self.request.user,
-            action='DONATION_STATUS',
-            title=f"Donation claim {instance.status.upper()} for: {instance.book.title}",
-            details={
-                'claim_id': instance.id,
-                'status': instance.status,
-                'book_title': instance.book.title
-            }
-        )
+        from django.db import transaction
+        with transaction.atomic():
+            instance = serializer.save()
+            
+            from apps.analytics.models import log_activity
+            log_activity(
+                request=self.request,
+                user=self.request.user,
+                action='DONATION_STATUS',
+                title=f"Donation claim {instance.status.upper()} for: {instance.book.title}",
+                details={
+                    'claim_id': instance.id,
+                    'status': instance.status,
+                    'book_title': instance.book.title
+                }
+            )
 
-        if instance.status == 'completed':
-            book = instance.book
-            book.status = 'Donated'
-            book.save(update_fields=['status'])
+            if instance.status == 'completed':
+                book = instance.book
+                book.status = 'Donated'
+                book.save(update_fields=['status'])

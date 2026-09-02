@@ -5,8 +5,12 @@ from apps.users.models import User
 from apps.books.models import Book
 
 
+from django.core.cache import cache
+
+
 class BookAPITests(TestCase):
     def setUp(self):
+        cache.clear()
         self.client = APIClient()
         self.books_url = '/api/books/'
         self.stats_url = '/api/statistics'

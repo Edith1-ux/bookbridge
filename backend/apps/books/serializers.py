@@ -44,6 +44,26 @@ class BookCreateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Price cannot be negative.")
         return value
 
+    def validate_cover_image(self, value):
+        if value:
+            max_size = 5 * 1024 * 1024  # 5MB
+            if value.size > max_size:
+                raise serializers.ValidationError("Cover image file size cannot exceed 5MB.")
+            ext = value.name.split('.')[-1].lower() if '.' in value.name else ''
+            if ext not in ['jpg', 'jpeg', 'png', 'webp']:
+                raise serializers.ValidationError("Cover image must be a valid JPG, PNG, or WebP image.")
+        return value
+
+    def validate_pdf_file(self, value):
+        if value:
+            max_size = 15 * 1024 * 1024  # 15MB
+            if value.size > max_size:
+                raise serializers.ValidationError("PDF file size cannot exceed 15MB.")
+            ext = value.name.split('.')[-1].lower() if '.' in value.name else ''
+            if ext not in ['pdf']:
+                raise serializers.ValidationError("Document must be a valid PDF file.")
+        return value
+
 
 class WishlistSerializer(serializers.ModelSerializer):
     book_details = BookSerializer(source='book', read_only=True)
