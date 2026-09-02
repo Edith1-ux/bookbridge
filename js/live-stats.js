@@ -9,30 +9,10 @@
  */
 async function getLiveStats() {
     try {
-        // 1. Try public stats endpoint from API first
         if (window.BookAPI && typeof window.BookAPI.getPublicStats === 'function') {
             const apiStats = await window.BookAPI.getPublicStats();
             if (apiStats) return apiStats;
         }
-
-        // 2. Client fallback only if in demo mode
-        if (window.BOOKBRIDGE_DEMO_MODE && window.BookDB) {
-            const users = await window.BookDB.getAllUsers();
-            const books = await window.BookDB.getBooks();
-            const studentUsers = Array.isArray(users) ? users.filter(u => (u.role || '').toUpperCase() === 'STUDENT') : [];
-            const exchangeBooks = Array.isArray(books) ? books.filter(b => b.mode === 'exchange' || Boolean(b.exchange_for)) : [];
-            const donatedBooks = Array.isArray(books) ? books.filter(b => b.mode === 'donate' || b.price === 0) : [];
-            const totalSaved = Array.isArray(books) ? books.reduce((sum, b) => sum + (parseFloat(b.original || b.original_price) || 0), 0) : 0;
-
-            return {
-                students: studentUsers.length,
-                books: books.length,
-                exchanges: exchangeBooks.length,
-                donated: donatedBooks.length,
-                saved: totalSaved
-            };
-        }
-
         return { students: 0, books: 0, exchanges: 0, donated: 0, saved: 0 };
     } catch (e) {
         console.error("Error fetching live platform statistics:", e);

@@ -36,10 +36,6 @@ function _authHeaders(extra = {}) {
   };
 }
 
-function isDemoMode() {
-  return Boolean(window.BOOKBRIDGE_DEMO_MODE);
-}
-
 const REQUEST_TIMEOUT_MS = 15000;
 let _isRefreshingToken = false;
 let _tokenRefreshPromise = null;
@@ -370,30 +366,14 @@ window.BookAPI = {
   // ── BOOKS ──────────────────────────────────────────────────────────────
 
   async getBooks(filters = {}) {
-    try {
-      const data = await _get('/books', filters);
-      const list = Array.isArray(data) ? data : (data.results || []);
-      return list.map(_normaliseBook);
-    } catch (e) {
-      if (isDemoMode() && window.BookDB) {
-        console.warn('[BookAPI] Demo mode fallback', e.message);
-        return window.BookDB.getBooks(filters);
-      }
-      throw e;
-    }
+    const data = await _get('/books', filters);
+    const list = Array.isArray(data) ? data : (data.results || []);
+    return list.map(_normaliseBook);
   },
 
   async getBookById(id) {
-    try {
-      const data = await _get(`/books/${id}/`);
-      return _normaliseBook(data);
-    } catch (e) {
-      if (isDemoMode() && window.BookDB) {
-        const local = await window.BookDB.getBookById(id);
-        if (local) return _normaliseBook(local);
-      }
-      throw e;
-    }
+    const data = await _get(`/books/${id}/`);
+    return _normaliseBook(data);
   },
 
   async addBook(bookData) {
@@ -420,27 +400,12 @@ window.BookAPI = {
       pdf_url: bookData.pdf_url || '',
     };
 
-    try {
-      const saved = await _post('/books/', payload);
-      return _normaliseBook(saved);
-    } catch (e) {
-      if (isDemoMode() && window.BookDB) {
-        console.warn('[BookAPI] Demo mode addBook fallback', e.message);
-        return window.BookDB.addBook(bookData);
-      }
-      throw e;
-    }
+    const saved = await _post('/books/', payload);
+    return _normaliseBook(saved);
   },
 
   async deleteBook(id) {
-    try {
-      return await _delete(`/books/${id}/`);
-    } catch (e) {
-      if (isDemoMode() && window.BookDB) {
-        return window.BookDB.deleteBook(id);
-      }
-      throw e;
-    }
+    return await _delete(`/books/${id}/`);
   },
 
   // ── AUTH ───────────────────────────────────────────────────────────────
@@ -460,42 +425,26 @@ window.BookAPI = {
       phone_number: userData.phone_number || userData.phone || userData.whatsapp || '',
     };
 
-    try {
-      const data = await _post('/register/', payload);
-      if (data.token || data.access) {
-        _setTokens(data.access || data.token, data.refresh);
-      }
-      const user = _normaliseUser(data.user);
-      _currentUserCache = user;
-      return user;
-    } catch (e) {
-      if (isDemoMode() && window.BookDB) {
-        console.warn('[BookAPI] Demo mode register fallback', e.message);
-        return window.BookDB.register(userData);
-      }
-      throw e;
+    const data = await _post('/register/', payload);
+    if (data.token || data.access) {
+      _setTokens(data.access || data.token, data.refresh);
     }
+    const user = _normaliseUser(data.user);
+    _currentUserCache = user;
+    return user;
   },
 
   async login(email, password) {
     const cleanEmail = (email || '').trim().toLowerCase();
     const cleanPassword = (password || '').trim();
-    try {
-      const data = await _post('/login/', { email: cleanEmail, password: cleanPassword });
-      if (data.token || data.access) {
-        _setTokens(data.access || data.token, data.refresh);
-      }
-      const user = _normaliseUser(data.user);
-      _currentUserCache = user;
-      localStorage.setItem('rcti_gtu_current_user', JSON.stringify(user));
-      return user;
-    } catch (e) {
-      if (isDemoMode() && window.BookDB) {
-        console.warn('[BookAPI] Demo mode login fallback', e.message);
-        return window.BookDB.login(cleanEmail, cleanPassword);
-      }
-      throw e;
+    const data = await _post('/login/', { email: cleanEmail, password: cleanPassword });
+    if (data.token || data.access) {
+      _setTokens(data.access || data.token, data.refresh);
     }
+    const user = _normaliseUser(data.user);
+    _currentUserCache = user;
+    localStorage.setItem('rcti_gtu_current_user', JSON.stringify(user));
+    return user;
   },
 
   async getCurrentUser() {
@@ -542,9 +491,6 @@ window.BookAPI = {
         saved: data.saved || 0,
       };
     } catch (e) {
-      if (isDemoMode() && window.BookDB) {
-        return window.BookDB.getStats ? window.BookDB.getStats() : null;
-      }
       return null;
     }
   },
@@ -552,14 +498,7 @@ window.BookAPI = {
   // ── ADMIN SUITE & MANAGEMENT ───────────────────────────────────────────
 
   async getAdminStats() {
-    try {
-      return await _get('/admin/stats/');
-    } catch (e) {
-      if (isDemoMode() && window.BookDB) {
-        return window.BookDB.getAdminStats();
-      }
-      throw e;
-    }
+    return await _get('/admin/stats/');
   },
 
   async getAdminAnalytics() {
@@ -571,16 +510,9 @@ window.BookAPI = {
   },
 
   async getAllUsers(filters = {}) {
-    try {
-      const data = await _get('/admin/users/', filters);
-      const list = Array.isArray(data) ? data : (data.results || []);
-      return list.map(_normaliseUser);
-    } catch (e) {
-      if (isDemoMode() && window.BookDB) {
-        return window.BookDB.getAllUsers();
-      }
-      throw e;
-    }
+    const data = await _get('/admin/users/', filters);
+    const list = Array.isArray(data) ? data : (data.results || []);
+    return list.map(_normaliseUser);
   },
 
   async getAdminUsers(filters = {}) {
@@ -748,18 +680,11 @@ window.BookAPI = {
   // ── MESSAGES ───────────────────────────────────────────────────────────
 
   async sendMessage(receiverEmail, text, bookTitle = '') {
-    try {
-      return await _post('/messages/', {
-        receiver_email: receiverEmail,
-        text,
-        book_title: bookTitle,
-      });
-    } catch (e) {
-      if (isDemoMode() && window.BookDB) {
-        return window.BookDB.sendMessage(receiverEmail, text, bookTitle);
-      }
-      throw e;
-    }
+    return await _post('/messages/', {
+      receiver_email: receiverEmail,
+      text,
+      book_title: bookTitle,
+    });
   },
 
   async getMessages(targetEmail = null) {
@@ -767,9 +692,6 @@ window.BookAPI = {
       const params = targetEmail ? { with: targetEmail } : {};
       return await _get('/messages/', params);
     } catch (e) {
-      if (isDemoMode() && window.BookDB) {
-        return window.BookDB.getMessages(targetEmail);
-      }
       return [];
     }
   },
@@ -777,15 +699,8 @@ window.BookAPI = {
   // ── WISHLIST ───────────────────────────────────────────────────────────
 
   async toggleWishlist(bookId) {
-    try {
-      const res = await _post('/wishlist/toggle/', { book_id: bookId });
-      return res.added;
-    } catch (e) {
-      if (isDemoMode() && window.BookDB) {
-        return window.BookDB.toggleWishlist(bookId);
-      }
-      throw e;
-    }
+    const res = await _post('/wishlist/toggle/', { book_id: bookId });
+    return res.added;
   },
 
   async getWishlistBooks() {
@@ -794,9 +709,6 @@ window.BookAPI = {
       const list = Array.isArray(data) ? data : (data.results || []);
       return list.map(item => _normaliseBook(item.book_details || item.book));
     } catch (e) {
-      if (isDemoMode() && window.BookDB) {
-        return window.BookDB.getWishlistBooks();
-      }
       return [];
     }
   },
@@ -820,14 +732,7 @@ window.BookAPI = {
       note: swapData.note || '',
     };
 
-    try {
-      return await _post('/exchanges/', payload);
-    } catch (e) {
-      if (isDemoMode() && window.BookDB) {
-        return window.BookDB.proposeExchange(swapData);
-      }
-      throw e;
-    }
+    return await _post('/exchanges/', payload);
   },
 
   async getExchangeProposals() {
@@ -851,14 +756,7 @@ window.BookAPI = {
       message: typeof message === 'string' ? message : (message.message || ''),
     };
 
-    try {
-      return await _post('/donations/', payload);
-    } catch (e) {
-      if (isDemoMode() && window.BookDB) {
-        return window.BookDB.claimDonation(bookId, message);
-      }
-      throw e;
-    }
+    return await _post('/donations/', payload);
   },
 
   async getDonationClaims() {
@@ -891,9 +789,6 @@ window.BookAPI = {
       const list = Array.isArray(data) ? data : (data.results || []);
       return list.map(_normaliseBook);
     } catch (e) {
-      if (isDemoMode() && window.BookDB) {
-        return window.BookDB.getAIRecommendations(branch, semester);
-      }
       return [];
     }
   },
