@@ -137,3 +137,39 @@ class AdminStatsView(APIView):
 
 
 ProfileView = UserProfileView
+
+
+class LogoutView(APIView):
+    """
+    Secure logout endpoint:
+    1. Blacklists the SimpleJWT refresh token server-side if provided.
+    2. Logs the logout event for audit trails.
+    3. Handles expired or missing tokens gracefully without throwing errors.
+    """
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        refresh_token = request.data.get('refresh') or request.data.get('refresh_token')
+        if refresh_token:
+            try:
+                token = RefreshToken(refresh_token)
+                token.blacklist()
+            except Exception:
+                # Expired, already blacklisted, or malformed token - handled safely
+                pass
+
+        if request.user and request.user.is_authenticated:
+            try:
+                from apps.analytics.models import log_activity
+                log_activity(
+                    request=request,
+                    user=request.user,
+                    action='LOGOUT',
+                    title=f"User logout: {request.user.full_name or request.user.email}",
+                    details={'email': request.user.email}
+                )
+            except Exception:
+                pass
+
+        return Response({'message': 'Logged out successfully'}, status=status.HTTP_200_OK)
+

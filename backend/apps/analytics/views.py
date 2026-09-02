@@ -25,7 +25,7 @@ class ActivityLogListView(generics.ListAPIView):
 
 class StudentEngagementDashboardView(APIView):
     """Business Intelligence Telemetry: Student engagement, popular resources, demand forecasting."""
-    permission_classes = [permissions.IsAdminUser]
+    permission_classes = [permissions.IsAuthenticated, IsBookBridgeAdmin]
 
     def get(self, request):
         return Response({

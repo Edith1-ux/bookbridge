@@ -317,6 +317,7 @@ window.BookAPI = {
       }
       const user = _normaliseUser(data.user);
       _currentUserCache = user;
+      localStorage.setItem('rcti_gtu_current_user', JSON.stringify(user));
       return user;
     } catch (e) {
       if (isDemoMode() && window.BookDB) {
@@ -335,6 +336,7 @@ window.BookAPI = {
         const profile = await _get('/profile/');
         const user = _normaliseUser(profile);
         _currentUserCache = user;
+        localStorage.setItem('rcti_gtu_current_user', JSON.stringify(user));
         return user;
       } catch (e) {
         _clearTokens();
@@ -344,8 +346,17 @@ window.BookAPI = {
   },
 
   async logout() {
+    const refreshToken = localStorage.getItem('bb_refresh_token');
+    if (refreshToken) {
+      try {
+        await _post('/logout/', { refresh: refreshToken }).catch(() => {});
+      } catch (e) {
+        // Continue clearing client tokens even if network fails
+      }
+    }
     _currentUserCache = null;
     _clearTokens();
+    localStorage.removeItem('admin_mode');
   },
 
   // ── PUBLIC STATS ───────────────────────────────────────────────────────

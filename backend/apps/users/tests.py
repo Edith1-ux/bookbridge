@@ -118,3 +118,39 @@ class UserAuthenticationTests(TestCase):
         self.assertEqual(res_stats.status_code, status.HTTP_200_OK)
         self.assertIn('totalUsers', res_stats.data)
         self.assertIn('totalListings', res_stats.data)
+
+    def test_privilege_escalation_attempt_prevented(self):
+        self.client.force_authenticate(user=self.student_user)
+        payload = {
+            'role': 'SUPER_ADMIN',
+            'is_staff': True,
+            'is_superuser': True,
+            'is_college_verified': True,
+            'full_name': 'Hacker Student'
+        }
+        res = self.client.patch(self.profile_url, payload, format='json')
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+
+        self.student_user.refresh_from_db()
+        self.assertEqual(self.student_user.full_name, 'Hacker Student')
+        self.assertEqual(self.student_user.role, 'STUDENT')
+        self.assertFalse(self.student_user.is_staff)
+        self.assertFalse(self.student_user.is_superuser)
+        self.assertFalse(self.student_user.is_college_verified)
+
+    def test_logout_blacklists_refresh_token(self):
+        login_res = self.client.post(self.login_url, {
+            'email': 'student@rcti.ac.in',
+            'password': 'StrongPassword123!'
+        }, format='json')
+        self.assertEqual(login_res.status_code, status.HTTP_200_OK)
+        refresh_token = login_res.data['refresh']
+
+        # Call logout endpoint
+        logout_res = self.client.post('/api/logout/', {'refresh': refresh_token}, format='json')
+        self.assertEqual(logout_res.status_code, status.HTTP_200_OK)
+
+        # Verify token cannot be refreshed anymore
+        refresh_attempt = self.client.post('/api/token/refresh/', {'refresh': refresh_token}, format='json')
+        self.assertEqual(refresh_attempt.status_code, status.HTTP_401_UNAUTHORIZED)
+

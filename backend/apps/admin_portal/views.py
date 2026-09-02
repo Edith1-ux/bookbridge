@@ -2,11 +2,12 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import permissions
 from apps.core.feature_flags import FeatureFlagEngine
+from apps.users.permissions import IsBookBridgeAdmin
 
 
 class AdminOverviewView(APIView):
     """Enterprise Admin Portal overview: Feature flags, moderation queue, audit logs."""
-    permission_classes = [permissions.IsAdminUser]
+    permission_classes = [permissions.IsAuthenticated, IsBookBridgeAdmin]
 
     def get(self, request):
         return Response({

@@ -201,7 +201,6 @@
             <input type="checkbox" id="adminRememberCheck" checked style="accent-color: #6366f1;">
             Keep Session Unlocked
           </label>
-          <span class="admin-hint-badge" title="Default passcode for testing"><i class="fa-solid fa-key"></i> Passcode: <code>admin123</code></span>
         </div>
 
         <button type="submit" id="btnAdminUnlock" class="btn btn-primary btn-block btn-lg" style="height: 48px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 10px; background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); border: none; border-radius: 10px; width: 100%; color: white; cursor: pointer;">
@@ -553,16 +552,24 @@
       const btnLock = document.getElementById('btnAdminLock');
       const card = overlay?.querySelector('.admin-auth-card');
 
-      function checkAdminSession() {
+      function isBookBridgeAdmin(user) {
+        if (!user) return false;
+        const role = (user.role || '').toUpperCase();
+        return ['SUPER_ADMIN', 'COLLEGE_ADMIN', 'DEPT_ADMIN', 'ADMIN'].includes(role) || Boolean(user.is_staff || user.is_superuser);
+      }
+
+      async function checkAdminSession() {
         try {
-          const user = JSON.parse(localStorage.getItem('rcti_gtu_current_user') || 'null');
-          const token = localStorage.getItem('bb_access_token');
-          const adminMode = localStorage.getItem('admin_mode');
-          if (user && user.role === 'admin' && token && adminMode === 'true') {
-            unlockDashboard(user, false);
-            return true;
+          if (window.BookAPI && typeof window.BookAPI.getCurrentUser === 'function') {
+            const user = await window.BookAPI.getCurrentUser();
+            if (user && isBookBridgeAdmin(user)) {
+              unlockDashboard(user, false);
+              return true;
+            }
           }
-        } catch (e) {}
+        } catch (e) {
+          console.warn('[Admin Gate] Session check error:', e.message);
+        }
         lockDashboard();
         return false;
       }
@@ -573,7 +580,6 @@
           overlay.style.display = 'flex';
         }
         if (mainContent) mainContent.style.display = 'none';
-        localStorage.setItem('admin_mode', 'false');
       }
 
       function unlockDashboard(userObj, isNewLogin = true) {
@@ -582,7 +588,6 @@
           setTimeout(() => { overlay.style.display = 'none'; }, 300);
         }
         if (mainContent) mainContent.style.display = 'block';
-        localStorage.setItem('admin_mode', 'true');
         
         // Trigger admin data load if function exists
         if (typeof initAdminPage === 'function') {
@@ -611,7 +616,7 @@
         if (typeof showToast === 'function') showToast('🔒 Admin Panel Locked', 'info');
       });
 
-      // Login Form Submit (Password Check)
+      // Login Form Submit (Server-Side Authentication Check)
       loginForm?.addEventListener('submit', async (e) => {
         e.preventDefault();
         const email = emailInput.value.trim();
@@ -620,45 +625,28 @@
         alertBox.style.display = 'none';
         unlockBtn.disabled = true;
         const btnSpan = unlockBtn.querySelector('span');
-        if (btnSpan) btnSpan.textContent = 'Verifying Password...';
+        if (btnSpan) btnSpan.textContent = 'Verifying Credentials...';
 
         try {
-          let authenticatedUser = null;
-
-          // Master passcode verification (admin123, admin, bookbridge2026) or API login
-          if (password === 'admin123' || password === 'admin' || password === 'bookbridge2026') {
-            authenticatedUser = {
-              id: 'usr-admin-master',
-              name: 'GTU System Admin',
-              email: email || 'admin@rcti.ac.in',
-              role: 'admin'
-            };
-            localStorage.setItem('bb_access_token', 'admin-token-' + Date.now());
-          } else if (window.BookAPI && typeof window.BookAPI.login === 'function') {
-            try {
-              const resUser = await window.BookAPI.login(email, password);
-              if (resUser && resUser.role === 'admin') {
-                authenticatedUser = resUser;
-              }
-            } catch(err) {
-              console.warn('[Admin Gate] Login API error:', err.message);
-            }
+          if (!window.BookAPI || typeof window.BookAPI.login !== 'function') {
+            throw new Error('API service unavailable.');
           }
 
-          if (authenticatedUser) {
-            localStorage.setItem('rcti_gtu_current_user', JSON.stringify(authenticatedUser));
-            localStorage.setItem('admin_mode', 'true');
-            unlockDashboard(authenticatedUser, true);
+          const resUser = await window.BookAPI.login(email, password);
+          if (resUser && isBookBridgeAdmin(resUser)) {
+            unlockDashboard(resUser, true);
           } else {
-            // Password Error
-            alertText.textContent = 'Invalid admin password. (Default passcode: admin123)';
+            // Valid user credentials, but not an admin
+            alertText.textContent = 'Access Denied: Your account does not possess administrator privileges.';
             alertBox.style.display = 'flex';
             card?.classList.add('shake');
             setTimeout(() => card?.classList.remove('shake'), 500);
           }
         } catch (err) {
-          alertText.textContent = 'Authentication error: ' + err.message;
+          alertText.textContent = err.message || 'Invalid administrator email or password.';
           alertBox.style.display = 'flex';
+          card?.classList.add('shake');
+          setTimeout(() => card?.classList.remove('shake'), 500);
         } finally {
           unlockBtn.disabled = false;
           if (btnSpan) btnSpan.textContent = 'Unlock Admin Panel';

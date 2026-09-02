@@ -8,8 +8,9 @@ from django.conf.urls.static import static
 from django.http import HttpResponse, JsonResponse
 from django.db import connection
 
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from config.page_views import serve_html_page, statistics_api
-from apps.users.views import RegisterView, CustomLoginView, UserListView, AdminStatsView, UserProfileView
+from apps.users.views import RegisterView, CustomLoginView, UserListView, AdminStatsView, UserProfileView, LogoutView
 from apps.books.views import BookListCreateView, BookDetailView, WishlistListView, WishlistToggleView, StatisticsAPIView
 from apps.exchange.views import ExchangeProposalListCreateView, ExchangeProposalDetailView
 from apps.donations.views import DonationClaimListCreateView, DonationClaimDetailView
@@ -130,6 +131,12 @@ urlpatterns = [
     path('api/register/', RegisterView.as_view()),
     path('api/login', CustomLoginView.as_view(), name='api-login'),
     path('api/login/', CustomLoginView.as_view()),
+    path('api/logout', LogoutView.as_view(), name='api-logout'),
+    path('api/logout/', LogoutView.as_view()),
+    path('api/token/login/', TokenObtainPairView.as_view(), name='api-token-login'),
+    path('api/token/login', TokenObtainPairView.as_view()),
+    path('api/token/refresh/', TokenRefreshView.as_view(), name='api-token-refresh'),
+    path('api/token/refresh', TokenRefreshView.as_view()),
     path('api/profile', UserProfileView.as_view(), name='api-profile'),
     path('api/profile/', UserProfileView.as_view()),
     path('api/books', BookListCreateView.as_view(), name='api-books'),

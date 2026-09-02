@@ -19,12 +19,15 @@ PROJECT_ROOT = BASE_DIR.parent
 # ---------------------------------------------------------------------------
 # SECURITY
 # ---------------------------------------------------------------------------
+DEBUG = os.environ.get('DEBUG', 'False').lower() in ('true', '1', 'yes')
+
 SECRET_KEY = os.environ.get('SECRET_KEY', '') or os.environ.get('DJANGO_SECRET_KEY', '')
 if not SECRET_KEY:
-    import secrets
-    SECRET_KEY = secrets.token_urlsafe(50)
-
-DEBUG = os.environ.get('DEBUG', 'False').lower() in ('true', '1', 'yes')
+    if DEBUG or 'test' in sys.argv or os.environ.get('DJANGO_TEST', '').lower() == 'true':
+        SECRET_KEY = 'django-insecure-dev-only-secret-key-do-not-use-in-production'
+    else:
+        from django.core.exceptions import ImproperlyConfigured
+        raise ImproperlyConfigured("The SECRET_KEY environment variable must be set in production (DEBUG=False).")
 
 ALLOWED_HOSTS = [
     h.strip() for h in os.environ.get('ALLOWED_HOSTS', '*').split(',') if h.strip()
@@ -279,7 +282,7 @@ REST_FRAMEWORK = {
 }
 
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(hours=2),
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=30),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
     'ROTATE_REFRESH_TOKENS': True,
     'BLACKLIST_AFTER_ROTATION': True,

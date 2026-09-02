@@ -27,9 +27,25 @@ class UserSerializer(serializers.ModelSerializer):
             'college', 'college_name', 'department', 'department_name',
             'enrollment_number', 'semester',
             'role', 'avatar_url', 'is_college_verified', 'is_2fa_enabled',
-            'date_joined', 'is_active', 'is_staff'
+            'date_joined', 'is_active', 'is_staff', 'is_superuser'
         )
-        read_only_fields = ('id', 'is_college_verified', 'date_joined', 'is_staff')
+        read_only_fields = (
+            'id', 'email', 'role', 'is_staff', 'is_superuser',
+            'is_college_verified', 'is_2fa_enabled', 'date_joined', 'is_active'
+        )
+
+    def validate(self, attrs):
+        request = self.context.get('request')
+        user = getattr(request, 'user', None)
+        is_admin = user and (
+            user.is_staff or user.is_superuser or
+            getattr(user, 'role', '').upper() in ('SUPER_ADMIN', 'COLLEGE_ADMIN', 'DEPT_ADMIN', 'ADMIN')
+        )
+        # Prevent non-admin users from altering security-sensitive attributes
+        if not is_admin:
+            for sensitive_field in ('role', 'is_staff', 'is_superuser', 'is_college_verified', 'is_2fa_enabled', 'is_active'):
+                attrs.pop(sensitive_field, None)
+        return attrs
 
 
 class UserRegisterSerializer(serializers.ModelSerializer):
