@@ -10,7 +10,8 @@ from django.db import connection
 
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from config.page_views import serve_html_page, statistics_api
-from apps.users.views import RegisterView, CustomLoginView, UserListView, AdminStatsView, UserProfileView, LogoutView
+from apps.users.views import RegisterView, CustomLoginView, UserListView, UserAdminDetailView, AdminStatsView, UserProfileView, LogoutView
+from apps.admin_portal.views import AdminOverviewView, AdminAnalyticsView, AdminSystemHealthView, AdminBroadcastNotificationView, AdminReportExportView
 from apps.books.views import BookListCreateView, BookDetailView, WishlistListView, WishlistToggleView, StatisticsAPIView
 from apps.exchange.views import ExchangeProposalListCreateView, ExchangeProposalDetailView
 from apps.donations.views import DonationClaimListCreateView, DonationClaimDetailView
@@ -32,13 +33,34 @@ def health_check(request):
     except Exception:
         db_ok = False
 
+    http_status = 200 if db_ok else 503
     return JsonResponse({
         'status': 'healthy' if db_ok else 'degraded',
         'service': 'BookBridge Enterprise Django Engine',
         'version': '2.0.0',
         'database_connected': db_ok,
         'demo_mode': getattr(settings, 'DEMO_MODE', False),
-    }, status=200)
+    }, status=http_status)
+
+
+def health_liveness(request):
+    """Liveness probe: verifies the application worker process is alive and accepting requests."""
+    return JsonResponse({'status': 'alive', 'service': 'BookBridge'}, status=200)
+
+
+def health_readiness(request):
+    """Readiness probe: verifies critical dependencies (database) are operational."""
+    db_ok = True
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT 1")
+    except Exception:
+        db_ok = False
+
+    if db_ok:
+        return JsonResponse({'status': 'ready', 'database': 'connected'}, status=200)
+    else:
+        return JsonResponse({'status': 'unready', 'database': 'disconnected'}, status=503)
 
 
 def serve_robots_txt(request):
@@ -94,6 +116,10 @@ urlpatterns = [
     path('sitemap.xml', serve_sitemap_xml, name='sitemap-xml'),
     path('api/health', health_check, name='api-health'),
     path('api/health/', health_check),
+    path('api/health/liveness', health_liveness, name='api-health-liveness'),
+    path('api/health/liveness/', health_liveness),
+    path('api/health/readiness', health_readiness, name='api-health-readiness'),
+    path('api/health/readiness/', health_readiness),
 
     # ── Root HTML Pages ───────────────────────────────────────────────────────
     path('', serve_html_page('index.html'), name='home-page'),
@@ -149,6 +175,18 @@ urlpatterns = [
     path('api/admin/stats/', AdminStatsView.as_view()),
     path('api/admin/users', UserListView.as_view(), name='api-admin-users'),
     path('api/admin/users/', UserListView.as_view()),
+    path('api/admin/users/<uuid:pk>/', UserAdminDetailView.as_view(), name='api-admin-user-detail'),
+    path('api/admin/users/<uuid:pk>', UserAdminDetailView.as_view()),
+    path('api/admin/overview', AdminOverviewView.as_view(), name='api-admin-overview'),
+    path('api/admin/overview/', AdminOverviewView.as_view()),
+    path('api/admin/analytics', AdminAnalyticsView.as_view(), name='api-admin-analytics'),
+    path('api/admin/analytics/', AdminAnalyticsView.as_view()),
+    path('api/admin/system-health', AdminSystemHealthView.as_view(), name='api-admin-system-health'),
+    path('api/admin/system-health/', AdminSystemHealthView.as_view()),
+    path('api/admin/broadcast', AdminBroadcastNotificationView.as_view(), name='api-admin-broadcast'),
+    path('api/admin/broadcast/', AdminBroadcastNotificationView.as_view()),
+    path('api/admin/export', AdminReportExportView.as_view(), name='api-admin-export'),
+    path('api/admin/export/', AdminReportExportView.as_view()),
     path('api/admin/logs', ActivityLogListView.as_view(), name='api-admin-logs'),
     path('api/admin/logs/', ActivityLogListView.as_view()),
     path('api/exchanges', ExchangeProposalListCreateView.as_view(), name='api-exchanges'),

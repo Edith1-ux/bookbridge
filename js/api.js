@@ -5,7 +5,9 @@
  * ==========================================================================
  */
 
-const API_BASE = '/api';
+const API_BASE = (typeof window !== 'undefined' && (window.location.protocol === 'file:' || (window.location.port && window.location.port !== '8000' && window.location.port !== '80' && window.location.port !== '443')))
+  ? 'http://127.0.0.1:8000/api'
+  : '/api';
 let _currentUserCache = null;
 
 // ── Token helpers ──────────────────────────────────────────────────────────
@@ -38,100 +40,160 @@ function isDemoMode() {
   return Boolean(window.BOOKBRIDGE_DEMO_MODE);
 }
 
-// ── Generic fetch helpers with clean error reporting ───────────────────────
+const REQUEST_TIMEOUT_MS = 15000;
+let _isRefreshingToken = false;
+let _tokenRefreshPromise = null;
 
-async function _get(path, params = {}) {
+async function _fetchWithTimeout(url, options = {}, timeoutMs = REQUEST_TIMEOUT_MS) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+    return response;
+  } catch (err) {
+    clearTimeout(timeoutId);
+    if (err.name === 'AbortError') {
+      const timeoutErr = new Error('Request timed out. The server took too long to respond. Please check your connection and try again.');
+      timeoutErr.name = 'TimeoutError';
+      timeoutErr.status = 408;
+      throw timeoutErr;
+    }
+    const netErr = new Error('Network error: Unable to reach the BookBridge server. Please check your connection.');
+    netErr.name = 'NetworkError';
+    throw netErr;
+  }
+}
+
+async function _handleTokenRefresh() {
+  if (_isRefreshingToken && _tokenRefreshPromise) {
+    return _tokenRefreshPromise;
+  }
+  const refresh = localStorage.getItem('bb_refresh_token');
+  if (!refresh) return null;
+
+  _isRefreshingToken = true;
+  _tokenRefreshPromise = (async () => {
+    try {
+      const url = `${API_BASE}/token/refresh/`;
+      const res = await _fetchWithTimeout(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refresh }),
+      }, 10000);
+
+      if (res.ok) {
+        const data = await res.json();
+        const newAccess = data.access || data.token;
+        if (newAccess) {
+          localStorage.setItem('bb_access_token', newAccess);
+          return newAccess;
+        }
+      }
+      // Refresh failed or revoked
+      _clearTokens();
+      _currentUserCache = null;
+      return null;
+    } catch (_) {
+      return null;
+    } finally {
+      _isRefreshingToken = false;
+      _tokenRefreshPromise = null;
+    }
+  })();
+
+  return _tokenRefreshPromise;
+}
+
+function _extractErrorMessage(errData, status) {
+  if (!errData || typeof errData !== 'object') {
+    if (status === 401) return 'Session expired. Please sign in again.';
+    if (status === 403) return 'Access denied. You do not have permission to perform this action.';
+    if (status === 404) return 'Requested resource not found.';
+    if (status === 429) return 'Too many requests. Please wait a moment and try again.';
+    if (status >= 500) return 'Server temporarily unavailable. Please try again shortly.';
+    return `Request failed with status ${status}`;
+  }
+  if (errData.error && typeof errData.error === 'string') return errData.error;
+  if (errData.detail && typeof errData.detail === 'string') return errData.detail;
+  if (errData.message && typeof errData.message === 'string') return errData.message;
+
+  const firstKey = Object.keys(errData)[0];
+  if (firstKey) {
+    const val = errData[firstKey];
+    if (Array.isArray(val) && val.length > 0) return `${firstKey}: ${val[0]}`;
+    if (typeof val === 'string') return `${firstKey}: ${val}`;
+  }
+  return status >= 500 ? 'Server error occurred. Please try again.' : `Request failed (${status})`;
+}
+
+// ── Generic fetch helpers with clean error reporting & retry ───────────────────
+
+async function _request(method, path, body = null, params = {}, retryOn401 = true) {
   const qs = new URLSearchParams(params).toString();
   const url = `${API_BASE}${path}${qs ? '?' + qs : ''}`;
-  let res;
-  try {
-    res = await fetch(url, { headers: _authHeaders() });
-  } catch (netErr) {
-    throw new Error('Network error: Unable to reach the BookBridge server. Please check your connection.');
+  const options = {
+    method,
+    headers: _authHeaders(),
+  };
+  if (body !== null && method !== 'GET' && method !== 'HEAD') {
+    options.body = JSON.stringify(body);
+  }
+
+  const res = await _fetchWithTimeout(url, options);
+
+  // Auto-refresh token on 401 (once) for non-auth endpoints
+  if (res.status === 401 && retryOn401 && !path.includes('/login') && !path.includes('/register') && !path.includes('/token/refresh')) {
+    const newToken = await _handleTokenRefresh();
+    if (newToken) {
+      options.headers = _authHeaders();
+      const retryRes = await _fetchWithTimeout(url, options);
+      if (retryRes.ok) {
+        if (retryRes.status === 204) return { success: true };
+        return await retryRes.json().catch(() => ({ success: true }));
+      }
+      const errData = await retryRes.json().catch(() => ({}));
+      const err = new Error(_extractErrorMessage(errData, retryRes.status));
+      err.status = retryRes.status;
+      err.data = errData;
+      throw err;
+    }
   }
 
   if (!res.ok) {
     const errData = await res.json().catch(() => ({}));
-    const message = errData.error || errData.detail || (Array.isArray(errData) ? errData[0] : null) || `Request failed (${res.status})`;
-    const err = new Error(typeof message === 'object' ? JSON.stringify(message) : message);
+    const message = _extractErrorMessage(errData, res.status);
+    const err = new Error(message);
     err.status = res.status;
     err.data = errData;
     throw err;
   }
-  return res.json();
+
+  if (res.status === 204) return { success: true };
+  return await res.json().catch(() => ({ success: true }));
+}
+
+async function _get(path, params = {}) {
+  return await _request('GET', path, null, params);
 }
 
 async function _post(path, body = {}) {
-  const url = `${API_BASE}${path}`;
-  let res;
-  try {
-    res = await fetch(url, {
-      method: 'POST',
-      headers: _authHeaders(),
-      body: JSON.stringify(body),
-    });
-  } catch (netErr) {
-    throw new Error('Network error: Unable to reach the BookBridge server. Please check your connection.');
-  }
+  return await _request('POST', path, body);
+}
 
-  if (!res.ok) {
-    const errData = await res.json().catch(() => ({}));
-    let message = errData.error || errData.detail;
-    if (!message && typeof errData === 'object') {
-      const firstKey = Object.keys(errData)[0];
-      if (firstKey) {
-        const val = errData[firstKey];
-        message = Array.isArray(val) ? `${firstKey}: ${val[0]}` : `${firstKey}: ${val}`;
-      }
-    }
-    const err = new Error(message || `Request failed (${res.status})`);
-    err.status = res.status;
-    err.data = errData;
-    throw err;
-  }
-  return res.json();
+async function _put(path, body = {}) {
+  return await _request('PUT', path, body);
 }
 
 async function _patch(path, body = {}) {
-  const url = `${API_BASE}${path}`;
-  let res;
-  try {
-    res = await fetch(url, {
-      method: 'PATCH',
-      headers: _authHeaders(),
-      body: JSON.stringify(body),
-    });
-  } catch (netErr) {
-    throw new Error('Network error: Unable to reach the BookBridge server.');
-  }
-
-  if (!res.ok) {
-    const errData = await res.json().catch(() => ({}));
-    const err = new Error(errData.error || errData.detail || `Request failed (${res.status})`);
-    err.status = res.status;
-    err.data = errData;
-    throw err;
-  }
-  return res.json();
+  return await _request('PATCH', path, body);
 }
 
 async function _delete(path) {
-  const url = `${API_BASE}${path}`;
-  let res;
-  try {
-    res = await fetch(url, { method: 'DELETE', headers: _authHeaders() });
-  } catch (netErr) {
-    throw new Error('Network error: Unable to reach the BookBridge server.');
-  }
-
-  if (!res.ok) {
-    const errData = await res.json().catch(() => ({}));
-    const err = new Error(errData.error || errData.detail || `Delete failed (${res.status})`);
-    err.status = res.status;
-    err.data = errData;
-    throw err;
-  }
-  return res.json().catch(() => ({ success: true }));
+  return await _request('DELETE', path);
 }
 
 // ── Normalise data contracts between frontend & backend ─────────────────────
@@ -196,6 +258,96 @@ function _normaliseUser(u) {
 // ── BookBridge API Surface ─────────────────────────────────────────────────
 
 window.BookAPI = {
+
+  // ── AUTHENTICATION ───────────────────────────────────────────────────────
+
+  async login(email, password) {
+    try {
+      const data = await _post('/login/', { email, password });
+      if (data.token) {
+        _setTokens(data.token, data.refresh);
+      } else if (data.access) {
+        _setTokens(data.access, data.refresh);
+      }
+      const user = _normaliseUser(data.user);
+      _currentUserCache = user;
+      localStorage.setItem('rcti_gtu_current_user', JSON.stringify(user));
+      return user;
+    } catch (err) {
+      throw err;
+    }
+  },
+
+  async register(userData) {
+    try {
+      const data = await _post('/register/', userData);
+      if (data.token) {
+        _setTokens(data.token, data.refresh);
+      } else if (data.access) {
+        _setTokens(data.access, data.refresh);
+      }
+      const user = _normaliseUser(data.user);
+      _currentUserCache = user;
+      localStorage.setItem('rcti_gtu_current_user', JSON.stringify(user));
+      return user;
+    } catch (err) {
+      throw err;
+    }
+  },
+
+  async getCurrentUser() {
+    if (_currentUserCache) return _currentUserCache;
+    const token = _getToken();
+    if (!token) {
+      const stored = localStorage.getItem('rcti_gtu_current_user');
+      if (stored) {
+        try {
+          return _normaliseUser(JSON.parse(stored));
+        } catch (_) {}
+      }
+      return null;
+    }
+    try {
+      const u = await _get('/profile/');
+      const user = _normaliseUser(u);
+      _currentUserCache = user;
+      localStorage.setItem('rcti_gtu_current_user', JSON.stringify(user));
+      return user;
+    } catch (err) {
+      if (err.status === 401) {
+        _clearTokens();
+        _currentUserCache = null;
+      }
+      return null;
+    }
+  },
+
+  async logout() {
+    const refresh = localStorage.getItem('bb_refresh_token');
+    if (refresh) {
+      try {
+        await _post('/logout/', { refresh });
+      } catch (_) {}
+    }
+    _clearTokens();
+    _currentUserCache = null;
+    return true;
+  },
+
+  async refreshToken() {
+    const refresh = localStorage.getItem('bb_refresh_token');
+    if (!refresh) return null;
+    try {
+      const data = await _post('/token/refresh/', { refresh });
+      if (data.access) {
+        localStorage.setItem('bb_access_token', data.access);
+        return data.access;
+      }
+    } catch (e) {
+      _clearTokens();
+    }
+    return null;
+  },
 
   // ── BOOKS ──────────────────────────────────────────────────────────────
 
@@ -379,7 +531,7 @@ window.BookAPI = {
     }
   },
 
-  // ── ADMIN STATS & USERS ────────────────────────────────────────────────
+  // ── ADMIN SUITE & MANAGEMENT ───────────────────────────────────────────
 
   async getAdminStats() {
     try {
@@ -392,9 +544,17 @@ window.BookAPI = {
     }
   },
 
-  async getAllUsers() {
+  async getAdminAnalytics() {
+    return await _get('/admin/analytics/');
+  },
+
+  async getAdminSystemHealth() {
+    return await _get('/admin/system-health/');
+  },
+
+  async getAllUsers(filters = {}) {
     try {
-      const data = await _get('/admin/users/');
+      const data = await _get('/admin/users/', filters);
       const list = Array.isArray(data) ? data : (data.results || []);
       return list.map(_normaliseUser);
     } catch (e) {
@@ -403,6 +563,168 @@ window.BookAPI = {
       }
       throw e;
     }
+  },
+
+  async getAdminUsers(filters = {}) {
+    return this.getAllUsers(filters);
+  },
+
+  async getAdminUserDetail(id) {
+    const data = await _get(`/admin/users/${id}/`);
+    return _normaliseUser(data);
+  },
+
+  async updateAdminUser(id, payload) {
+    const data = await _patch(`/admin/users/${id}/`, payload);
+    return _normaliseUser(data);
+  },
+
+  async toggleUserStatus(id, isActive) {
+    return await this.updateAdminUser(id, { is_active: isActive });
+  },
+
+  async updateUserRole(id, newRole) {
+    return await this.updateAdminUser(id, { role: newRole });
+  },
+
+  async deleteAdminUser(id) {
+    return await _delete(`/admin/users/${id}/`);
+  },
+
+  async getAdminBooks(filters = {}) {
+    return this.getBooks({ all: true, ...filters });
+  },
+
+  async updateAdminBook(id, payload) {
+    return await _patch(`/books/${id}/`, payload);
+  },
+
+  async deleteAdminBook(id) {
+    return this.deleteBook(id);
+  },
+
+  async getAdminExchanges(filters = {}) {
+    try {
+      const data = await _get('/exchanges/', filters);
+      return Array.isArray(data) ? data : (data.results || []);
+    } catch (e) {
+      return [];
+    }
+  },
+
+  async getAdminDonations(filters = {}) {
+    try {
+      const data = await _get('/donations/', filters);
+      return Array.isArray(data) ? data : (data.results || []);
+    } catch (e) {
+      return [];
+    }
+  },
+
+  // ── ACADEMIC STRUCTURE (Colleges / Depts / Courses) ─────────────────────
+
+  async getColleges(filters = {}) {
+    try {
+      const data = await _get('/v1/colleges/', filters);
+      return Array.isArray(data) ? data : (data.results || []);
+    } catch (e) {
+      return [];
+    }
+  },
+
+  async createCollege(data) {
+    return await _post('/v1/colleges/', data);
+  },
+
+  async updateCollege(id, data) {
+    return await _patch(`/v1/colleges/${id}/`, data);
+  },
+
+  async deleteCollege(id) {
+    return await _delete(`/v1/colleges/${id}/`);
+  },
+
+  async getDepartments(filters = {}) {
+    try {
+      const data = await _get('/v1/colleges/departments/', filters);
+      return Array.isArray(data) ? data : (data.results || []);
+    } catch (e) {
+      return [];
+    }
+  },
+
+  async createDepartment(data) {
+    return await _post('/v1/colleges/departments/', data);
+  },
+
+  async updateDepartment(id, data) {
+    return await _patch(`/v1/colleges/departments/${id}/`, data);
+  },
+
+  async deleteDepartment(id) {
+    return await _delete(`/v1/colleges/departments/${id}/`);
+  },
+
+  async getCourses(filters = {}) {
+    try {
+      const data = await _get('/v1/colleges/courses/', filters);
+      return Array.isArray(data) ? data : (data.results || []);
+    } catch (e) {
+      return [];
+    }
+  },
+
+  async createCourse(data) {
+    return await _post('/v1/colleges/courses/', data);
+  },
+
+  async updateCourse(id, data) {
+    return await _patch(`/v1/colleges/courses/${id}/`, data);
+  },
+
+  async deleteCourse(id) {
+    return await _delete(`/v1/colleges/courses/${id}/`);
+  },
+
+  // ── AUDIT LOGS, NOTIFICATIONS & EXPORT ──────────────────────────────────
+
+  async getAuditLogs(filters = {}) {
+    try {
+      const data = await _get('/admin/logs/', filters);
+      return Array.isArray(data) ? data : (data.results || []);
+    } catch (e) {
+      return [];
+    }
+  },
+
+  async broadcastNotification(payload) {
+    return await _post('/admin/broadcast/', payload);
+  },
+
+  async exportReportCsv(reportType = 'users') {
+    const token = _getToken();
+    const url = `${API_BASE}/admin/export/?type=${encodeURIComponent(reportType)}`;
+    const res = await fetch(url, {
+      headers: {
+        ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+      }
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || `Export failed with status ${res.status}`);
+    }
+    const blob = await res.blob();
+    const downloadUrl = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = downloadUrl;
+    a.download = `bookbridge_${reportType}_${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => {
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(downloadUrl);
+    }, 100);
+    return true;
   },
 
   // ── MESSAGES ───────────────────────────────────────────────────────────

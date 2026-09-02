@@ -1219,10 +1219,35 @@ function initRegisterPage() {
   });
 }
 
-/* 🛡️ ADMIN */
+/* 🛡️ ADMIN FULL MANAGEMENT ENGINE */
+let _adminCharts = {};
+
+window.switchAdminTab = function(tabName) {
+  const sidebarLinks = document.querySelectorAll('.sidebar-link[data-admin-tab]');
+  const contentTabs = document.querySelectorAll('.admin-content-tab');
+
+  sidebarLinks.forEach(link => {
+    if (link.dataset.adminTab === tabName) link.classList.add('active');
+    else link.classList.remove('active');
+  });
+
+  contentTabs.forEach(tab => {
+    if (tab.id === `adminTab-${tabName}`) tab.classList.add('active');
+    else tab.classList.remove('active');
+  });
+
+  // Trigger tab data load
+  if (typeof window._loadAdminTab === 'function') {
+    window._loadAdminTab(tabName);
+  }
+};
+
 async function initAdminPage() {
   const currentUser = await window.BookAPI.getCurrentUser();
-  const isAdmin = currentUser && ['SUPER_ADMIN', 'COLLEGE_ADMIN', 'DEPT_ADMIN', 'ADMIN'].includes((currentUser.role || '').toUpperCase());
+  const isAdmin = currentUser && (
+    ['SUPER_ADMIN', 'COLLEGE_ADMIN', 'DEPT_ADMIN', 'ADMIN'].includes((currentUser.role || '').toUpperCase()) ||
+    Boolean(currentUser.is_staff || currentUser.is_superuser)
+  );
 
   if (!isAdmin) {
     document.body.innerHTML = `
@@ -1238,91 +1263,1099 @@ async function initAdminPage() {
     return;
   }
 
-  const tbody = document.getElementById('adminBooksTableBody');
-  const searchInput = document.getElementById('adminBookSearch');
-  const adminTabBtns = document.querySelectorAll('.admin-tab-btn');
-  const adminContentTabs = document.querySelectorAll('.admin-content-tab');
-
-  adminTabBtns.forEach(btn => {
-    btn.addEventListener('click', () => {
-      const tab = btn.dataset.adminTab;
-      adminTabBtns.forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      adminContentTabs.forEach(t => t.classList.remove('active'));
-      document.getElementById(`adminTab-${tab}`)?.classList.add('active');
-      if (tab === 'users') fetchAdminUsers();
+  // ── Tab Switching Handlers ────────────────────────────────────────────────
+  const sidebarLinks = document.querySelectorAll('.sidebar-link[data-admin-tab]');
+  sidebarLinks.forEach(link => {
+    link.addEventListener('click', (e) => {
+      e.preventDefault();
+      window.switchAdminTab(link.dataset.adminTab);
     });
   });
 
-  async function fetchAdmin() {
+  // Sub tabs for Academic section
+  const subTabBtns = document.querySelectorAll('.sub-tab-btn[data-sub-tab]');
+  subTabBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const targetSub = btn.dataset.subTab;
+      subTabBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      document.querySelectorAll('.sub-content-tab').forEach(t => t.classList.remove('active'));
+      document.getElementById(`subTab-${targetSub}`)?.classList.add('active');
+      if (targetSub === 'colleges') loadColleges();
+      else if (targetSub === 'departments') loadDepartments();
+      else if (targetSub === 'courses') loadCourses();
+    });
+  });
+
+  // ── Tab Router ────────────────────────────────────────────────────────────
+  window._loadAdminTab = function(tabName) {
+    switch (tabName) {
+      case 'dashboard':
+        loadDashboardStats();
+        break;
+      case 'users':
+        loadUsers();
+        break;
+      case 'books':
+        loadBooks();
+        break;
+      case 'marketplace':
+        loadMarketplace();
+        break;
+      case 'exchanges':
+        loadExchanges();
+        break;
+      case 'donations':
+        loadDonations();
+        break;
+      case 'academic':
+        loadColleges();
+        break;
+      case 'analytics':
+        loadAnalytics();
+        break;
+      case 'audit-logs':
+        loadAuditLogs();
+        break;
+      case 'notifications':
+        loadNotifications();
+        break;
+      case 'system-health':
+        loadSystemHealth();
+        break;
+      case 'admin-profile':
+        loadAdminProfile();
+        break;
+      default:
+        break;
+    }
+  };
+
+  // ── 1. DASHBOARD OVERVIEW & CHARTS ────────────────────────────────────────
+  async function loadDashboardStats() {
     try {
       const stats = await window.BookAPI.getAdminStats();
-      const els = {
-        adminStatUsers: stats.totalUsers,
-        adminStatBooks: stats.totalListings,
-        adminStatSwaps: stats.activeSwaps || 0,
-        adminStatDonations: stats.freeDonations || 0
-      };
-      Object.entries(els).forEach(([id, val]) => {
-        const el = document.getElementById(id);
-        if (el) { el.dataset.count = val; el.textContent = val.toLocaleString('en-IN'); }
+      document.getElementById('dashStatUsers').textContent = (stats.totalUsers || 0).toLocaleString('en-IN');
+      document.getElementById('dashStatActiveUsers').textContent = (stats.activeUsers || 0).toLocaleString('en-IN');
+      document.getElementById('dashStatBooks').textContent = (stats.totalListings || stats.totalBooks || 0).toLocaleString('en-IN');
+      document.getElementById('dashStatAvailBooks').textContent = (stats.availableListings || stats.availableBooks || 0).toLocaleString('en-IN');
+      document.getElementById('dashStatSwaps').textContent = (stats.activeSwaps || 0).toLocaleString('en-IN');
+      document.getElementById('dashStatCompSwaps').textContent = (stats.completedSwaps || 0).toLocaleString('en-IN');
+      document.getElementById('dashStatDonations').textContent = (stats.freeDonations || 0).toLocaleString('en-IN');
+      document.getElementById('dashStatApprDonations').textContent = (stats.approvedDonations || 0).toLocaleString('en-IN');
+      document.getElementById('dashStatColleges').textContent = (stats.totalColleges || 0).toLocaleString('en-IN');
+      document.getElementById('dashStatDepartments').textContent = (stats.totalDepartments || 0).toLocaleString('en-IN');
+      document.getElementById('dashStatCourses').textContent = (stats.totalCourses || 0).toLocaleString('en-IN');
+      document.getElementById('dashLastUpdated').textContent = new Date().toLocaleTimeString();
+
+      // Recent Activity
+      const actBody = document.getElementById('dashRecentActivityBody');
+      if (actBody && stats.recentActivity) {
+        actBody.innerHTML = stats.recentActivity.map(a => `
+          <tr>
+            <td><span class="badge badge-primary">${escapeHtml(a.action || 'ACTIVITY')}</span></td>
+            <td><strong>${escapeHtml(a.title || '')}</strong><br><span style="font-size:11.5px;color:var(--color-gray);">${escapeHtml(a.user_email || a.user_name || 'System')}</span></td>
+            <td style="color:var(--color-gray);">${a.created_at ? new Date(a.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'N/A'}</td>
+          </tr>
+        `).join('') || '<tr><td colspan="3" style="text-align:center;color:var(--color-gray);padding:16px;">No recent activity.</td></tr>';
+      }
+
+      // Recent Users
+      const usersBody = document.getElementById('dashRecentUsersBody');
+      if (usersBody && stats.recentRegistrations) {
+        usersBody.innerHTML = stats.recentRegistrations.map(u => `
+          <tr>
+            <td><strong>${escapeHtml(u.full_name || u.email)}</strong><br><span style="font-size:11.5px;color:var(--color-gray);">${escapeHtml(u.email)}</span></td>
+            <td><span class="role-badge role-${(u.role || 'student').toLowerCase().replace('_', '-')}">${escapeHtml(u.role || 'STUDENT')}</span></td>
+            <td><span class="status-pill ${u.is_active ? 'active' : 'inactive'}">${u.is_active ? 'Active' : 'Inactive'}</span></td>
+            <td style="color:var(--color-gray);">${u.date_joined ? new Date(u.date_joined).toLocaleDateString() : 'N/A'}</td>
+          </tr>
+        `).join('') || '<tr><td colspan="4" style="text-align:center;color:var(--color-gray);padding:16px;">No users registered yet.</td></tr>';
+      }
+
+      // Render Charts
+      renderDashboardCharts(stats);
+    } catch (err) {
+      if (typeof showToast === 'function') showToast(err.message || 'Failed to load dashboard statistics', 'danger');
+    }
+  }
+
+  function renderDashboardCharts(stats) {
+    if (typeof Chart === 'undefined') return;
+
+    // 1. Department Distribution (Doughnut Chart)
+    const branchCanvas = document.getElementById('dashBranchChartCanvas');
+    if (branchCanvas) {
+      if (_adminCharts.dashBranch) _adminCharts.dashBranch.destroy();
+      const dist = stats.departmentDistribution || [];
+      const labels = dist.length > 0 ? dist.map(d => d.branch || 'Other') : ['CE', 'IT', 'EE', 'ME', 'Civil'];
+      const data = dist.length > 0 ? dist.map(d => d.count) : [0, 0, 0, 0, 0];
+
+      _adminCharts.dashBranch = new Chart(branchCanvas, {
+        type: 'doughnut',
+        data: {
+          labels: labels,
+          datasets: [{
+            data: data,
+            backgroundColor: ['#6366f1', '#06b6d4', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6', '#64748b'],
+            borderWidth: 2,
+            borderColor: '#ffffff',
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } } }
+        }
+      });
+    }
+
+    // 2. Listing Mode Breakdown (Bar Chart)
+    const typeCanvas = document.getElementById('dashTypeChartCanvas');
+    if (typeCanvas) {
+      if (_adminCharts.dashType) _adminCharts.dashType.destroy();
+      const modes = stats.listingTypeBreakdown || [];
+      const modeMap = { sell: 0, exchange: 0, donate: 0 };
+      modes.forEach(m => {
+        const k = (m.mode || '').toLowerCase();
+        if (modeMap[k] !== undefined) modeMap[k] = m.count;
       });
 
+      _adminCharts.dashType = new Chart(typeCanvas, {
+        type: 'bar',
+        data: {
+          labels: ['For Sale', 'For Exchange', 'Free Donation'],
+          datasets: [{
+            label: 'Listings',
+            data: [modeMap.sell, modeMap.exchange, modeMap.donate],
+            backgroundColor: ['#3b82f6', '#8b5cf6', '#10b981'],
+            borderRadius: 6,
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
+        }
+      });
+    }
+  }
+
+  // ── 2. USERS MANAGEMENT ───────────────────────────────────────────────────
+  let _usersCache = [];
+
+  async function loadUsers() {
+    const tbody = document.getElementById('adminUsersTableBody');
+    const searchVal = document.getElementById('userSearchInput')?.value.trim();
+    const roleVal = document.getElementById('userRoleFilter')?.value;
+    const statusVal = document.getElementById('userStatusFilter')?.value;
+
+    if (tbody) tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--color-gray);"><i class="fa-solid fa-spinner fa-spin"></i> Loading registered users...</td></tr>';
+
+    try {
+      const filters = {};
+      if (searchVal) filters.search = searchVal;
+      if (roleVal) filters.role = roleVal;
+      if (statusVal === 'active') filters.is_active = 'true';
+      else if (statusVal === 'inactive') filters.is_active = 'false';
+
+      _usersCache = await window.BookAPI.getAdminUsers(filters);
+      document.getElementById('usersResultCount').textContent = `${_usersCache.length} Users`;
+
       if (!tbody) return;
-      const books = await window.BookAPI.getBooks({ all: true });
+      tbody.innerHTML = _usersCache.map(u => {
+        const roleClass = `role-${(u.role || 'student').toLowerCase().replace('_', '-')}`;
+        const activeStatus = u.is_active ? 'active' : 'inactive';
+        const activeLabel = u.is_active ? 'Active' : 'Inactive';
+
+        return `
+          <tr>
+            <td>
+              <div style="display:flex;align-items:center;gap:10px;">
+                <div style="width:34px;height:34px;border-radius:50%;background:var(--color-primary-light);color:var(--color-primary);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;">
+                  ${(u.full_name || u.name || u.email || 'U').charAt(0).toUpperCase()}
+                </div>
+                <div>
+                  <strong>${escapeHtml(u.full_name || u.name || 'User')}</strong>
+                  ${u.enrollment_number ? `<br><span style="font-size:11.5px;color:var(--color-gray);">${escapeHtml(u.enrollment_number)}</span>` : ''}
+                </div>
+              </div>
+            </td>
+            <td style="font-size:13px;">${escapeHtml(u.email)}</td>
+            <td style="font-size:12.5px;">${escapeHtml(u.department_name || u.college_name || 'Academic')}</td>
+            <td><span class="role-badge ${roleClass}">${escapeHtml(u.role || 'STUDENT')}</span></td>
+            <td><span class="status-pill ${activeStatus}">${activeLabel}</span></td>
+            <td style="font-size:12px;color:var(--color-gray);">${u.date_joined ? new Date(u.date_joined).toLocaleDateString() : 'N/A'}</td>
+            <td style="text-align: right;">
+              <div class="action-btn-group">
+                <button class="action-btn" title="View Full Details" onclick="window.inspectUser('${u.id}')"><i class="fa-solid fa-eye"></i></button>
+                <button class="action-btn" title="${u.is_active ? 'Deactivate' : 'Activate'}" onclick="window.toggleUserActive('${u.id}', ${u.is_active})">
+                  <i class="fa-solid ${u.is_active ? 'fa-ban' : 'fa-check'}" style="color:${u.is_active ? '#dc2626' : '#16a34a'};"></i>
+                </button>
+                <button class="action-btn" title="Assign Role" onclick="window.openRoleModal('${u.id}', '${escapeHtml(u.full_name || u.name || u.email)}', '${escapeHtml(u.email)}', '${u.role}')"><i class="fa-solid fa-user-gear"></i></button>
+                <button class="action-btn danger" title="Delete Account" onclick="window.deleteUser('${u.id}')"><i class="fa-solid fa-trash"></i></button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('') || '<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--color-gray);">No users match your filters.</td></tr>';
+    } catch (err) {
+      if (tbody) tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--color-danger);">${escapeHtml(err.message || 'Failed to load users.')}</td></tr>`;
+    }
+  }
+
+  // User Inspectors & Actions
+  window.inspectUser = async function(id) {
+    const modal = document.getElementById('adminUserDetailsModal');
+    const modalBody = document.getElementById('adminUserModalBody');
+    if (!modal || !modalBody) return;
+
+    modalBody.innerHTML = '<div style="text-align:center;padding:32px;"><i class="fa-solid fa-spinner fa-spin fa-2x"></i><p style="margin-top:12px;">Loading user profile & history...</p></div>';
+    modal.classList.add('active');
+
+    try {
+      const u = await window.BookAPI.getAdminUserDetail(id);
+      modalBody.innerHTML = `
+        <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--color-border);">
+          <div style="width:54px;height:54px;border-radius:50%;background:var(--color-primary);color:#fff;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;">
+            ${(u.full_name || u.email || 'U').charAt(0).toUpperCase()}
+          </div>
+          <div>
+            <h3 style="margin-bottom:4px;">${escapeHtml(u.full_name || u.email)}</h3>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span class="role-badge role-${(u.role || 'student').toLowerCase().replace('_', '-')}">${escapeHtml(u.role)}</span>
+              <span class="status-pill ${u.is_active ? 'active' : 'inactive'}">${u.is_active ? 'Active' : 'Inactive'}</span>
+              ${u.is_college_verified ? '<span class="badge badge-success"><i class="fa-solid fa-certificate"></i> Verified</span>' : ''}
+            </div>
+          </div>
+        </div>
+
+        <div class="grid-3" style="margin-bottom:20px;text-align:center;">
+          <div class="card" style="padding:12px;background:var(--color-bg);">
+            <div style="font-size:18px;font-weight:700;">${u.books_count || 0}</div>
+            <div style="font-size:11.5px;color:var(--color-gray);">Books Listed</div>
+          </div>
+          <div class="card" style="padding:12px;background:var(--color-bg);">
+            <div style="font-size:18px;font-weight:700;">${u.exchanges_count || 0}</div>
+            <div style="font-size:11.5px;color:var(--color-gray);">Exchanges</div>
+          </div>
+          <div class="card" style="padding:12px;background:var(--color-bg);">
+            <div style="font-size:18px;font-weight:700;">${u.donations_count || 0}</div>
+            <div style="font-size:11.5px;color:var(--color-gray);">Donations</div>
+          </div>
+        </div>
+
+        <div style="margin-bottom:16px;font-size:13.5px;">
+          <div><strong>Email:</strong> ${escapeHtml(u.email)}</div>
+          <div><strong>Phone:</strong> ${escapeHtml(u.phone_number || 'Not provided')}</div>
+          <div><strong>College:</strong> ${escapeHtml(u.college_name || 'N/A')}</div>
+          <div><strong>Department:</strong> ${escapeHtml(u.department_name || 'N/A')} (Sem ${u.semester || 1})</div>
+          <div><strong>Enrollment:</strong> ${escapeHtml(u.enrollment_number || 'N/A')}</div>
+          <div><strong>Joined Date:</strong> ${u.date_joined ? new Date(u.date_joined).toLocaleString() : 'N/A'}</div>
+          <div><strong>Last Login:</strong> ${u.last_login ? new Date(u.last_login).toLocaleString() : 'Never'}</div>
+        </div>
+
+        <h4 style="margin-top:16px;margin-bottom:8px;font-size:14px;"><i class="fa-solid fa-book"></i> Recent Listed Books</h4>
+        <div class="data-table-wrap" style="margin-bottom:16px;">
+          <table class="data-table" style="font-size:12px;">
+            <thead><tr><th>Title</th><th>Mode</th><th>Price</th><th>Status</th></tr></thead>
+            <tbody>
+              ${(u.recent_books || []).map(b => `
+                <tr>
+                  <td><strong>${escapeHtml(b.title)}</strong></td>
+                  <td>${escapeHtml(b.mode)}</td>
+                  <td>${b.price > 0 ? '₹' + b.price : 'Free'}</td>
+                  <td><span class="status-pill ${(b.status||'available').toLowerCase()}">${escapeHtml(b.status)}</span></td>
+                </tr>
+              `).join('') || '<tr><td colspan="4" style="text-align:center;color:var(--color-gray);padding:10px;">No listed books</td></tr>'}
+            </tbody>
+          </table>
+        </div>
+      `;
+    } catch (err) {
+      modalBody.innerHTML = `<div style="color:var(--color-danger);padding:24px;text-align:center;">Failed to load user details: ${escapeHtml(err.message)}</div>`;
+    }
+  };
+
+  window.toggleUserActive = async function(id, currentActive) {
+    const actionName = currentActive ? 'deactivate' : 'activate';
+    if (!confirm(`Are you sure you want to ${actionName} this user account?`)) return;
+    try {
+      await window.BookAPI.toggleUserStatus(id, !currentActive);
+      if (typeof showToast === 'function') showToast(`User account ${actionName}d successfully`, 'success');
+      loadUsers();
+    } catch (err) {
+      if (typeof showToast === 'function') showToast(err.message || 'Operation failed', 'danger');
+    }
+  };
+
+  window.openRoleModal = function(id, name, email, currentRole) {
+    const modal = document.getElementById('adminUserRoleModal');
+    if (!modal) return;
+    document.getElementById('roleModalUserId').value = id;
+    document.getElementById('roleModalUserName').textContent = name;
+    document.getElementById('roleModalUserEmail').textContent = email;
+    document.getElementById('roleModalSelect').value = currentRole || 'STUDENT';
+    modal.classList.add('active');
+  };
+
+  window.deleteUser = async function(id) {
+    if (!confirm('CAUTION: Are you sure you want to permanently delete this user account? This action cannot be undone.')) return;
+    try {
+      await window.BookAPI.deleteAdminUser(id);
+      if (typeof showToast === 'function') showToast('User deleted successfully', 'success');
+      loadUsers();
+    } catch (err) {
+      if (typeof showToast === 'function') showToast(err.message || 'Failed to delete user', 'danger');
+    }
+  };
+
+  // Role form submit
+  document.getElementById('adminUserRoleForm')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const id = document.getElementById('roleModalUserId').value;
+    const newRole = document.getElementById('roleModalSelect').value;
+    try {
+      await window.BookAPI.updateUserRole(id, newRole);
+      if (typeof showToast === 'function') showToast(`User role updated to ${newRole}`, 'success');
+      document.getElementById('adminUserRoleModal')?.classList.remove('active');
+      loadUsers();
+    } catch (err) {
+      if (typeof showToast === 'function') showToast(err.message || 'Failed to update role', 'danger');
+    }
+  });
+
+  // Filter Event Listeners for Users
+  let userSearchTimeout = null;
+  document.getElementById('userSearchInput')?.addEventListener('input', () => {
+    clearTimeout(userSearchTimeout);
+    userSearchTimeout = setTimeout(loadUsers, 300);
+  });
+  document.getElementById('userRoleFilter')?.addEventListener('change', loadUsers);
+  document.getElementById('userStatusFilter')?.addEventListener('change', loadUsers);
+  document.getElementById('btnRefreshUsers')?.addEventListener('click', loadUsers);
+
+  // ── 3. BOOKS MANAGEMENT ───────────────────────────────────────────────────
+  let _booksCache = [];
+
+  async function loadBooks() {
+    const tbody = document.getElementById('adminBooksTableBody');
+    const searchVal = document.getElementById('bookSearchInput')?.value.trim();
+    const branchVal = document.getElementById('bookBranchFilter')?.value;
+    const modeVal = document.getElementById('bookModeFilter')?.value;
+    const statusVal = document.getElementById('bookStatusFilter')?.value;
+
+    if (tbody) tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--color-gray);"><i class="fa-solid fa-spinner fa-spin"></i> Loading catalog...</td></tr>';
+
+    try {
+      const filters = {};
+      if (searchVal) filters.search = searchVal;
+      if (branchVal) filters.branch = branchVal;
+      if (modeVal) filters.mode = modeVal;
+      if (statusVal) filters.status = statusVal;
+
+      _booksCache = await window.BookAPI.getAdminBooks(filters);
+      document.getElementById('booksResultCount').textContent = `${_booksCache.length} Books`;
+
+      if (!tbody) return;
+      tbody.innerHTML = _booksCache.map(b => {
+        const modeBadgeClass = b.mode === 'sell' ? 'badge-primary' : (b.mode === 'exchange' ? 'badge-warning' : 'badge-success');
+        const statusClass = (b.status || 'available').toLowerCase();
+
+        return `
+          <tr>
+            <td><span style="font-weight:700;color:var(--color-primary);">${escapeHtml(b.gtu_code || b.gtuCode || b.id)}</span></td>
+            <td>
+              <strong>${escapeHtml(b.title)}</strong><br>
+              <span style="font-size:12px;color:var(--color-gray);">${escapeHtml(b.author || 'Unknown')} • Listed by ${escapeHtml(b.seller?.name || b.seller_name || 'Anonymous')}</span>
+            </td>
+            <td><span class="badge badge-secondary">${escapeHtml(b.branch || 'CE')} • Sem ${b.semester || 1}</span></td>
+            <td><span class="badge ${modeBadgeClass}">${(b.mode || 'sell').toUpperCase()}</span></td>
+            <td>${b.price > 0 ? '₹' + b.price : 'Free'}</td>
+            <td><span class="status-pill ${statusClass}">${escapeHtml(b.status || 'Available')}</span></td>
+            <td style="text-align: right;">
+              <div class="action-btn-group">
+                <button class="action-btn" title="View Book" onclick="window.viewBookDetails('${b.id}')"><i class="fa-solid fa-eye"></i></button>
+                <button class="action-btn" title="Edit Book" onclick="window.openEditBookModal('${b.id}')"><i class="fa-solid fa-pen-to-square"></i></button>
+                <button class="action-btn danger" title="Delete Listing" onclick="window.handleDeleteAdminBook('${b.id}')"><i class="fa-solid fa-trash"></i></button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('') || '<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--color-gray);">No books match your criteria.</td></tr>';
+    } catch (err) {
+      if (tbody) tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--color-danger);">${escapeHtml(err.message || 'Failed to load books catalog.')}</td></tr>`;
+    }
+  }
+
+  window.openEditBookModal = function(id) {
+    const book = _booksCache.find(b => String(b.id) === String(id));
+    if (!book) return;
+    document.getElementById('editBookId').value = book.id;
+    document.getElementById('editBookTitle').value = book.title;
+    document.getElementById('editBookAuthor').value = book.author || '';
+    document.getElementById('editBookBranch').value = book.branch || 'CE';
+    document.getElementById('editBookPrice').value = book.price || 0;
+    document.getElementById('editBookStatus').value = book.status || 'Available';
+    document.getElementById('editBookCondition').value = book.condition || 'Good';
+    document.getElementById('adminEditBookModal')?.classList.add('active');
+  };
+
+  document.getElementById('adminEditBookForm')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const id = document.getElementById('editBookId').value;
+    const payload = {
+      title: document.getElementById('editBookTitle').value.trim(),
+      author: document.getElementById('editBookAuthor').value.trim(),
+      branch: document.getElementById('editBookBranch').value,
+      price: parseFloat(document.getElementById('editBookPrice').value) || 0,
+      status: document.getElementById('editBookStatus').value,
+      condition: document.getElementById('editBookCondition').value,
+    };
+    try {
+      await window.BookAPI.updateAdminBook(id, payload);
+      if (typeof showToast === 'function') showToast('Book listing updated successfully', 'success');
+      document.getElementById('adminEditBookModal')?.classList.remove('active');
+      loadBooks();
+    } catch (err) {
+      if (typeof showToast === 'function') showToast(err.message || 'Failed to update book', 'danger');
+    }
+  });
+
+  window.handleDeleteAdminBook = async function(id) {
+    if (!confirm('Are you sure you want to remove this book listing from the catalog?')) return;
+    try {
+      await window.BookAPI.deleteAdminBook(id);
+      if (typeof showToast === 'function') showToast('Book listing deleted successfully', 'success');
+      loadBooks();
+      loadDashboardStats();
+    } catch (err) {
+      if (typeof showToast === 'function') showToast(err.message || 'Failed to delete listing', 'danger');
+    }
+  };
+
+  // Add Book Form Handlers
+  document.getElementById('btnAdminAddBook')?.addEventListener('click', () => {
+    document.getElementById('adminAddBookModal')?.classList.add('active');
+  });
+  document.getElementById('closeAdminAddBookModal')?.addEventListener('click', () => {
+    document.getElementById('adminAddBookModal')?.classList.remove('active');
+  });
+  document.getElementById('closeAdminEditBookModal')?.addEventListener('click', () => {
+    document.getElementById('adminEditBookModal')?.classList.remove('active');
+  });
+  document.getElementById('closeAdminUserDetailsModal')?.addEventListener('click', () => {
+    document.getElementById('adminUserDetailsModal')?.classList.remove('active');
+  });
+  document.getElementById('closeAdminUserRoleModal')?.addEventListener('click', () => {
+    document.getElementById('adminUserRoleModal')?.classList.remove('active');
+  });
+
+  document.getElementById('adminAddBookForm')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const payload = {
+      title: document.getElementById('adminBookTitle').value.trim(),
+      author: document.getElementById('adminBookAuthor').value.trim(),
+      branch: document.getElementById('adminBookBranch').value,
+      semester: parseInt(document.getElementById('adminBookSemester').value, 10),
+      gtu_code: document.getElementById('adminBookGtuCode').value.trim(),
+      condition: document.getElementById('adminBookCondition').value,
+      mode: document.getElementById('adminBookMode').value,
+      price: parseFloat(document.getElementById('adminBookPrice').value) || 0,
+      description: document.getElementById('adminBookDesc').value.trim(),
+    };
+    try {
+      await window.BookAPI.addBook(payload);
+      if (typeof showToast === 'function') showToast('Book added to catalog successfully', 'success');
+      document.getElementById('adminAddBookModal')?.classList.remove('active');
+      document.getElementById('adminAddBookForm').reset();
+      loadBooks();
+      loadDashboardStats();
+    } catch (err) {
+      if (typeof showToast === 'function') showToast(err.message || 'Failed to add book', 'danger');
+    }
+  });
+
+  let bookSearchTimeout = null;
+  document.getElementById('bookSearchInput')?.addEventListener('input', () => {
+    clearTimeout(bookSearchTimeout);
+    bookSearchTimeout = setTimeout(loadBooks, 300);
+  });
+  document.getElementById('bookBranchFilter')?.addEventListener('change', loadBooks);
+  document.getElementById('bookModeFilter')?.addEventListener('change', loadBooks);
+  document.getElementById('bookStatusFilter')?.addEventListener('change', loadBooks);
+
+  // ── 4. MARKETPLACE MANAGEMENT ─────────────────────────────────────────────
+  async function loadMarketplace() {
+    const tbody = document.getElementById('adminMarketplaceTableBody');
+    if (tbody) tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--color-gray);"><i class="fa-solid fa-spinner fa-spin"></i> Loading marketplace listings...</td></tr>';
+    try {
+      const books = await window.BookAPI.getAdminBooks();
+      if (!tbody) return;
       tbody.innerHTML = books.map(b => `
         <tr>
-          <td><span style="color: var(--color-primary); font-weight: 600;">${b.gtu_code || b.id}</span></td>
-          <td><strong>${b.title}</strong><br><span style="font-size:12px;color:var(--color-gray);">${b.author || ''}</span></td>
-          <td><span class="badge badge-primary">${b.branch || 'CE'}</span></td>
-          <td>${b.price > 0 ? '&#8377;' + b.price : 'Free'}</td>
-          <td><span class="book-status-badge ${(b.status||'available').toLowerCase()}">${b.status || 'Available'}</span></td>
+          <td><span style="font-family:monospace;font-size:12px;color:var(--color-primary);">${b.id}</span></td>
+          <td><strong>${escapeHtml(b.title)}</strong><br><span style="font-size:12px;color:var(--color-gray);">${escapeHtml(b.author || '')}</span></td>
+          <td>${escapeHtml(b.seller?.name || b.seller_name || 'Seller')}</td>
+          <td><span class="badge badge-primary">${(b.mode || 'sell').toUpperCase()}</span></td>
+          <td>${escapeHtml(b.condition || 'Good')}</td>
+          <td>${b.price > 0 ? '₹' + b.price : 'Free'}</td>
+          <td><span class="status-pill ${(b.status || 'available').toLowerCase()}">${escapeHtml(b.status || 'Available')}</span></td>
           <td style="text-align: right;">
-            <button onclick="handleDeleteAdminBook('${b.id}')" class="btn btn-danger btn-sm" style="height: 32px; padding: 0 12px; font-size: 12px;">Delete</button>
+            <button class="action-btn" title="View Book" onclick="window.viewBookDetails('${b.id}')"><i class="fa-solid fa-eye"></i></button>
+            <button class="action-btn danger" title="Remove Listing" onclick="window.handleDeleteAdminBook('${b.id}')"><i class="fa-solid fa-trash"></i></button>
           </td>
         </tr>
-      `).join('') || '<tr><td colspan="6" style="text-align:center;color:var(--color-gray);padding:24px;">No books found.</td></tr>';
+      `).join('') || '<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--color-gray);">No marketplace listings found.</td></tr>';
     } catch (err) {
-      showToast(err.message || 'Failed to load admin stats', 'danger');
+      if (tbody) tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--color-danger);">${escapeHtml(err.message || 'Failed to load marketplace.')}</td></tr>`;
+    }
+  }
+  document.getElementById('btnRefreshMarketplace')?.addEventListener('click', loadMarketplace);
+
+  // ── 5. EXCHANGES MANAGEMENT ───────────────────────────────────────────────
+  async function loadExchanges() {
+    const tbody = document.getElementById('adminExchangesTableBody');
+    if (tbody) tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--color-gray);"><i class="fa-solid fa-spinner fa-spin"></i> Loading exchanges...</td></tr>';
+    try {
+      const exchanges = await window.BookAPI.getAdminExchanges();
+      if (!tbody) return;
+      tbody.innerHTML = exchanges.map(ex => {
+        const statusClass = (ex.status || 'pending').toLowerCase();
+        const shortId = String(ex.id).slice(0, 8);
+        return `
+          <tr>
+            <td><span style="font-family:monospace;font-size:12px;font-weight:700;">#${shortId}</span></td>
+            <td><strong>${escapeHtml(ex.target_book_title || ex.target_book?.title || 'Unknown Book')}</strong></td>
+            <td>${escapeHtml(ex.proposer_name || ex.proposer?.full_name || 'Student')}</td>
+            <td>${escapeHtml(ex.seller_name || ex.target_book?.seller?.full_name || 'Owner')}</td>
+            <td>${escapeHtml(ex.offered_book_title || ex.offered_book?.title || 'None Specified')}</td>
+            <td><span class="status-pill ${statusClass}">${escapeHtml(ex.status || 'pending')}</span></td>
+            <td style="font-size:12px;color:var(--color-gray);">${ex.created_at ? new Date(ex.created_at).toLocaleDateString() : 'N/A'}</td>
+            <td style="text-align: right;">
+              <select class="admin-filter-select" style="height:28px;padding:0 6px;font-size:11.5px;" onchange="window.updateExchangeStatus('${ex.id}', this.value)">
+                <option value="pending" ${ex.status === 'pending' ? 'selected' : ''}>Pending</option>
+                <option value="accepted" ${ex.status === 'accepted' ? 'selected' : ''}>Accept</option>
+                <option value="completed" ${ex.status === 'completed' ? 'selected' : ''}>Complete</option>
+                <option value="rejected" ${ex.status === 'rejected' ? 'selected' : ''}>Reject</option>
+                <option value="cancelled" ${ex.status === 'cancelled' ? 'selected' : ''}>Cancel</option>
+              </select>
+            </td>
+          </tr>
+        `;
+      }).join('') || '<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--color-gray);">No exchange proposals found.</td></tr>';
+    } catch (err) {
+      if (tbody) tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--color-danger);">${escapeHtml(err.message || 'Failed to load exchanges.')}</td></tr>`;
     }
   }
 
-  async function fetchAdminUsers() {
-    const usersTbody = document.getElementById('adminUsersTableBody');
-    if (!usersTbody) return;
+  window.updateExchangeStatus = async function(id, newStatus) {
     try {
-      const users = await window.BookAPI.getAllUsers();
-      usersTbody.innerHTML = users.map(u => `
+      await window.BookAPI.updateExchangeStatus(id, newStatus);
+      if (typeof showToast === 'function') showToast(`Exchange status updated to ${newStatus}`, 'success');
+      loadExchanges();
+      loadDashboardStats();
+    } catch (err) {
+      if (typeof showToast === 'function') showToast(err.message || 'Failed to update exchange', 'danger');
+    }
+  };
+  document.getElementById('btnRefreshExchanges')?.addEventListener('click', loadExchanges);
+
+  // ── 6. DONATIONS MANAGEMENT ───────────────────────────────────────────────
+  async function loadDonations() {
+    const tbody = document.getElementById('adminDonationsTableBody');
+    if (tbody) tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--color-gray);"><i class="fa-solid fa-spinner fa-spin"></i> Loading donation claims...</td></tr>';
+    try {
+      const donations = await window.BookAPI.getAdminDonations();
+      if (!tbody) return;
+      tbody.innerHTML = donations.map(d => {
+        const statusClass = (d.status || 'pending').toLowerCase();
+        return `
+          <tr>
+            <td><span style="font-family:monospace;font-size:12px;font-weight:700;">#${d.id}</span></td>
+            <td><strong>${escapeHtml(d.book_title || d.book?.title || 'Donated Resource')}</strong></td>
+            <td>${escapeHtml(d.seller_name || d.book?.seller?.full_name || 'Donor')}</td>
+            <td>${escapeHtml(d.claimer_name || d.claimer?.full_name || 'Claimer')}</td>
+            <td style="font-size:12px;color:var(--color-gray);max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(d.message || 'No message')}</td>
+            <td><span class="status-pill ${statusClass}">${escapeHtml(d.status || 'pending')}</span></td>
+            <td style="font-size:12px;color:var(--color-gray);">${d.created_at ? new Date(d.created_at).toLocaleDateString() : 'N/A'}</td>
+            <td style="text-align: right;">
+              <select class="admin-filter-select" style="height:28px;padding:0 6px;font-size:11.5px;" onchange="window.updateDonationStatus('${d.id}', this.value)">
+                <option value="pending" ${d.status === 'pending' ? 'selected' : ''}>Pending</option>
+                <option value="approved" ${d.status === 'approved' ? 'selected' : ''}>Approve</option>
+                <option value="completed" ${d.status === 'completed' ? 'selected' : ''}>Complete</option>
+                <option value="rejected" ${d.status === 'rejected' ? 'selected' : ''}>Reject</option>
+              </select>
+            </td>
+          </tr>
+        `;
+      }).join('') || '<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--color-gray);">No donation claims found.</td></tr>';
+    } catch (err) {
+      if (tbody) tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--color-danger);">${escapeHtml(err.message || 'Failed to load donations.')}</td></tr>`;
+    }
+  }
+
+  window.updateDonationStatus = async function(id, newStatus) {
+    try {
+      await window.BookAPI.updateDonationStatus(id, newStatus);
+      if (typeof showToast === 'function') showToast(`Donation claim status updated to ${newStatus}`, 'success');
+      loadDonations();
+      loadDashboardStats();
+    } catch (err) {
+      if (typeof showToast === 'function') showToast(err.message || 'Failed to update donation', 'danger');
+    }
+  };
+  document.getElementById('btnRefreshDonations')?.addEventListener('click', loadDonations);
+
+  // ── 7. ACADEMIC STRUCTURE (Colleges / Depts / Courses) ─────────────────────
+  let _collegesList = [];
+  let _deptsList = [];
+
+  async function loadColleges() {
+    const tbody = document.getElementById('academicCollegesBody');
+    if (tbody) tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:16px;color:var(--color-gray);"><i class="fa-solid fa-spinner fa-spin"></i> Loading colleges...</td></tr>';
+    try {
+      _collegesList = await window.BookAPI.getColleges();
+      if (!tbody) return;
+      tbody.innerHTML = _collegesList.map(c => `
         <tr>
-          <td><strong>${u.name}</strong></td>
-          <td style="font-size:13px;">${u.email}</td>
-          <td><span class="badge badge-primary">${u.department_name || u.college_name || 'Academic'}</span></td>
-          <td><span class="book-status-badge ${u.role === 'SUPER_ADMIN' ? 'available' : 'exchanged'}">${u.role}</span></td>
-          <td style="font-size:12px;color:var(--color-gray);">${u.date_joined ? new Date(u.date_joined).toLocaleDateString() : 'N/A'}</td>
+          <td><span style="font-weight:700;color:var(--color-primary);">${escapeHtml(c.code)}</span></td>
+          <td><strong>${escapeHtml(c.name)}</strong></td>
+          <td>${escapeHtml(c.city || 'Gujarat')}</td>
+          <td>${escapeHtml(c.state || 'Gujarat')}</td>
+          <td><span class="status-pill ${c.is_active ? 'active' : 'inactive'}">${c.is_active ? 'Active' : 'Inactive'}</span></td>
           <td style="text-align: right;">
-            <span class="badge badge-success">Active</span>
+            <button class="action-btn danger" title="Delete College" onclick="window.deleteCollege('${c.id}')"><i class="fa-solid fa-trash"></i></button>
           </td>
         </tr>
-      `).join('') || '<tr><td colspan="6" style="text-align:center;color:var(--color-gray);padding:24px;">No users found.</td></tr>';
+      `).join('') || '<tr><td colspan="6" style="text-align:center;padding:16px;color:var(--color-gray);">No colleges registered.</td></tr>';
     } catch (err) {
-      showToast(err.message || 'Failed to load user list', 'danger');
+      if (tbody) tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:16px;color:var(--color-danger);">${escapeHtml(err.message)}</td></tr>`;
     }
   }
 
-  fetchAdmin();
-}
-
-window.handleDeleteAdminBook = async function(id) {
-  if (confirm('Are you sure you want to remove this book listing?')) {
+  async function loadDepartments() {
+    const tbody = document.getElementById('academicDepartmentsBody');
+    if (tbody) tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:16px;color:var(--color-gray);"><i class="fa-solid fa-spinner fa-spin"></i> Loading departments...</td></tr>';
     try {
-      await window.BookAPI.deleteBook(id);
-      showToast('Book listing deleted', 'success');
-      initAdminPage();
+      _deptsList = await window.BookAPI.getDepartments();
+      if (!tbody) return;
+      tbody.innerHTML = _deptsList.map(d => `
+        <tr>
+          <td><span style="font-weight:700;color:var(--color-primary);">${escapeHtml(d.code)}</span></td>
+          <td><strong>${escapeHtml(d.name)}</strong></td>
+          <td>${escapeHtml(d.college_name || 'RCTI')}</td>
+          <td style="text-align: right;">
+            <button class="action-btn danger" title="Delete Department" onclick="window.deleteDepartment('${d.id}')"><i class="fa-solid fa-trash"></i></button>
+          </td>
+        </tr>
+      `).join('') || '<tr><td colspan="4" style="text-align:center;padding:16px;color:var(--color-gray);">No departments found.</td></tr>';
     } catch (err) {
-      showToast(err.message || 'Failed to delete listing', 'danger');
+      if (tbody) tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;padding:16px;color:var(--color-danger);">${escapeHtml(err.message)}</td></tr>`;
     }
   }
-};
+
+  async function loadCourses() {
+    const tbody = document.getElementById('academicCoursesBody');
+    if (tbody) tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:16px;color:var(--color-gray);"><i class="fa-solid fa-spinner fa-spin"></i> Loading courses...</td></tr>';
+    try {
+      const courses = await window.BookAPI.getCourses();
+      if (!tbody) return;
+      tbody.innerHTML = courses.map(c => `
+        <tr>
+          <td><span style="font-weight:700;color:var(--color-primary);">${escapeHtml(c.code)}</span></td>
+          <td><strong>${escapeHtml(c.name)}</strong></td>
+          <td>${escapeHtml(c.department_name || c.department?.name || 'Computer')}</td>
+          <td>Semester ${c.semester || 1}</td>
+          <td style="text-align: right;">
+            <button class="action-btn danger" title="Delete Course" onclick="window.deleteCourse('${c.id}')"><i class="fa-solid fa-trash"></i></button>
+          </td>
+        </tr>
+      `).join('') || '<tr><td colspan="5" style="text-align:center;padding:16px;color:var(--color-gray);">No courses found.</td></tr>';
+    } catch (err) {
+      if (tbody) tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:16px;color:var(--color-danger);">${escapeHtml(err.message)}</td></tr>`;
+    }
+  }
+
+  // Academic Modals & Actions
+  document.getElementById('btnAddCollege')?.addEventListener('click', () => {
+    document.getElementById('adminAddCollegeModal')?.classList.add('active');
+  });
+  document.getElementById('closeAddCollegeModal')?.addEventListener('click', () => {
+    document.getElementById('adminAddCollegeModal')?.classList.remove('active');
+  });
+  document.getElementById('adminAddCollegeForm')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const payload = {
+      name: document.getElementById('newCollegeName').value.trim(),
+      code: document.getElementById('newCollegeCode').value.trim(),
+      city: document.getElementById('newCollegeCity').value.trim(),
+      state: document.getElementById('newCollegeState').value.trim(),
+    };
+    try {
+      await window.BookAPI.createCollege(payload);
+      if (typeof showToast === 'function') showToast('College added successfully', 'success');
+      document.getElementById('adminAddCollegeModal')?.classList.remove('active');
+      document.getElementById('adminAddCollegeForm').reset();
+      loadColleges();
+    } catch (err) {
+      if (typeof showToast === 'function') showToast(err.message || 'Failed to add college', 'danger');
+    }
+  });
+  window.deleteCollege = async function(id) {
+    if (!confirm('Are you sure you want to delete this college?')) return;
+    try {
+      await window.BookAPI.deleteCollege(id);
+      if (typeof showToast === 'function') showToast('College deleted successfully', 'success');
+      loadColleges();
+    } catch (err) {
+      if (typeof showToast === 'function') showToast(err.message || 'Failed to delete college', 'danger');
+    }
+  };
+
+  document.getElementById('btnAddDepartment')?.addEventListener('click', async () => {
+    const select = document.getElementById('newDeptCollegeSelect');
+    if (select) {
+      if (_collegesList.length === 0) _collegesList = await window.BookAPI.getColleges();
+      select.innerHTML = _collegesList.map(c => `<option value="${c.id}">${escapeHtml(c.name)} (${c.code})</option>`).join('');
+    }
+    document.getElementById('adminAddDeptModal')?.classList.add('active');
+  });
+  document.getElementById('closeAddDeptModal')?.addEventListener('click', () => {
+    document.getElementById('adminAddDeptModal')?.classList.remove('active');
+  });
+  document.getElementById('adminAddDeptForm')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const payload = {
+      college: document.getElementById('newDeptCollegeSelect').value,
+      name: document.getElementById('newDeptName').value.trim(),
+      code: document.getElementById('newDeptCode').value.trim().toUpperCase(),
+    };
+    try {
+      await window.BookAPI.createDepartment(payload);
+      if (typeof showToast === 'function') showToast('Department added successfully', 'success');
+      document.getElementById('adminAddDeptModal')?.classList.remove('active');
+      document.getElementById('adminAddDeptForm').reset();
+      loadDepartments();
+    } catch (err) {
+      if (typeof showToast === 'function') showToast(err.message || 'Failed to add department', 'danger');
+    }
+  });
+  window.deleteDepartment = async function(id) {
+    if (!confirm('Are you sure you want to delete this department?')) return;
+    try {
+      await window.BookAPI.deleteDepartment(id);
+      if (typeof showToast === 'function') showToast('Department deleted successfully', 'success');
+      loadDepartments();
+    } catch (err) {
+      if (typeof showToast === 'function') showToast(err.message || 'Failed to delete department', 'danger');
+    }
+  };
+
+  document.getElementById('btnAddCourse')?.addEventListener('click', async () => {
+    const select = document.getElementById('newCourseDeptSelect');
+    if (select) {
+      if (_deptsList.length === 0) _deptsList = await window.BookAPI.getDepartments();
+      select.innerHTML = _deptsList.map(d => `<option value="${d.id}">${escapeHtml(d.name)} (${d.code})</option>`).join('');
+    }
+    document.getElementById('adminAddCourseModal')?.classList.add('active');
+  });
+  document.getElementById('closeAddCourseModal')?.addEventListener('click', () => {
+    document.getElementById('adminAddCourseModal')?.classList.remove('active');
+  });
+  document.getElementById('adminAddCourseForm')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const payload = {
+      department: document.getElementById('newCourseDeptSelect').value,
+      name: document.getElementById('newCourseName').value.trim(),
+      code: document.getElementById('newCourseCode').value.trim(),
+      semester: parseInt(document.getElementById('newCourseSemester').value, 10),
+    };
+    try {
+      await window.BookAPI.createCourse(payload);
+      if (typeof showToast === 'function') showToast('Course added successfully', 'success');
+      document.getElementById('adminAddCourseModal')?.classList.remove('active');
+      document.getElementById('adminAddCourseForm').reset();
+      loadCourses();
+    } catch (err) {
+      if (typeof showToast === 'function') showToast(err.message || 'Failed to add course', 'danger');
+    }
+  });
+  window.deleteCourse = async function(id) {
+    if (!confirm('Are you sure you want to delete this course?')) return;
+    try {
+      await window.BookAPI.deleteCourse(id);
+      if (typeof showToast === 'function') showToast('Course deleted successfully', 'success');
+      loadCourses();
+    } catch (err) {
+      if (typeof showToast === 'function') showToast(err.message || 'Failed to delete course', 'danger');
+    }
+  };
+
+  // ── 8. ANALYTICS DEEP DIVE ────────────────────────────────────────────────
+  async function loadAnalytics() {
+    try {
+      const data = await window.BookAPI.getAdminAnalytics();
+
+      // 1. Monthly Trends
+      const growthCanvas = document.getElementById('analyticsGrowthChartCanvas');
+      if (growthCanvas && data.monthlyTrends) {
+        if (_adminCharts.analyticsGrowth) _adminCharts.analyticsGrowth.destroy();
+        _adminCharts.analyticsGrowth = new Chart(growthCanvas, {
+          type: 'line',
+          data: {
+            labels: data.monthlyTrends.map(m => m.month),
+            datasets: [
+              {
+                label: 'New Users',
+                data: data.monthlyTrends.map(m => m.users),
+                borderColor: '#6366f1',
+                backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                tension: 0.3,
+                fill: true,
+              },
+              {
+                label: 'New Listings',
+                data: data.monthlyTrends.map(m => m.books),
+                borderColor: '#10b981',
+                backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                tension: 0.3,
+                fill: true,
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: { y: { beginAtZero: true } }
+          }
+        });
+      }
+
+      // 2. Top Colleges
+      const collegesCanvas = document.getElementById('analyticsCollegesChartCanvas');
+      if (collegesCanvas && data.topColleges) {
+        if (_adminCharts.analyticsColleges) _adminCharts.analyticsColleges.destroy();
+        _adminCharts.analyticsColleges = new Chart(collegesCanvas, {
+          type: 'bar',
+          data: {
+            labels: data.topColleges.map(c => c.code || c.name),
+            datasets: [{
+              label: 'Enrolled Students',
+              data: data.topColleges.map(c => c.students_count),
+              backgroundColor: '#0284c7',
+              borderRadius: 6,
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true } }
+          }
+        });
+      }
+
+      // 3. Condition Breakdown
+      const conditionCanvas = document.getElementById('analyticsConditionChartCanvas');
+      if (conditionCanvas && data.conditionBreakdown) {
+        if (_adminCharts.analyticsCondition) _adminCharts.analyticsCondition.destroy();
+        _adminCharts.analyticsCondition = new Chart(conditionCanvas, {
+          type: 'pie',
+          data: {
+            labels: data.conditionBreakdown.map(c => c.condition || 'Good'),
+            datasets: [{
+              data: data.conditionBreakdown.map(c => c.count),
+              backgroundColor: ['#10b981', '#3b82f6', '#f59e0b', '#ef4444'],
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { position: 'bottom' } }
+          }
+        });
+      }
+
+      // 4. Swap Fulfillment Rate
+      if (data.exchangeStats) {
+        document.getElementById('analyticsSwapRate').textContent = `${data.exchangeStats.successRate}%`;
+      }
+    } catch (err) {
+      if (typeof showToast === 'function') showToast(err.message || 'Failed to load analytics', 'danger');
+    }
+  }
+  document.getElementById('btnRefreshAnalytics')?.addEventListener('click', loadAnalytics);
+
+  // ── 9. AUDIT LOGS ─────────────────────────────────────────────────────────
+  let _logsCache = [];
+
+  async function loadAuditLogs() {
+    const tbody = document.getElementById('adminAuditLogsTableBody');
+    const searchVal = document.getElementById('auditSearchInput')?.value.trim();
+    const actionVal = document.getElementById('auditActionFilter')?.value;
+
+    if (tbody) tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--color-gray);"><i class="fa-solid fa-spinner fa-spin"></i> Loading audit logs...</td></tr>';
+
+    try {
+      const filters = {};
+      if (searchVal) filters.search = searchVal;
+      if (actionVal) filters.action = actionVal;
+
+      _logsCache = await window.BookAPI.getAuditLogs(filters);
+      document.getElementById('auditLogsResultCount').textContent = `${_logsCache.length} Logs`;
+
+      if (!tbody) return;
+      tbody.innerHTML = _logsCache.map((l, idx) => `
+        <tr>
+          <td><span class="badge badge-primary">${escapeHtml(l.action)}</span></td>
+          <td><strong>${escapeHtml(l.title)}</strong></td>
+          <td style="font-size:12.5px;">${escapeHtml(l.user_email || l.user_name || 'Anonymous')}</td>
+          <td style="font-family:monospace;font-size:12px;color:var(--color-gray);">${escapeHtml(l.ip_address || '127.0.0.1')}</td>
+          <td style="font-size:12px;color:var(--color-gray);">${l.created_at ? new Date(l.created_at).toLocaleString() : 'N/A'}</td>
+          <td style="text-align: right;">
+            <button class="action-btn" title="Inspect Telemetry" onclick="window.inspectAuditLog(${idx})"><i class="fa-solid fa-code"></i></button>
+          </td>
+        </tr>
+      `).join('') || '<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--color-gray);">No audit logs found.</td></tr>';
+    } catch (err) {
+      if (tbody) tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--color-danger);">${escapeHtml(err.message || 'Failed to load logs.')}</td></tr>`;
+    }
+  }
+
+  window.inspectAuditLog = function(idx) {
+    const log = _logsCache[idx];
+    if (!log) return;
+    const modal = document.getElementById('adminAuditMetaModal');
+    const body = document.getElementById('auditMetaBody');
+    if (!modal || !body) return;
+    body.textContent = JSON.stringify(log, null, 2);
+    modal.classList.add('active');
+  };
+  document.getElementById('closeAuditMetaModal')?.addEventListener('click', () => {
+    document.getElementById('adminAuditMetaModal')?.classList.remove('active');
+  });
+
+  let auditSearchTimeout = null;
+  document.getElementById('auditSearchInput')?.addEventListener('input', () => {
+    clearTimeout(auditSearchTimeout);
+    auditSearchTimeout = setTimeout(loadAuditLogs, 300);
+  });
+  document.getElementById('auditActionFilter')?.addEventListener('change', loadAuditLogs);
+  document.getElementById('btnRefreshAuditLogs')?.addEventListener('click', loadAuditLogs);
+
+  // ── 10. NOTIFICATIONS & BROADCAST ─────────────────────────────────────────
+  async function loadNotifications() {
+    const tbody = document.getElementById('adminNotificationsTableBody');
+    if (tbody) tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--color-gray);"><i class="fa-solid fa-spinner fa-spin"></i> Loading notifications...</td></tr>';
+    try {
+      const data = await window.BookAPI.getNotifications();
+      const list = data.notifications || [];
+      if (!tbody) return;
+      tbody.innerHTML = list.map(n => `
+        <tr>
+          <td><strong>${escapeHtml(n.title)}</strong><br><span style="font-size:12px;color:var(--color-gray);">${escapeHtml(n.message || '')}</span></td>
+          <td>${escapeHtml(n.recipient_email || 'Recipient')}</td>
+          <td><span class="badge badge-secondary">${escapeHtml(n.notification_type || 'SYSTEM')}</span></td>
+          <td><span class="status-pill ${n.is_read ? 'completed' : 'pending'}">${n.is_read ? 'Read' : 'Unread'}</span></td>
+          <td style="font-size:12px;color:var(--color-gray);">${n.created_at ? new Date(n.created_at).toLocaleString() : 'N/A'}</td>
+        </tr>
+      `).join('') || '<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--color-gray);">No recent notifications.</td></tr>';
+    } catch (err) {
+      if (tbody) tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--color-danger);">${escapeHtml(err.message)}</td></tr>`;
+    }
+  }
+
+  document.getElementById('btnOpenBroadcastModal')?.addEventListener('click', () => {
+    document.getElementById('adminBroadcastModal')?.classList.add('active');
+  });
+  document.getElementById('closeBroadcastModal')?.addEventListener('click', () => {
+    document.getElementById('adminBroadcastModal')?.classList.remove('active');
+  });
+  document.getElementById('adminBroadcastForm')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const payload = {
+      title: document.getElementById('broadcastTitle').value.trim(),
+      message: document.getElementById('broadcastMessage').value.trim(),
+      target: document.getElementById('broadcastTarget').value,
+    };
+    try {
+      const res = await window.BookAPI.broadcastNotification(payload);
+      if (typeof showToast === 'function') showToast(res.message || 'Broadcast announcement sent', 'success');
+      document.getElementById('adminBroadcastModal')?.classList.remove('active');
+      document.getElementById('adminBroadcastForm').reset();
+      loadNotifications();
+    } catch (err) {
+      if (typeof showToast === 'function') showToast(err.message || 'Broadcast failed', 'danger');
+    }
+  });
+
+  // ── 11. SYSTEM HEALTH ─────────────────────────────────────────────────────
+  async function loadSystemHealth() {
+    try {
+      const health = await window.BookAPI.getAdminSystemHealth();
+      const isHealthy = health.status === 'HEALTHY';
+
+      const dbBadge = document.getElementById('healthDbBadge');
+      if (dbBadge) {
+        dbBadge.className = `health-status-badge ${isHealthy ? 'healthy' : 'degraded'}`;
+        dbBadge.innerHTML = `<i class="fa-solid ${isHealthy ? 'fa-circle-check' : 'fa-triangle-exclamation'}"></i> ${isHealthy ? 'Connected' : 'Degraded'}`;
+      }
+
+      document.getElementById('healthDbVendor').textContent = health.database?.vendor ? `${health.database.vendor.toUpperCase()} DB Engine` : 'MySQL Engine';
+      document.getElementById('healthDbLatency').textContent = `${health.database?.latency_ms || 1.2} ms`;
+      document.getElementById('healthEnv').textContent = health.engine?.environment || 'Production Ready';
+
+      if (health.counts) {
+        document.getElementById('healthCountUsers').textContent = health.counts.users || 0;
+        document.getElementById('healthCountBooks').textContent = health.counts.books || 0;
+        document.getElementById('healthCountColleges').textContent = health.counts.colleges || 0;
+        document.getElementById('healthCountLogs').textContent = health.counts.activity_logs || 0;
+      }
+    } catch (err) {
+      if (typeof showToast === 'function') showToast(err.message || 'Failed to fetch health check', 'danger');
+    }
+  }
+  document.getElementById('btnRefreshHealth')?.addEventListener('click', loadSystemHealth);
+
+  // ── 12. ADMIN PROFILE ─────────────────────────────────────────────────────
+  function loadAdminProfile() {
+    if (!currentUser) return;
+    document.getElementById('profAdminName').textContent = currentUser.full_name || currentUser.name || 'Administrator';
+    document.getElementById('profAdminEmail').textContent = currentUser.email || '';
+    document.getElementById('profAdminRoleBadge').textContent = currentUser.role || 'SUPER_ADMIN';
+    document.getElementById('profInputName').value = currentUser.full_name || currentUser.name || '';
+    document.getElementById('profInputEmail').value = currentUser.email || '';
+    document.getElementById('profInputPhone').value = currentUser.phone_number || '';
+    document.getElementById('profInputJoined').value = currentUser.date_joined ? new Date(currentUser.date_joined).toLocaleDateString() : 'Active Member';
+  }
+
+  document.getElementById('adminProfileForm')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const newName = document.getElementById('profInputName').value.trim();
+    const newPhone = document.getElementById('profInputPhone').value.trim();
+    try {
+      await _patch('/profile/', { full_name: newName, phone_number: newPhone });
+      if (typeof showToast === 'function') showToast('Admin profile updated successfully', 'success');
+      const updatedUser = await window.BookAPI.getCurrentUser();
+      const navName = document.getElementById('adminNavName');
+      if (navName && updatedUser) navName.textContent = `${updatedUser.full_name || updatedUser.name} (${updatedUser.role || 'Admin'})`;
+    } catch (err) {
+      if (typeof showToast === 'function') showToast(err.message || 'Failed to update profile', 'danger');
+    }
+  });
+
+  // ── Global Dashboard Refresh Handlers ─────────────────────────────────────
+  document.getElementById('btnRefreshDashboard')?.addEventListener('click', loadDashboardStats);
+  document.getElementById('btnGlobalRefresh')?.addEventListener('click', () => {
+    loadDashboardStats();
+    if (typeof showToast === 'function') showToast('Dashboard refreshed with latest database records', 'info');
+  });
+
+  // Initial Load
+  loadDashboardStats();
+}
 
 /* 📊 DASHBOARD */
 async function initDashboardPage() {

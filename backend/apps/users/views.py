@@ -102,37 +102,186 @@ class UserProfileView(generics.RetrieveUpdateAPIView):
         return self.request.user
 
 
-class UserListView(generics.ListAPIView):
-    """Admin-only endpoint to list all registered users."""
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import filters
+from .serializers import UserSerializer, RegisterSerializer, PublicUserSerializer, UserAdminSerializer, UserAdminDetailSerializer
+from apps.colleges.models import College, Department, Course
+from apps.analytics.models import ActivityLog
+
+
+class UserListView(generics.ListCreateAPIView):
+    """Admin-only endpoint to list and search all registered users."""
     queryset = User.objects.all().select_related('college', 'department').order_by('-date_joined')
-    serializer_class = UserSerializer
+    serializer_class = UserAdminSerializer
     permission_classes = [permissions.IsAuthenticated, IsBookBridgeAdmin]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields = ['role', 'is_active', 'is_college_verified', 'college', 'department']
+    search_fields = ['full_name', 'email', 'enrollment_number', 'phone_number']
+    ordering_fields = ['date_joined', 'full_name', 'email', 'role', 'last_login']
+
+    def perform_create(self, serializer):
+        user = serializer.save()
+        from apps.analytics.models import log_activity
+        log_activity(
+            request=self.request,
+            user=self.request.user,
+            action='REGISTER',
+            title=f"Admin created user: {user.full_name or user.email}",
+            details={'created_user_id': str(user.id), 'email': user.email, 'role': user.role}
+        )
+
+
+class UserAdminDetailView(generics.RetrieveUpdateDestroyAPIView):
+    """Admin-only endpoint to retrieve details, update, or deactivate a specific user."""
+    queryset = User.objects.all().select_related('college', 'department')
+    permission_classes = [permissions.IsAuthenticated, IsBookBridgeAdmin]
+
+    def get_serializer_class(self):
+        if self.request.method in ('GET',):
+            return UserAdminDetailSerializer
+        return UserAdminSerializer
+
+    def perform_update(self, serializer):
+        prev_user = self.get_object()
+        prev_role = prev_user.role
+        prev_active = prev_user.is_active
+
+        updated_user = serializer.save()
+
+        from apps.analytics.models import log_activity
+        # Log role changes
+        if prev_role != updated_user.role:
+            log_activity(
+                request=self.request,
+                user=self.request.user,
+                action='REGISTER',
+                title=f"Admin updated role for {updated_user.email}: {prev_role} -> {updated_user.role}",
+                details={'target_user': str(updated_user.id), 'old_role': prev_role, 'new_role': updated_user.role}
+            )
+        # Log activation / deactivation
+        if prev_active != updated_user.is_active:
+            action_desc = "activated" if updated_user.is_active else "deactivated"
+            log_activity(
+                request=self.request,
+                user=self.request.user,
+                action='LOGIN' if updated_user.is_active else 'LOGOUT',
+                title=f"Admin {action_desc} account: {updated_user.email}",
+                details={'target_user': str(updated_user.id), 'is_active': updated_user.is_active}
+            )
+
+    def perform_destroy(self, instance):
+        actor = self.request.user
+        is_super = actor.is_superuser or getattr(actor, 'role', '').upper() == 'SUPER_ADMIN'
+        if not is_super:
+            raise permissions.exceptions.PermissionDenied("Only Super Administrators can delete user accounts.")
+        if instance.id == actor.id:
+            raise permissions.exceptions.PermissionDenied("You cannot delete your own active administrator account.")
+
+        from apps.analytics.models import log_activity
+        log_activity(
+            request=self.request,
+            user=actor,
+            action='LOGOUT',
+            title=f"Admin deleted user account: {instance.full_name or instance.email}",
+            details={'deleted_email': instance.email, 'deleted_id': str(instance.id)}
+        )
+        instance.delete()
 
 
 class AdminStatsView(APIView):
-    """Admin-only endpoint returning accurate platform statistics."""
+    """Admin-only endpoint returning accurate platform statistics and analytics."""
     permission_classes = [permissions.IsAuthenticated, IsBookBridgeAdmin]
 
     def get(self, request):
         total_users = User.objects.count()
+        active_users = User.objects.filter(is_active=True).count()
+        inactive_users = User.objects.filter(is_active=False).count()
         student_users = User.objects.filter(role__iexact='STUDENT').count()
+        faculty_users = User.objects.filter(role__iexact='FACULTY').count()
+        admin_users = User.objects.filter(role__in=['SUPER_ADMIN', 'COLLEGE_ADMIN', 'DEPT_ADMIN', 'ADMIN']).count()
+
         total_books = Book.objects.count()
         available_books = Book.objects.filter(status='Available').count()
+        sold_books = Book.objects.filter(status__iexact='Sold').count()
+        exchanged_books = Book.objects.filter(status__iexact='Exchanged').count()
+        donated_books = Book.objects.filter(status__iexact='Donated').count()
+
         active_swaps = ExchangeProposal.objects.filter(status='pending').count()
         completed_swaps = ExchangeProposal.objects.filter(status='completed').count()
         total_claims = DonationClaim.objects.count()
         approved_donations = DonationClaim.objects.filter(status__in=['approved', 'completed']).count()
 
+        total_colleges = College.objects.count()
+        total_departments = Department.objects.count()
+        total_courses = Course.objects.count()
+
+        # Recent records
+        recent_users = list(User.objects.order_by('-date_joined')[:5].values('id', 'full_name', 'email', 'role', 'is_active', 'date_joined'))
+        for u in recent_users:
+            u['id'] = str(u['id'])
+            u['date_joined'] = u['date_joined'].isoformat() if u.get('date_joined') else None
+
+        recent_books = list(Book.objects.select_related('seller').order_by('-created_at')[:5].values(
+            'id', 'title', 'author', 'branch', 'price', 'mode', 'status', 'created_at', 'seller__full_name'
+        ))
+        for b in recent_books:
+            b['created_at'] = b['created_at'].isoformat() if b.get('created_at') else None
+
+        recent_exchanges = list(ExchangeProposal.objects.select_related('target_book', 'proposer').order_by('-created_at')[:5].values(
+            'id', 'status', 'created_at', 'target_book__title', 'proposer__full_name'
+        ))
+        for ex in recent_exchanges:
+            ex['id'] = str(ex.get('id', ''))
+            ex['created_at'] = ex['created_at'].isoformat() if ex.get('created_at') else None
+
+        recent_donations = list(DonationClaim.objects.select_related('book', 'claimer').order_by('-created_at')[:5].values(
+            'id', 'status', 'created_at', 'book__title', 'claimer__full_name'
+        ))
+        for d in recent_donations:
+            d['created_at'] = d['created_at'].isoformat() if d.get('created_at') else None
+
+        recent_activity = list(ActivityLog.objects.order_by('-created_at')[:10].values(
+            'id', 'action', 'title', 'user_email', 'user_name', 'created_at', 'ip_address'
+        ))
+        for a in recent_activity:
+            a['id'] = str(a.get('id', ''))
+            a['created_at'] = a['created_at'].isoformat() if a.get('created_at') else None
+
+        # Department distribution of books
+        from django.db.models import Count
+        dept_counts = list(Book.objects.values('branch').annotate(count=Count('id')).order_by('-count')[:8])
+        # Listing type breakdown
+        mode_counts = list(Book.objects.values('mode').annotate(count=Count('id')).order_by('-count'))
+
         return Response({
             'totalUsers': total_users,
+            'activeUsers': active_users,
+            'inactiveUsers': inactive_users,
             'studentUsers': student_users,
+            'facultyUsers': faculty_users,
+            'adminUsers': admin_users,
             'totalListings': total_books,
+            'totalBooks': total_books,
             'availableListings': available_books,
+            'availableBooks': available_books,
+            'soldBooks': sold_books,
+            'exchangedBooks': exchanged_books,
+            'donatedBooks': donated_books,
             'activeSwaps': active_swaps,
             'completedSwaps': completed_swaps,
             'freeDonations': total_claims,
             'approvedDonations': approved_donations,
+            'totalColleges': total_colleges,
+            'totalDepartments': total_departments,
+            'totalCourses': total_courses,
             'totalTransactions': completed_swaps + approved_donations,
+            'recentRegistrations': recent_users,
+            'recentListings': recent_books,
+            'recentExchanges': recent_exchanges,
+            'recentDonations': recent_donations,
+            'recentActivity': recent_activity,
+            'departmentDistribution': dept_counts,
+            'listingTypeBreakdown': mode_counts,
         }, status=status.HTTP_200_OK)
 
 

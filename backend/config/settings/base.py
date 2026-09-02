@@ -63,6 +63,7 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt.token_blacklist',
     'corsheaders',
     'django_filters',
+    'channels',
 
     # BookBridge apps
     'apps.core.apps.CoreConfig',
@@ -82,6 +83,12 @@ INSTALLED_APPS = [
     'apps.analytics.apps.AnalyticsConfig',
     'apps.admin_portal.apps.AdminPortalConfig',
 ]
+
+try:
+    import daphne
+    INSTALLED_APPS.insert(0, 'daphne')
+except ImportError:
+    pass
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -114,10 +121,11 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'config.wsgi.application'
+ASGI_APPLICATION = 'config.asgi.application'
 
 # ---------------------------------------------------------------------------
 # DATABASE — Automatic Multi-Engine Support (MySQL / PostgreSQL / SQLite)
-# Supports MYSQL_HOST, DATABASE_URL, or clean SQLite fallback for Render/Cloud deployments.
+# Production strictly requires MySQL/PostgreSQL. Silent SQLite fallback is blocked when DEBUG=False.
 # ---------------------------------------------------------------------------
 _database_url = os.environ.get('DATABASE_URL', '') or os.environ.get('MYSQL_URL', '')
 _mysql_host = os.environ.get('MYSQL_HOST', os.environ.get('MYSQLHOST', '')).strip()
@@ -138,13 +146,6 @@ if _is_testing and not os.environ.get('FORCE_MYSQL_TEST'):
             'NAME': ':memory:',
         }
     }
-elif _use_sqlite:
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
-        }
-    }
 elif _database_url and ('postgres://' in _database_url or 'postgresql://' in _database_url):
     import urllib.parse
     parsed = urllib.parse.urlparse(_database_url)
@@ -156,7 +157,7 @@ elif _database_url and ('postgres://' in _database_url or 'postgresql://' in _da
             'PASSWORD': parsed.password or '',
             'HOST': parsed.hostname or '',
             'PORT': str(parsed.port or '5432'),
-            'CONN_MAX_AGE': 600,
+            'CONN_MAX_AGE': 60,
         }
     }
 elif _database_url and ('mysql://' in _database_url or 'mariadb://' in _database_url):
@@ -172,10 +173,10 @@ elif _database_url and ('mysql://' in _database_url or 'mariadb://' in _database
             'PORT': str(parsed.port or '3306'),
             'OPTIONS': {
                 'charset': 'utf8mb4',
-                'connect_timeout': 5,
+                'connect_timeout': 10,
                 'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
             },
-            'CONN_MAX_AGE': 600,
+            'CONN_MAX_AGE': 60,
         }
     }
 elif _mysql_host and (_force_mysql or _mysql_host not in ('127.0.0.1', 'localhost', '')):
@@ -189,20 +190,59 @@ elif _mysql_host and (_force_mysql or _mysql_host not in ('127.0.0.1', 'localhos
             'PORT': _mysql_port,
             'OPTIONS': {
                 'charset': 'utf8mb4',
-                'connect_timeout': 5,
+                'connect_timeout': 10,
                 'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
             },
-            'CONN_MAX_AGE': 600,
+            'CONN_MAX_AGE': 60,
         }
     }
+elif not DEBUG and not _is_testing and not _use_sqlite:
+    from django.core.exceptions import ImproperlyConfigured
+    raise ImproperlyConfigured(
+        "Production deployment (DEBUG=False) strictly requires MySQL database configuration. "
+        "Please provide MYSQL_HOST, MYSQL_DATABASE, MYSQL_USER, MYSQL_PASSWORD, or DATABASE_URL."
+    )
 else:
-    # Default to SQLite if external MySQL is not specified/provided
+    # Default to SQLite for local development only
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
             'NAME': BASE_DIR / 'db.sqlite3',
         }
     }
+
+# ---------------------------------------------------------------------------
+# CHANNELS & REDIS LAYER CONFIGURATION
+# ---------------------------------------------------------------------------
+_redis_url = os.environ.get('REDIS_URL', '') or os.environ.get('REDIS_TLS_URL', '')
+_redis_host = os.environ.get('REDIS_HOST', '').strip()
+_redis_port = str(os.environ.get('REDIS_PORT', '6379')).strip()
+
+if _redis_url:
+    CHANNEL_LAYERS = {
+        'default': {
+            'BACKEND': 'channels_redis.core.RedisChannelLayer',
+            'CONFIG': {
+                'hosts': [_redis_url],
+            },
+        },
+    }
+elif _redis_host:
+    CHANNEL_LAYERS = {
+        'default': {
+            'BACKEND': 'channels_redis.core.RedisChannelLayer',
+            'CONFIG': {
+                'hosts': [(_redis_host, int(_redis_port))],
+            },
+        },
+    }
+else:
+    CHANNEL_LAYERS = {
+        'default': {
+            'BACKEND': 'channels.layers.InMemoryChannelLayer',
+        },
+    }
+
 
 # Custom User Model
 AUTH_USER_MODEL = 'users.User'
@@ -280,7 +320,7 @@ REST_FRAMEWORK = {
     ),
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 20,
-    'EXCEPTION_HANDLER': 'rest_framework.views.exception_handler',
+    'EXCEPTION_HANDLER': 'apps.core.exceptions.custom_exception_handler',
 }
 
 SIMPLE_JWT = {

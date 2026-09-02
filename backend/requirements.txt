@@ -7,6 +7,12 @@ django-filter>=24.2
 whitenoise>=6.0.0
 gunicorn>=22.0.0
 
+# Realtime WebSockets & ASGI Server
+channels>=4.0.0
+channels-redis>=4.2.0
+daphne>=4.1.0
+redis>=5.0.0
+
 # MySQL driver. PyMySQL is registered as MySQLdb in config/__init__.py,
 # avoiding a native mysqlclient build during cloud deployment.
 PyMySQL>=1.1.0

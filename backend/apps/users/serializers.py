@@ -120,3 +120,122 @@ class UserRegisterSerializer(serializers.ModelSerializer):
 
 
 RegisterSerializer = UserRegisterSerializer
+
+
+class UserAdminSerializer(serializers.ModelSerializer):
+    """Admin-facing user serializer for listing and updating user accounts."""
+    college_name = serializers.CharField(source='college.name', read_only=True, default='')
+    department_name = serializers.CharField(source='department.name', read_only=True, default='')
+
+    class Meta:
+        model = User
+        fields = (
+            'id', 'email', 'full_name', 'phone_number',
+            'college', 'college_name', 'department', 'department_name',
+            'enrollment_number', 'semester',
+            'role', 'avatar_url', 'is_college_verified', 'is_2fa_enabled',
+            'date_joined', 'last_login', 'is_active', 'is_staff', 'is_superuser'
+        )
+        read_only_fields = ('id', 'date_joined', 'last_login')
+
+    def validate(self, attrs):
+        request = self.context.get('request')
+        actor = getattr(request, 'user', None) if request else None
+
+        if not actor or not (actor.is_staff or actor.is_superuser or getattr(actor, 'role', '').upper() in ('SUPER_ADMIN', 'COLLEGE_ADMIN', 'DEPT_ADMIN', 'ADMIN')):
+            raise serializers.ValidationError('You do not have administrative permissions to perform this action.')
+
+        # Role change validation
+        new_role = attrs.get('role')
+        if new_role and self.instance and self.instance.role != new_role:
+            is_super = actor.is_superuser or getattr(actor, 'role', '').upper() == 'SUPER_ADMIN'
+            if not is_super:
+                raise serializers.ValidationError({'role': 'Only Super Administrators can assign or modify administrative roles.'})
+            if new_role == 'SUPER_ADMIN' and not (actor.is_superuser or getattr(actor, 'role', '').upper() == 'SUPER_ADMIN'):
+                raise serializers.ValidationError({'role': 'Only a Super Administrator can assign the Super Admin role.'})
+
+        # is_staff / is_superuser changes
+        if ('is_staff' in attrs or 'is_superuser' in attrs) and not actor.is_superuser:
+            raise serializers.ValidationError('Only Django superusers can modify is_staff or is_superuser flags.')
+
+        return attrs
+
+
+class UserAdminDetailSerializer(UserAdminSerializer):
+    """Detailed user serializer including nested resource counts and recent activity."""
+    books_count = serializers.SerializerMethodField()
+    exchanges_count = serializers.SerializerMethodField()
+    donations_count = serializers.SerializerMethodField()
+    recent_books = serializers.SerializerMethodField()
+    recent_exchanges = serializers.SerializerMethodField()
+    recent_donations = serializers.SerializerMethodField()
+    recent_activity = serializers.SerializerMethodField()
+
+    class Meta(UserAdminSerializer.Meta):
+        fields = UserAdminSerializer.Meta.fields + (
+            'books_count', 'exchanges_count', 'donations_count',
+            'recent_books', 'recent_exchanges', 'recent_donations', 'recent_activity'
+        )
+
+    def get_books_count(self, obj):
+        return obj.listed_books.count() if hasattr(obj, 'listed_books') else 0
+
+    def get_exchanges_count(self, obj):
+        from apps.exchange.models import ExchangeProposal
+        from django.db.models import Q
+        return ExchangeProposal.objects.filter(Q(proposer=obj) | Q(target_book__seller=obj)).count()
+
+    def get_donations_count(self, obj):
+        from apps.donations.models import DonationClaim
+        from django.db.models import Q
+        return DonationClaim.objects.filter(Q(claimer=obj) | Q(book__seller=obj)).count()
+
+    def get_recent_books(self, obj):
+        from apps.books.models import Book
+        books = Book.objects.filter(seller=obj).order_by('-created_at')[:5]
+        return [{
+            'id': b.id,
+            'title': b.title,
+            'price': float(b.price),
+            'status': b.status,
+            'mode': b.mode,
+            'created_at': b.created_at.isoformat() if hasattr(b, 'created_at') and b.created_at else None
+        } for b in books]
+
+    def get_recent_exchanges(self, obj):
+        from apps.exchange.models import ExchangeProposal
+        from django.db.models import Q
+        exchanges = ExchangeProposal.objects.filter(
+            Q(proposer=obj) | Q(target_book__seller=obj)
+        ).select_related('target_book', 'proposer').order_by('-created_at')[:5]
+        return [{
+            'id': str(ex.id),
+            'target_book_title': ex.target_book.title if ex.target_book else 'Unknown',
+            'status': ex.status,
+            'is_proposer': ex.proposer_id == obj.id,
+            'created_at': ex.created_at.isoformat() if ex.created_at else None
+        } for ex in exchanges]
+
+    def get_recent_donations(self, obj):
+        from apps.donations.models import DonationClaim
+        from django.db.models import Q
+        claims = DonationClaim.objects.filter(
+            Q(claimer=obj) | Q(book__seller=obj)
+        ).select_related('book', 'claimer').order_by('-created_at')[:5]
+        return [{
+            'id': cl.id,
+            'book_title': cl.book.title if cl.book else 'Unknown',
+            'status': cl.status,
+            'is_claimer': cl.claimer_id == obj.id,
+            'created_at': cl.created_at.isoformat() if cl.created_at else None
+        } for cl in claims]
+
+    def get_recent_activity(self, obj):
+        from apps.analytics.models import ActivityLog
+        logs = ActivityLog.objects.filter(user=obj).order_by('-created_at')[:5]
+        return [{
+            'id': str(l.id),
+            'action': l.action,
+            'title': l.title,
+            'created_at': l.created_at.isoformat() if l.created_at else None
+        } for l in logs]
