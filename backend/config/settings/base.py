@@ -240,7 +240,7 @@ _mysql_ssl_required = (
 _mysql_options = {
     'charset': 'utf8mb4',
     'connect_timeout': 15,
-    'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
+    'init_command': "SET sql_mode='STRICT_TRANS_TABLES', foreign_key_checks=0",
 }
 if _mysql_ssl_ca:
     _mysql_options['ssl'] = {'ca': _mysql_ssl_ca}
