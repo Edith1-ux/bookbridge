@@ -237,10 +237,16 @@ _mysql_options = {
 }
 if _mysql_ssl_ca:
     _mysql_options['ssl'] = {'ca': _mysql_ssl_ca}
-elif _mysql_ssl_mode:
-    _mysql_options['ssl'] = {'ssl_mode': _mysql_ssl_mode}
 elif _mysql_ssl_required:
-    _mysql_options['ssl'] = {'ssl_mode': 'REQUIRED'}
+    import ssl as _py_ssl
+    try:
+        _mysql_options['ssl'] = _py_ssl.create_default_context()
+    except Exception:
+        _ca_bundle = '/etc/ssl/certs/ca-certificates.crt'
+        if os.path.exists(_ca_bundle):
+            _mysql_options['ssl'] = {'ca': _ca_bundle}
+        else:
+            _mysql_options['ssl'] = True
 
 if (_is_testing or _is_collectstatic) and not os.environ.get('FORCE_MYSQL_TEST'):
     # In-memory test runner for CI / offline test suite execution and static collection
