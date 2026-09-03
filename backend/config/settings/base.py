@@ -132,7 +132,7 @@ _mysql_host = os.environ.get('MYSQL_HOST', os.environ.get('MYSQLHOST', '')).stri
 _mysql_port = str(os.environ.get('MYSQL_PORT', os.environ.get('MYSQLPORT', '3306'))).strip()
 _mysql_db = os.environ.get('MYSQL_DATABASE', os.environ.get('MYSQLDATABASE', 'bookbridge_db')).strip()
 _mysql_user = os.environ.get('MYSQL_USER', os.environ.get('MYSQLUSER', 'root')).strip()
-_mysql_password = os.environ.get('MYSQL_PASSWORD', os.environ.get('MYSQLPASSWORD', ''))
+_mysql_password = os.environ.get('MYSQL_PASSWORD', os.environ.get('MYSQLPASSWORD', '')).strip()
 
 _is_testing = 'test' in sys.argv or os.environ.get('DJANGO_TEST', '').lower() == 'true'
 _is_collectstatic = 'collectstatic' in sys.argv
