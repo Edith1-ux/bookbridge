@@ -31,4 +31,4 @@ EXPOSE 8000
 
 # Start Daphne ASGI from backend/ so the 'config' package is on sys.path.
 # Use $PORT (Render sets this dynamically); fall back to 8000 for docker-compose.
-CMD ["sh", "-c", "cd /app/backend && python manage.py migrate --noinput && daphne -b 0.0.0.0 -p ${PORT:-8000} config.asgi:application"]
+CMD ["sh", "-c", "cd /app/backend && python manage.py migrate --fake-initial --noinput && daphne -b 0.0.0.0 -p ${PORT:-8000} config.asgi:application"]

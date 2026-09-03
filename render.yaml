@@ -7,7 +7,7 @@ services:
     buildCommand: "pip install -r backend/requirements.txt && cd backend && python manage.py collectstatic --noinput"
 
     # Start: cd into backend/ first so 'config' package is importable, then migrate and run Daphne ASGI
-    startCommand: "cd backend && python manage.py migrate --noinput && daphne -b 0.0.0.0 -p $PORT config.asgi:application"
+    startCommand: "cd backend && python manage.py migrate --fake-initial --noinput && daphne -b 0.0.0.0 -p $PORT config.asgi:application"
 
     envVars:
       - key: PYTHON_VERSION
