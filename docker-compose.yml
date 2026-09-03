@@ -20,13 +20,20 @@ services:
       timeout: 5s
       retries: 5
 
+  redis:
+    image: redis:7-alpine
+    container_name: bookbridge_redis
+    restart: always
+    ports:
+      - "6379:6379"
+
   web:
     build:
       context: .
       dockerfile: Dockerfile
     container_name: bookbridge_web
     restart: always
-    command: gunicorn --chdir backend config.wsgi:application --bind 0.0.0.0:8000 --workers 3
+    command: daphne -b 0.0.0.0 -p 8000 config.asgi:application
     ports:
       - "8000:8000"
     environment:
@@ -37,11 +44,14 @@ services:
       - MYSQL_DATABASE=${MYSQL_DATABASE:-bookbridge_db}
       - MYSQL_USER=${MYSQL_USER:-bookbridge_user}
       - MYSQL_PASSWORD=${MYSQL_PASSWORD:-bookbridge_secure_pass}
+      - REDIS_URL=redis://redis:6379/0
       - ALLOWED_HOSTS=localhost,127.0.0.1,web
       - DEMO_MODE=false
     depends_on:
       mysql:
         condition: service_healthy
+      redis:
+        condition: service_started
 
 volumes:
   mysql_data:

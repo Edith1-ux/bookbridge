@@ -7,8 +7,8 @@
  */
 
 class BookBridgeAPIAdapter {
-  constructor() {
-    this.api = window.BookAPI;
+  get api() {
+    return window.BookAPI || null;
   }
 
   async getBooks(filters = {}) {

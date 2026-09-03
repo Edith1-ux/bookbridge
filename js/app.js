@@ -1250,6 +1250,11 @@ async function initAdminPage() {
   );
 
   if (!isAdmin) {
+    const authOverlay = document.getElementById('adminAuthOverlay');
+    if (authOverlay) {
+      // admin.html has a native password/auth modal overlay; let it handle the gate
+      return;
+    }
     document.body.innerHTML = `
       <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--color-bg);font-family:var(--font-sans);padding:24px;">
         <div style="max-width:440px;background:#fff;padding:32px;border-radius:16px;box-shadow:0 8px 30px rgba(0,0,0,0.1);text-align:center;">

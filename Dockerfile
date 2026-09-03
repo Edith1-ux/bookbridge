@@ -28,5 +28,5 @@ RUN python backend/manage.py collectstatic --noinput || true
 
 EXPOSE 8000
 
-# Production WSGI server
-CMD ["gunicorn", "--chdir", "backend", "config.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "3"]
+# Production ASGI server supporting HTTP and WebSockets
+CMD ["daphne", "-b", "0.0.0.0", "-p", "8000", "config.asgi:application"]
