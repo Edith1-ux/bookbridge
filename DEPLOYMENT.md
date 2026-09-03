@@ -15,16 +15,16 @@ Before launching to production, set the following environment variables:
 
 | Variable | Recommended Production Value | Description |
 | :--- | :--- | :--- |
-| `SECRET_KEY` | `django-insecure-prod-...` (Generate unique 64+ char key) | Cryptographic key for JWT & sessions |
+| `SECRET_KEY` | Auto-generated or custom 64+ char key | Cryptographic key for JWT & sessions |
 | `DEBUG` | `False` | Disables debug mode and detailed error stack traces |
-| `ALLOWED_HOSTS` | `yourdomain.com,bookbridge.onrender.com` | Allowed hostnames |
-| `MYSQL_HOST` | `your-mysql-host.cloud` | MySQL database server hostname |
-| `MYSQL_PORT` | `3306` | MySQL port (default: 3306) |
+| `ALLOWED_HOSTS` | `book-bridge-2.onrender.com,.onrender.com` | Allowed hostnames |
+| `MYSQL_HOST` | Hostname from cloud MySQL provider (e.g. TiDB Cloud / Aiven) | Cloud MySQL server host |
+| `MYSQL_PORT` | `3306` (or `4000` for TiDB Cloud) | MySQL port |
 | `MYSQL_DATABASE` | `bookbridge_db` | MySQL database name |
-| `MYSQL_USER` | `bookbridge_user` | MySQL database username |
-| `MYSQL_PASSWORD` | `your_secure_mysql_password` | MySQL database password |
-| `CORS_ALLOWED_ORIGINS` | `https://yourdomain.com,https://bookbridge.onrender.com` | Whitelisted cross-origin domains |
-| `CSRF_TRUSTED_ORIGINS` | `https://yourdomain.com,https://bookbridge.onrender.com` | Trusted CSRF origins |
+| `MYSQL_USER` | Your cloud database user | MySQL database username |
+| `MYSQL_PASSWORD` | Your real secure MySQL password | MySQL database password |
+| `CORS_ALLOWED_ORIGINS` | `https://yourdomain.com,https://book-bridge-2.onrender.com` | Whitelisted cross-origin domains |
+| `CSRF_TRUSTED_ORIGINS` | `https://yourdomain.com,https://book-bridge-2.onrender.com` | Trusted CSRF origins |
 | `SECURE_SSL_REDIRECT` | `True` | Enforce HTTPS redirects |
 | `DEMO_MODE` | `false` | Disables demo fallback mode |
 
@@ -34,21 +34,20 @@ Before launching to production, set the following environment variables:
 
 1. Push this repository to GitHub.
 2. In [Render Dashboard](https://dashboard.render.com/):
-   - Create or link your managed MySQL database instance.
    - Click **New +** → **Blueprint** and select your repository.
-3. Render automatically loads [`render.yaml`](file:///c:/Users/pved9/OneDrive/Documents/GitHub/book-bridge-2/render.yaml):
-   - **Build Command**: `pip install -r backend/requirements.txt && python backend/manage.py migrate && python backend/manage.py collectstatic --noinput`
-   - **Start Command**: `gunicorn --chdir backend config.wsgi:application --bind 0.0.0.0:$PORT`
-4. Provide the MySQL credentials (`MYSQL_HOST`, `MYSQL_PORT`, `MYSQL_DATABASE`, `MYSQL_USER`, `MYSQL_PASSWORD`) in the Render environment settings.
+3. Render automatically loads [`render.yaml`](render.yaml):
+   - **Build Command**: `pip install -r backend/requirements.txt && cd backend && python manage.py collectstatic --noinput`
+   - **Start Command**: `cd backend && python manage.py migrate --noinput && daphne -b 0.0.0.0 -p $PORT config.asgi:application`
+4. Provide your real cloud MySQL credentials (`MYSQL_HOST`, `MYSQL_PORT`, `MYSQL_DATABASE`, `MYSQL_USER`, `MYSQL_PASSWORD`) in the Render environment settings.
 
 ---
 
 ## 🐳 Docker Deployment
 
-### Building and Running with Docker Compose (Django + MySQL)
+### Building and Running with Docker Compose (Django + MySQL + Redis)
 
 ```bash
-# Launch MySQL 8.0 and Django Web Service
+# Launch MySQL 8.0, Redis 7, and Daphne ASGI Web Service
 docker-compose up -d --build
 ```
 
@@ -63,11 +62,11 @@ docker run -d -p 8000:8000 \
   -e SECRET_KEY="your-production-secret-key" \
   -e DEBUG="False" \
   -e ALLOWED_HOSTS="localhost,127.0.0.1" \
-  -e MYSQL_HOST="your-mysql-host" \
+  -e MYSQL_HOST="mysql-server-host" \
   -e MYSQL_PORT="3306" \
   -e MYSQL_DATABASE="bookbridge_db" \
-  -e MYSQL_USER="bookbridge_user" \
-  -e MYSQL_PASSWORD="your_mysql_password" \
+  -e MYSQL_USER="db_user" \
+  -e MYSQL_PASSWORD="db_password" \
   --name bookbridge_app bookbridge:latest
 ```
 

@@ -139,6 +139,109 @@ _is_collectstatic = 'collectstatic' in sys.argv
 _force_mysql = os.environ.get('FORCE_MYSQL', '').lower() in ('true', '1', 'yes')
 _use_sqlite = os.environ.get('USE_SQLITE', '').lower() in ('true', '1', 'yes')
 
+DISALLOWED_HOST_PLACEHOLDERS = {
+    'your-mysql-host',
+    'your-mysql-host.cloud',
+    'your_mysql_host',
+    'your-host',
+    'your-mysql-server',
+    'mysql-host',
+    'placeholder',
+    'example.com',
+    'change-me',
+    'changeme',
+    'todo',
+}
+
+DISALLOWED_PASS_PLACEHOLDERS = {
+    'your-mysql-password',
+    'your_mysql_password',
+    'your_secure_mysql_password',
+    'your-password',
+    'password',
+    'changeme',
+    'change-me',
+}
+
+# In production (DEBUG=False and not offline testing/collectstatic), validate that real credentials are provided
+if not DEBUG and not _is_testing and not _is_collectstatic and not _use_sqlite:
+    from django.core.exceptions import ImproperlyConfigured
+
+    if _database_url:
+        for placeholder in DISALLOWED_HOST_PLACEHOLDERS:
+            if placeholder in _database_url.lower():
+                raise ImproperlyConfigured(
+                    f"Production Database Error: DATABASE_URL contains placeholder '{placeholder}'.\n"
+                    "Please provide your real cloud MySQL connection URL in Render Environment Variables."
+                )
+    else:
+        if not _mysql_host:
+            raise ImproperlyConfigured(
+                "Production Database Error: MYSQL_HOST environment variable is missing.\n"
+                "Render requires a real cloud MySQL database to run BookBridge.\n"
+                "Please configure in Render Dashboard -> Environment:\n"
+                "  - MYSQL_HOST (hostname from your MySQL provider, e.g. TiDB Cloud, Aiven, Railway, AWS RDS)\n"
+                "  - MYSQL_PORT (usually 3306 or 4000)\n"
+                "  - MYSQL_DATABASE (e.g. bookbridge_db)\n"
+                "  - MYSQL_USER (e.g. your_db_user)\n"
+                "  - MYSQL_PASSWORD (your real password)"
+            )
+
+        if _mysql_host.lower() in DISALLOWED_HOST_PLACEHOLDERS or _mysql_host.lower().startswith('your-') or '<' in _mysql_host:
+            raise ImproperlyConfigured(
+                f"Production Database Error: MYSQL_HOST is set to the template placeholder '{_mysql_host}'.\n"
+                "Render cannot connect to a placeholder hostname.\n\n"
+                "Action Required:\n"
+                "1. Obtain a real MySQL database (e.g. free serverless MySQL on TiDB Cloud at tidbcloud.com, Aiven at aiven.io, or Railway at railway.app).\n"
+                "2. Open Render Dashboard -> your service -> Environment.\n"
+                "3. Replace 'your-mysql-host' with your actual database host (e.g. gateway01.ap-southeast-1.prod.aws.tidbcloud.com)."
+            )
+
+        if _mysql_host.lower() in ('localhost', '127.0.0.1') and not _force_mysql:
+            raise ImproperlyConfigured(
+                f"Production Database Error: MYSQL_HOST is set to '{_mysql_host}'.\n"
+                "In Render production, the database cannot run on localhost because Render web services run in isolated containers.\n"
+                "Please provide an external managed MySQL host in Render Environment Variables."
+            )
+
+        if not _mysql_password or _mysql_password.lower() in DISALLOWED_PASS_PLACEHOLDERS:
+            raise ImproperlyConfigured(
+                "Production Database Error: MYSQL_PASSWORD is missing or set to a placeholder.\n"
+                "Please set your real MySQL database password in Render Environment Variables."
+            )
+
+        if not _mysql_user or _mysql_user.lower().startswith('your-'):
+            raise ImproperlyConfigured(
+                "Production Database Error: MYSQL_USER is missing or set to a placeholder.\n"
+                "Please set your real MySQL username in Render Environment Variables."
+            )
+
+        if not _mysql_db or _mysql_db.lower().startswith('your-'):
+            raise ImproperlyConfigured(
+                "Production Database Error: MYSQL_DATABASE is missing or set to a placeholder.\n"
+                "Please set your real MySQL database name in Render Environment Variables."
+            )
+
+# Cloud SSL detection & configuration (TiDB Cloud, Aiven, Azure, DigitalOcean require SSL)
+_mysql_ssl_ca = os.environ.get('MYSQL_SSL_CA', '').strip()
+_mysql_ssl_mode = os.environ.get('MYSQL_SSL_MODE', '').strip()
+_mysql_ssl_required = (
+    os.environ.get('MYSQL_SSL', '').lower() in ('true', '1', 'yes', 'required') or
+    any(domain in _mysql_host.lower() for domain in ('tidbcloud.com', 'aivencloud.com', 'azure.com', 'digitalocean.com'))
+)
+
+_mysql_options = {
+    'charset': 'utf8mb4',
+    'connect_timeout': 15,
+    'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
+}
+if _mysql_ssl_ca:
+    _mysql_options['ssl'] = {'ca': _mysql_ssl_ca}
+elif _mysql_ssl_mode:
+    _mysql_options['ssl'] = {'ssl_mode': _mysql_ssl_mode}
+elif _mysql_ssl_required:
+    _mysql_options['ssl'] = {'ssl_mode': 'REQUIRED'}
+
 if (_is_testing or _is_collectstatic) and not os.environ.get('FORCE_MYSQL_TEST'):
     # In-memory test runner for CI / offline test suite execution and static collection
     DATABASES = {
@@ -164,6 +267,7 @@ elif _database_url and ('postgres://' in _database_url or 'postgresql://' in _da
 elif _database_url and ('mysql://' in _database_url or 'mariadb://' in _database_url):
     import urllib.parse
     parsed = urllib.parse.urlparse(_database_url)
+    db_opts = dict(_mysql_options)
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.mysql',
@@ -172,11 +276,7 @@ elif _database_url and ('mysql://' in _database_url or 'mariadb://' in _database
             'PASSWORD': parsed.password or '',
             'HOST': parsed.hostname or '127.0.0.1',
             'PORT': str(parsed.port or '3306'),
-            'OPTIONS': {
-                'charset': 'utf8mb4',
-                'connect_timeout': 10,
-                'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
-            },
+            'OPTIONS': db_opts,
             'CONN_MAX_AGE': 60,
         }
     }
@@ -189,11 +289,7 @@ elif _mysql_host and (_force_mysql or _mysql_host not in ('127.0.0.1', 'localhos
             'PASSWORD': _mysql_password or '',
             'HOST': _mysql_host,
             'PORT': _mysql_port,
-            'OPTIONS': {
-                'charset': 'utf8mb4',
-                'connect_timeout': 10,
-                'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
-            },
+            'OPTIONS': _mysql_options,
             'CONN_MAX_AGE': 60,
         }
     }

@@ -33,14 +33,12 @@ def health_check(request):
     except Exception:
         db_ok = False
 
-    http_status = 200 if db_ok else 503
     return JsonResponse({
-        'status': 'healthy' if db_ok else 'degraded',
-        'service': 'BookBridge Enterprise Django Engine',
+        'status': 'ok' if db_ok else 'degraded',
+        'service': 'BookBridge API',
+        'database': 'connected' if db_ok else 'disconnected',
         'version': '2.0.0',
-        'database_connected': db_ok,
-        'demo_mode': getattr(settings, 'DEMO_MODE', False),
-    }, status=http_status)
+    }, status=200)
 
 
 def health_liveness(request):
