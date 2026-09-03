@@ -1,3 +1,4 @@
+import logging
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -6,6 +7,8 @@ from .models import ChatMessage
 from .serializers import ChatMessageSerializer
 from apps.users.models import User
 from apps.notifications.models import Notification
+
+logger = logging.getLogger('apps.chat')
 
 
 class ChatMessageListCreateView(generics.ListCreateAPIView):
@@ -33,7 +36,9 @@ class ChatMessageListCreateView(generics.ListCreateAPIView):
                         link='/dashboard.html'
                     )
             except Exception:
-                pass
+                logger.exception(
+                    "Failed to create notification for chat message to %s", msg.receiver_email
+                )
 
 
 class ChatInboxView(APIView):

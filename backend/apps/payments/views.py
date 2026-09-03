@@ -1,10 +1,14 @@
 import os
 import hmac
 import hashlib
+import logging
+from django.db import transaction
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import permissions, status
 from apps.books.models import Book
+
+logger = logging.getLogger('apps.payments')
 
 
 class WalletBalanceView(APIView):
@@ -37,9 +41,15 @@ class CreatePaymentIntentView(APIView):
 
         if book_id:
             try:
-                book = Book.objects.get(pk=book_id)
-                if amount is None:
-                    amount = float(book.price)
+                with transaction.atomic():
+                    book = Book.objects.select_for_update().get(pk=book_id)
+                    if book.status != 'Available':
+                        return Response(
+                            {'error': 'This listing is no longer available. It may have already been reserved or sold.'},
+                            status=status.HTTP_409_CONFLICT
+                        )
+                    if amount is None:
+                        amount = float(book.price)
             except (Book.DoesNotExist, ValueError):
                 return Response({'error': 'Book not found.'}, status=status.HTTP_404_NOT_FOUND)
 

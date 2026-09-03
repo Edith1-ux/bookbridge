@@ -384,6 +384,7 @@ REST_FRAMEWORK = {
         'anon': '300/hour',
         'user': '3000/hour',
         'auth': '10/minute',     # Login & registration
+        'ai_chat': '20/minute',  # AI Assistant - prevent budget exhaustion
     },
     'DEFAULT_FILTER_BACKENDS': (
         'django_filters.rest_framework.DjangoFilterBackend',

@@ -1094,8 +1094,12 @@ function initLoginPage() {
 
       if (user) {
         showToast(`Welcome back, ${user.name}!`, 'success');
-        const redirectUrl = new URLSearchParams(window.location.search).get('redirect') || 'browse.html';
-        setTimeout(() => window.location.href = redirectUrl, 800);
+        // Validate redirect URL to prevent open redirect attacks
+        const rawRedirect = new URLSearchParams(window.location.search).get('redirect') || 'browse.html';
+        const safeRedirect = (rawRedirect.startsWith('/') || /^[a-zA-Z0-9_\-]+\.html$/.test(rawRedirect))
+          ? rawRedirect
+          : 'browse.html';
+        setTimeout(() => window.location.href = safeRedirect, 800);
       } else {
         showToast('Invalid credentials.', 'danger');
       }

@@ -1,6 +1,7 @@
 from rest_framework import generics, permissions, status, filters
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from django.db import models
 from django_filters.rest_framework import DjangoFilterBackend
 from .models import Book, Wishlist
 from .serializers import BookSerializer, BookCreateSerializer, WishlistSerializer
@@ -173,8 +174,8 @@ class BookDetailView(generics.RetrieveUpdateDestroyAPIView):
 
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
-        instance.views_count += 1
-        instance.save(update_fields=['views_count'])
+        # Use F() for atomic increment to avoid race conditions in concurrent requests
+        Book.objects.filter(pk=instance.pk).update(views_count=models.F('views_count') + 1)
         return super().retrieve(request, *args, **kwargs)
 
 

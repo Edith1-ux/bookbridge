@@ -66,6 +66,8 @@ class AIQueryParserView(APIView):
         })
 
 
+from rest_framework.throttling import ScopedRateThrottle
+
 class AIAssistantView(APIView):
     """
     Academic Study Assistant.
@@ -73,6 +75,8 @@ class AIAssistantView(APIView):
     academic guidance with rate limits, privacy-safe per-user session isolation, and token budgeting.
     """
     permission_classes = [permissions.IsAuthenticated]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = 'ai_chat'
 
     def post(self, request):
         user = request.user
