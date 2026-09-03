@@ -135,11 +135,12 @@ _mysql_user = os.environ.get('MYSQL_USER', os.environ.get('MYSQLUSER', 'root')).
 _mysql_password = os.environ.get('MYSQL_PASSWORD', os.environ.get('MYSQLPASSWORD', ''))
 
 _is_testing = 'test' in sys.argv or os.environ.get('DJANGO_TEST', '').lower() == 'true'
+_is_collectstatic = 'collectstatic' in sys.argv
 _force_mysql = os.environ.get('FORCE_MYSQL', '').lower() in ('true', '1', 'yes')
 _use_sqlite = os.environ.get('USE_SQLITE', '').lower() in ('true', '1', 'yes')
 
-if _is_testing and not os.environ.get('FORCE_MYSQL_TEST'):
-    # In-memory test runner for CI / offline test suite execution
+if (_is_testing or _is_collectstatic) and not os.environ.get('FORCE_MYSQL_TEST'):
+    # In-memory test runner for CI / offline test suite execution and static collection
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
@@ -414,9 +415,12 @@ _cors_origins = os.environ.get('CORS_ALLOWED_ORIGINS', '')
 if _cors_origins:
     CORS_ALLOWED_ORIGINS = [o.strip() for o in _cors_origins.split(',') if o.strip()]
 elif not DEBUG:
-    # In production with no explicit config, allow same-origin only
-    CORS_ALLOWED_ORIGINS = []
-    if _render_host:
+    # In production with no explicit config, allow Render origins
+    CORS_ALLOWED_ORIGINS = [
+        'https://book-bridge-2.onrender.com',
+        'https://book-bridge-2-5dbv.onrender.com',
+    ]
+    if _render_host and f'https://{_render_host}' not in CORS_ALLOWED_ORIGINS:
         CORS_ALLOWED_ORIGINS.append(f'https://{_render_host}')
 else:
     CORS_ALLOWED_ORIGINS = [
