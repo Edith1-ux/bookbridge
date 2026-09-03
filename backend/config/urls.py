@@ -127,6 +127,8 @@ urlpatterns = [
     path('browse', serve_html_page('browse.html'), name='browse-page'),
     path('browse.html', serve_html_page('browse.html')),
     path('browse-books', serve_html_page('browse.html')),
+    path('sell', serve_html_page('sell.html'), name='sell-page'),
+    path('sell.html', serve_html_page('sell.html')),
     path('exchange', serve_html_page('exchange.html'), name='exchange-page'),
     path('exchange.html', serve_html_page('exchange.html')),
     path('donate', serve_html_page('donate.html'), name='donate-page'),
