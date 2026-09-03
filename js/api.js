@@ -5,7 +5,9 @@
  * ==========================================================================
  */
 
-const API_BASE = (typeof window !== 'undefined' && (window.location.protocol === 'file:' || (window.location.port && window.location.port !== '8000' && window.location.port !== '80' && window.location.port !== '443')))
+// Use relative /api for all same-origin deployments (Render, Netlify, Vercel proxy, etc.)
+// Only fall back to absolute localhost URL when opening HTML as a local file (file: protocol)
+const API_BASE = (typeof window !== 'undefined' && window.location.protocol === 'file:')
   ? 'http://127.0.0.1:8000/api'
   : '/api';
 let _currentUserCache = null;

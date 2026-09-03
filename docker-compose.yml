@@ -33,7 +33,7 @@ services:
       dockerfile: Dockerfile
     container_name: bookbridge_web
     restart: always
-    command: daphne -b 0.0.0.0 -p 8000 config.asgi:application
+    command: sh -c "cd /app/backend && python manage.py migrate --noinput && daphne -b 0.0.0.0 -p 8000 config.asgi:application"
     ports:
       - "8000:8000"
     environment:

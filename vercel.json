@@ -3,7 +3,7 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://bookbridge-production-8c39.up.railway.app/api/:path*"
+      "destination": "https://book-bridge-2.onrender.com/api/:path*"
     }
   ]
 }
