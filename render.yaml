@@ -7,7 +7,7 @@ services:
     buildCommand: "pip install -r backend/requirements.txt && cd backend && python manage.py collectstatic --noinput"
 
     # Start: cd into backend/ first so 'config' package is importable, then migrate and run Daphne ASGI
-    startCommand: "cd backend && python manage.py migrate --fake-initial --noinput && daphne -b 0.0.0.0 -p $PORT config.asgi:application"
+    startCommand: "cd backend && python manage.py migrate --fake-initial --noinput && python -m daphne -b 0.0.0.0 -p $PORT config.asgi:application"
 
     envVars:
       - key: PYTHON_VERSION
@@ -27,6 +27,10 @@ services:
       - key: DEMO_MODE
         value: "false"
 
+      # Optional unified connection string (e.g. mysql://user:pass@host:3306/dbname)
+      - key: DATABASE_URL
+        sync: false
+
       # MySQL database — set in Render dashboard (sync: false means value is set manually)
       - key: MYSQL_HOST
         sync: false
@@ -38,6 +42,8 @@ services:
         sync: false
       - key: MYSQL_PASSWORD
         sync: false
+      - key: MYSQL_SSL
+        value: "true"
 
       # Redis — set in Render dashboard (required for Django Channels WebSockets)
       - key: REDIS_URL

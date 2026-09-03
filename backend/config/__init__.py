@@ -12,8 +12,8 @@ except ImportError:
 # (raising MySQL Error 1072: Key column '...' doesn't exist in table).
 # Setting supports_foreign_keys = False tells Django's schema editor to create the column without
 # emitting physical foreign key constraints, while keeping 100% full ORM relational integrity intact.
-_mysql_host = os.environ.get('MYSQL_HOST', '')
-if 'tidbcloud.com' in _mysql_host.lower() or os.environ.get('DISABLE_DB_CONSTRAINTS', '').lower() in ('true', '1', 'yes'):
+_db_str = (os.environ.get('MYSQL_HOST', '') + ' ' + os.environ.get('DATABASE_URL', '') + ' ' + os.environ.get('MYSQL_URL', '')).lower()
+if 'tidbcloud.com' in _db_str or os.environ.get('DISABLE_DB_CONSTRAINTS', '').lower() in ('true', '1', 'yes'):
     try:
         from django.db.backends.mysql.features import DatabaseFeatures
         DatabaseFeatures.supports_foreign_keys = False

@@ -3,7 +3,59 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://book-bridge-2.onrender.com/api/:path*"
+      "destination": "https://book-bridge-2-5dbv.onrender.com/api/:path*"
+    },
+    {
+      "source": "/browse",
+      "destination": "/browse.html"
+    },
+    {
+      "source": "/sell",
+      "destination": "/sell.html"
+    },
+    {
+      "source": "/exchange",
+      "destination": "/exchange.html"
+    },
+    {
+      "source": "/donate",
+      "destination": "/donate.html"
+    },
+    {
+      "source": "/about",
+      "destination": "/about.html"
+    },
+    {
+      "source": "/contact",
+      "destination": "/contact.html"
+    },
+    {
+      "source": "/login",
+      "destination": "/login.html"
+    },
+    {
+      "source": "/register",
+      "destination": "/register.html"
+    },
+    {
+      "source": "/dashboard",
+      "destination": "/dashboard.html"
+    },
+    {
+      "source": "/admin",
+      "destination": "/admin.html"
+    },
+    {
+      "source": "/privacy",
+      "destination": "/privacy.html"
+    },
+    {
+      "source": "/terms",
+      "destination": "/terms.html"
+    },
+    {
+      "source": "/forgot-password",
+      "destination": "/forgot-password.html"
     }
   ]
 }

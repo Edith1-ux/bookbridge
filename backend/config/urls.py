@@ -34,11 +34,12 @@ def health_check(request):
         db_ok = False
 
     return JsonResponse({
-        'status': 'ok' if db_ok else 'degraded',
-        'service': 'BookBridge API',
+        'status': 'healthy' if db_ok else 'degraded',
+        'database_connected': db_ok,
         'database': 'connected' if db_ok else 'disconnected',
+        'service': 'BookBridge Enterprise Django Engine',
         'version': '2.0.0',
-    }, status=200)
+    }, status=200 if db_ok else 503)
 
 
 def health_liveness(request):
@@ -233,3 +234,23 @@ urlpatterns = [
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+
+
+def custom_handler404(request, exception=None):
+    if request.path.startswith('/api/'):
+        return JsonResponse({'error': 'Endpoint not found', 'status_code': 404}, status=404)
+    f404 = PROJECT_ROOT / '404.html'
+    if f404.exists():
+        with open(f404, 'r', encoding='utf-8') as f:
+            return HttpResponse(f.read(), content_type='text/html; charset=utf-8', status=404)
+    return HttpResponse("<h1>404 - Page Not Found</h1>", content_type='text/html; charset=utf-8', status=404)
+
+
+def custom_handler500(request):
+    if request.path.startswith('/api/'):
+        return JsonResponse({'error': 'Internal server error. Please try again shortly.', 'status_code': 500}, status=500)
+    return HttpResponse("<h1>500 - Server Error</h1><p>Something went wrong. Please try again shortly.</p>", content_type='text/html; charset=utf-8', status=500)
+
+
+handler404 = 'config.urls.custom_handler404'
+handler500 = 'config.urls.custom_handler500'

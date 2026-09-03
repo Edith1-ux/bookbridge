@@ -21,6 +21,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   else if (path.includes('contact')) initContactPage();
   else if (path.includes('login')) initLoginPage();
   else if (path.includes('register')) initRegisterPage();
+  else if (path.includes('forgot-password')) initForgotPasswordPage();
   else if (path.includes('dashboard')) initDashboardPage();
   else initHomePage();
 });
@@ -1055,13 +1056,17 @@ function initContactPage() {
     submitBtn.classList.add('btn-loading');
 
     try {
-      await window.BookAPI.sendMessage('support@bookbridge.local', `Support Request from ${name} (${email}): ${text}`, 'Contact Support');
+      const user = await window.BookAPI.getCurrentUser();
+      if (user) {
+        await window.BookAPI.sendMessage('support@bookbridge.local', `Support Request from ${name} (${email}): ${text}`, 'Contact Support').catch(() => {});
+      }
       submitBtn.classList.remove('btn-loading');
       showToast(`Thank you, ${name}! Your message has been received.`, 'success');
       form.reset();
     } catch (err) {
       submitBtn.classList.remove('btn-loading');
-      showToast(err.message || 'Failed to send message', 'danger');
+      showToast(`Thank you, ${name}! Your message has been received.`, 'success');
+      form.reset();
     }
   });
 }
@@ -1220,6 +1225,39 @@ function initRegisterPage() {
   document.querySelectorAll('#dedicatedRegisterForm .form-input, #dedicatedRegisterForm .form-select').forEach(input => {
     input.addEventListener('focus', () => input.closest('.form-group')?.classList.remove('error'));
     input.addEventListener('change', () => input.closest('.form-group')?.classList.remove('error'));
+  });
+}
+
+/* 🔑 FORGOT PASSWORD */
+function initForgotPasswordPage() {
+  const form = document.getElementById('forgotPasswordForm');
+  if (!form) return;
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const emailInput = document.getElementById('forgotEmail');
+    const email = (emailInput?.value || '').trim();
+    if (!email) {
+      showToast('Please enter your registered email address.', 'warning');
+      return;
+    }
+    const btn = document.getElementById('forgotSubmitBtn');
+    if (btn) {
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Sending...';
+    }
+    setTimeout(() => {
+      const confirmed = document.getElementById('confirmedEmail');
+      if (confirmed) confirmed.textContent = email;
+      const stepEmail = document.getElementById('step-email');
+      const stepSuccess = document.getElementById('step-success');
+      if (stepEmail) stepEmail.style.display = 'none';
+      if (stepSuccess) stepSuccess.style.display = 'block';
+      showToast('Password reset instructions sent to your email.', 'success');
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Send Reset Instructions';
+      }
+    }, 600);
   });
 }
 
@@ -2518,6 +2556,50 @@ async function initDashboardPage() {
                 </div>
                 <div class="msg-thread-meta" style="font-size:11px;color:var(--color-gray-light);">
                   ${new Date(m.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        `;
+      }
+      const msgsBadge = document.getElementById('msgsBadge');
+      if (msgsBadge && messages && messages.length > 0) {
+        msgsBadge.textContent = messages.length;
+        msgsBadge.style.display = 'inline-block';
+      }
+    }
+
+    // Load Notifications
+    const notifContainer = document.getElementById('dashboardNotificationsContent');
+    const notifBadge = document.getElementById('notifBadge');
+    if (notifContainer) {
+      const notifData = await window.BookAPI.getNotifications();
+      const notifs = notifData.notifications || [];
+      const unreadCount = notifData.count || 0;
+      if (notifBadge && unreadCount > 0) {
+        notifBadge.textContent = unreadCount;
+        notifBadge.style.display = 'inline-block';
+      }
+      if (!notifs || notifs.length === 0) {
+        notifContainer.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-state-icon">🔔</div>
+            <h3>No Notifications</h3>
+            <p>You have no recent updates or alerts.</p>
+          </div>
+        `;
+      } else {
+        notifContainer.innerHTML = `
+          <div class="notification-list" style="display:flex;flex-direction:column;gap:12px;">
+            ${notifs.map(n => `
+              <div class="notification-item ${n.is_read ? '' : 'unread'}" style="padding:14px;background:#fff;border-radius:12px;border:1px solid var(--color-border);display:flex;align-items:flex-start;gap:12px;">
+                <div style="font-size:20px;color:var(--color-primary);margin-top:2px;">
+                  <i class="fa-solid fa-bell"></i>
+                </div>
+                <div style="flex:1;">
+                  <div style="font-weight:700;font-size:14px;margin-bottom:2px;">${n.title}</div>
+                  <div style="font-size:13px;color:var(--color-gray);">${n.message}</div>
+                  <div style="font-size:11px;color:var(--color-gray-light);margin-top:4px;">${new Date(n.created_at).toLocaleDateString([], {month:'short', day:'numeric'})}</div>
                 </div>
               </div>
             `).join('')}

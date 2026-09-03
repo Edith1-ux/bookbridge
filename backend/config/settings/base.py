@@ -125,14 +125,35 @@ ASGI_APPLICATION = 'config.asgi.application'
 
 # ---------------------------------------------------------------------------
 # DATABASE — Automatic Multi-Engine Support (MySQL / PostgreSQL / SQLite)
-# Production strictly requires MySQL/PostgreSQL. Silent SQLite fallback is blocked when DEBUG=False.
+# Production strictly requires MySQL. Ephemeral SQLite fallback is blocked when DEBUG=False.
 # ---------------------------------------------------------------------------
+try:
+    import pymysql
+    pymysql.install_as_MySQLdb()
+except ImportError:
+    pass
+
 _database_url = os.environ.get('DATABASE_URL', '') or os.environ.get('MYSQL_URL', '')
 _mysql_host = os.environ.get('MYSQL_HOST', os.environ.get('MYSQLHOST', '')).strip()
 _mysql_port = str(os.environ.get('MYSQL_PORT', os.environ.get('MYSQLPORT', '3306'))).strip()
 _mysql_db = os.environ.get('MYSQL_DATABASE', os.environ.get('MYSQLDATABASE', 'bookbridge_db')).strip()
 _mysql_user = os.environ.get('MYSQL_USER', os.environ.get('MYSQLUSER', 'root')).strip()
 _mysql_password = os.environ.get('MYSQL_PASSWORD', os.environ.get('MYSQLPASSWORD', '')).strip()
+
+# Early parsing of DATABASE_URL if mysql scheme is provided
+if _database_url and ('mysql://' in _database_url or 'mariadb://' in _database_url):
+    import urllib.parse
+    _parsed_db = urllib.parse.urlparse(_database_url)
+    if _parsed_db.hostname:
+        _mysql_host = _parsed_db.hostname
+    if _parsed_db.port:
+        _mysql_port = str(_parsed_db.port)
+    if _parsed_db.path.lstrip('/'):
+        _mysql_db = _parsed_db.path.lstrip('/')
+    if _parsed_db.username:
+        _mysql_user = urllib.parse.unquote(_parsed_db.username)
+    if _parsed_db.password:
+        _mysql_password = urllib.parse.unquote(_parsed_db.password)
 
 _is_testing = 'test' in sys.argv or os.environ.get('DJANGO_TEST', '').lower() == 'true'
 _is_collectstatic = 'collectstatic' in sys.argv
@@ -167,12 +188,12 @@ DISALLOWED_PASS_PLACEHOLDERS = {
 if not DEBUG and not _is_testing and not _is_collectstatic and not _use_sqlite:
     from django.core.exceptions import ImproperlyConfigured
 
-    if _database_url:
+    if _database_url and ('postgres://' in _database_url or 'postgresql://' in _database_url):
         for placeholder in DISALLOWED_HOST_PLACEHOLDERS:
             if placeholder in _database_url.lower():
                 raise ImproperlyConfigured(
                     f"Production Database Error: DATABASE_URL contains placeholder '{placeholder}'.\n"
-                    "Please provide your real cloud MySQL connection URL in Render Environment Variables."
+                    "Please provide your real cloud database connection URL in Render Environment Variables."
                 )
     else:
         if not _mysql_host:
@@ -184,7 +205,8 @@ if not DEBUG and not _is_testing and not _is_collectstatic and not _use_sqlite:
                 "  - MYSQL_PORT (usually 3306 or 4000)\n"
                 "  - MYSQL_DATABASE (e.g. bookbridge_db)\n"
                 "  - MYSQL_USER (e.g. your_db_user)\n"
-                "  - MYSQL_PASSWORD (your real password)"
+                "  - MYSQL_PASSWORD (your real password)\n"
+                "Or provide a complete DATABASE_URL (e.g. mysql://user:pass@host:3306/dbname)."
             )
 
         if _mysql_host.lower() in DISALLOWED_HOST_PLACEHOLDERS or _mysql_host.lower().startswith('your-') or '<' in _mysql_host:
@@ -194,7 +216,7 @@ if not DEBUG and not _is_testing and not _is_collectstatic and not _use_sqlite:
                 "Action Required:\n"
                 "1. Obtain a real MySQL database (e.g. free serverless MySQL on TiDB Cloud at tidbcloud.com, Aiven at aiven.io, or Railway at railway.app).\n"
                 "2. Open Render Dashboard -> your service -> Environment.\n"
-                "3. Replace 'your-mysql-host' with your actual database host (e.g. gateway01.ap-southeast-1.prod.aws.tidbcloud.com)."
+                "3. Replace placeholder host with your actual database host."
             )
 
         if _mysql_host.lower() in ('localhost', '127.0.0.1') and not _force_mysql:
@@ -237,13 +259,24 @@ _mysql_ssl_required = (
     any(domain in _mysql_host.lower() for domain in ('tidbcloud.com', 'aivencloud.com', 'azure.com', 'digitalocean.com'))
 )
 
+_init_commands = ["SET sql_mode='STRICT_TRANS_TABLES'"]
+if 'tidbcloud.com' in _mysql_host.lower() or os.environ.get('DISABLE_DB_CONSTRAINTS', '').lower() in ('true', '1', 'yes'):
+    _init_commands.append("SET foreign_key_checks=0")
+
 _mysql_options = {
     'charset': 'utf8mb4',
     'connect_timeout': 15,
-    'init_command': "SET sql_mode='STRICT_TRANS_TABLES', foreign_key_checks=0",
+    'init_command': ', '.join(_init_commands),
 }
+
 if _mysql_ssl_ca:
-    _mysql_options['ssl'] = {'ca': _mysql_ssl_ca}
+    if _mysql_ssl_ca.startswith('-----BEGIN'):
+        import ssl as _py_ssl
+        _ctx = _py_ssl.create_default_context()
+        _ctx.load_verify_locations(cadata=_mysql_ssl_ca)
+        _mysql_options['ssl'] = _ctx
+    else:
+        _mysql_options['ssl'] = {'ca': _mysql_ssl_ca}
 elif _mysql_ssl_required:
     import ssl as _py_ssl
     try:
@@ -270,30 +303,14 @@ elif _database_url and ('postgres://' in _database_url or 'postgresql://' in _da
         'default': {
             'ENGINE': 'django.db.backends.postgresql',
             'NAME': parsed.path.lstrip('/') or 'bookbridge_db',
-            'USER': parsed.username or '',
-            'PASSWORD': parsed.password or '',
+            'USER': urllib.parse.unquote(parsed.username or ''),
+            'PASSWORD': urllib.parse.unquote(parsed.password or ''),
             'HOST': parsed.hostname or '',
             'PORT': str(parsed.port or '5432'),
             'CONN_MAX_AGE': 60,
         }
     }
-elif _database_url and ('mysql://' in _database_url or 'mariadb://' in _database_url):
-    import urllib.parse
-    parsed = urllib.parse.urlparse(_database_url)
-    db_opts = dict(_mysql_options)
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.mysql',
-            'NAME': parsed.path.lstrip('/') or 'bookbridge_db',
-            'USER': parsed.username or 'root',
-            'PASSWORD': parsed.password or '',
-            'HOST': parsed.hostname or '127.0.0.1',
-            'PORT': str(parsed.port or '3306'),
-            'OPTIONS': db_opts,
-            'CONN_MAX_AGE': 60,
-        }
-    }
-elif _mysql_host and (_force_mysql or _mysql_host not in ('127.0.0.1', 'localhost', '')):
+elif _mysql_host:
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.mysql',
@@ -490,10 +507,10 @@ REST_FRAMEWORK = {
         'rest_framework.throttling.ScopedRateThrottle',
     ],
     'DEFAULT_THROTTLE_RATES': {
-        'anon': '300/hour',
-        'user': '3000/hour',
-        'auth': '10/minute',     # Login & registration
-        'ai_chat': '20/minute',  # AI Assistant - prevent budget exhaustion
+        'anon': '10000/hour' if _is_testing else '300/hour',
+        'user': '10000/hour' if _is_testing else '3000/hour',
+        'auth': '10000/minute' if _is_testing else '10/minute',     # Login & registration
+        'ai_chat': '10000/minute' if _is_testing else '20/minute',  # AI Assistant - prevent budget exhaustion
     },
     'DEFAULT_FILTER_BACKENDS': (
         'django_filters.rest_framework.DjangoFilterBackend',
