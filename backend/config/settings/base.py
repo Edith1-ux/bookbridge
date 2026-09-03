@@ -216,6 +216,13 @@ if not DEBUG and not _is_testing and not _is_collectstatic and not _use_sqlite:
                 "Please set your real MySQL username in Render Environment Variables."
             )
 
+        if 'tidbcloud.com' in _mysql_host.lower() and '.' not in _mysql_user:
+            raise ImproperlyConfigured(
+                f"TiDB Cloud Configuration Error: MYSQL_USER is set to '{_mysql_user}'.\n"
+                "TiDB Serverless requires the full username including the cluster prefix (e.g. '2t3ToPWdqgY8uQT.root').\n"
+                "Please update MYSQL_USER in Render Dashboard to the complete prefixed username from TiDB."
+            )
+
         if not _mysql_db or _mysql_db.lower().startswith('your-'):
             raise ImproperlyConfigured(
                 "Production Database Error: MYSQL_DATABASE is missing or set to a placeholder.\n"
