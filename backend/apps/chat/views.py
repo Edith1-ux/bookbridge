@@ -28,7 +28,8 @@ class ChatMessageListCreateView(generics.ListCreateAPIView):
             try:
                 recipient = User.objects.filter(email__iexact=msg.receiver_email).first()
                 if recipient and recipient != self.request.user:
-                    Notification.objects.create(
+                    from apps.notifications.models import push_notification
+                    push_notification(
                         recipient=recipient,
                         title=f"New message from {self.request.user.full_name or self.request.user.email}",
                         message=f"{msg.text[:100]}...",

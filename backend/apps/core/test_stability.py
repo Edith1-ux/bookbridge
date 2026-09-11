@@ -160,3 +160,37 @@ class ChannelLayerConfigurationTestCase(TestCase):
         self.assertTrue(hasattr(layer, 'group_send'))
         self.assertTrue(hasattr(layer, 'group_add'))
         self.assertTrue(hasattr(layer, 'group_discard'))
+
+    def test_push_notification_creates_db_and_broadcasts(self):
+        from apps.notifications.models import push_notification, Notification
+        user = User.objects.create_user(
+            email='push_notif_target@bookbridge.edu',
+            password='TestPassword123!',
+            full_name='Push Target',
+            role='STUDENT'
+        )
+        notif = push_notification(
+            recipient=user,
+            title='Realtime Alert',
+            message='Your book was swapped!',
+            notification_type='SWAP_UPDATE'
+        )
+        self.assertIsNotNone(notif.id)
+        self.assertEqual(notif.recipient, user)
+        self.assertEqual(notif.title, 'Realtime Alert')
+        self.assertEqual(Notification.objects.filter(recipient=user).count(), 1)
+
+    def test_ice_servers_endpoint_returns_stun_servers(self):
+        user = User.objects.create_user(
+            email='webrtc_user@bookbridge.edu',
+            password='TestPassword123!',
+            full_name='WebRTC User',
+            role='STUDENT'
+        )
+        client = APIClient()
+        client.force_authenticate(user=user)
+        response = client.get('/api/v1/calls/ice-servers/')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        data = response.json()
+        self.assertIn('iceServers', data)
+        self.assertTrue(len(data['iceServers']) > 0)

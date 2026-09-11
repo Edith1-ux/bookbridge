@@ -57,4 +57,4 @@ jobs:
 
       - name: Run Automated Test Suites
         run: |
-          python backend/manage.py test apps.core.test_performance apps.core.test_stability apps.users.test_admin_comprehensive apps.users.test_security_audit apps.books.tests
+          python backend/manage.py test apps.core.test_performance apps.core.test_stability apps.core.test_models_crud apps.users.test_admin_comprehensive apps.users.test_security_audit apps.books.tests

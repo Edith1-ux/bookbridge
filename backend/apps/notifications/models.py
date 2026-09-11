@@ -31,3 +31,40 @@ class Notification(models.Model):
 
     def __str__(self):
         return f"Notification for {self.recipient.email}: {self.title}"
+
+
+def push_notification(recipient, title, message, notification_type='SYSTEM', link=None):
+    """
+    Creates a Notification record in the database and broadcasts a real-time event
+    to the recipient's WebSocket channel layer group if active.
+    """
+    notif = Notification.objects.create(
+        recipient=recipient,
+        title=title,
+        message=message,
+        notification_type=notification_type,
+        link=link
+    )
+    try:
+        from channels.layers import get_channel_layer
+        from asgiref.sync import async_to_sync
+        channel_layer = get_channel_layer()
+        if channel_layer:
+            async_to_sync(channel_layer.group_send)(
+                f"user_{recipient.id}",
+                {
+                    "type": "notification_message",
+                    "notification": {
+                        "id": str(notif.id),
+                        "title": notif.title,
+                        "message": notif.message,
+                        "notification_type": notif.notification_type,
+                        "is_read": notif.is_read,
+                        "link": notif.link,
+                        "created_at": notif.created_at.isoformat(),
+                    }
+                }
+            )
+    except Exception:
+        pass
+    return notif
