@@ -9,7 +9,13 @@ class ChatMessage(models.Model):
     timestamp = models.DateTimeField(auto_now_add=True)
 
     class Meta:
+        db_table = 'chat_messages'
         ordering = ['timestamp']
+        indexes = [
+            models.Index(fields=['sender', 'timestamp'], name='chat_sender_ts_idx'),
+            models.Index(fields=['receiver_email', 'timestamp'], name='chat_recver_ts_idx'),
+            models.Index(fields=['timestamp'], name='chat_ts_idx'),
+        ]
 
     def __str__(self):
         return f"Message from {self.sender.email} to {self.receiver_email}: {self.text[:30]}"

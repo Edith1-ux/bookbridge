@@ -63,4 +63,9 @@ class Wishlist(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
+        db_table = 'wishlists'
         unique_together = ('user', 'book')
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['user', '-created_at'], name='wish_user_created_idx'),
+        ]

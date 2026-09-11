@@ -5,9 +5,10 @@ from rest_framework.test import APIClient
 from rest_framework import status
 from apps.users.models import User
 from apps.colleges.models import College, Department, Course
-from apps.books.models import Book
+from apps.books.models import Book, Wishlist
 from apps.exchange.models import ExchangeProposal
 from apps.donations.models import DonationClaim
+from apps.chat.models import ChatMessage
 
 
 class QueryOptimizationAndAggregationTestCase(TestCase):
@@ -112,6 +113,16 @@ class ModelIndexesVerificationTestCase(TestCase):
         self.assertIn('don_status_created_idx', index_names)
         self.assertIn('don_claimer_status_idx', index_names)
         self.assertIn('don_book_status_idx', index_names)
+
+    def test_wishlist_model_has_indexes(self):
+        index_names = [idx.name for idx in Wishlist._meta.indexes]
+        self.assertIn('wish_user_created_idx', index_names)
+
+    def test_chat_message_model_has_indexes(self):
+        index_names = [idx.name for idx in ChatMessage._meta.indexes]
+        self.assertIn('chat_sender_ts_idx', index_names)
+        self.assertIn('chat_recver_ts_idx', index_names)
+        self.assertIn('chat_ts_idx', index_names)
 
 
 class CourseViewSetSelectRelatedTestCase(TestCase):
