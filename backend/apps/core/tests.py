@@ -4,6 +4,7 @@ from django.http import Http404
 from config.urls import custom_handler404, custom_handler500
 from apps.chat.routing import websocket_urlpatterns as chat_ws_patterns
 from apps.calls.routing import websocket_urlpatterns as call_ws_patterns
+from apps.notifications.routing import websocket_urlpatterns as notif_ws_patterns
 
 
 class CoreErrorHandlersAndRoutingTestCase(TestCase):
@@ -46,3 +47,8 @@ class CoreErrorHandlersAndRoutingTestCase(TestCase):
         self.assertIsNotNone(match)
         _, _, kwargs = match
         self.assertEqual(kwargs.get('call_id'), '37c7d47f-5d1a-41cf-8663-98516623b6c4')
+
+    def test_notification_websocket_pattern_matches(self):
+        pattern = notif_ws_patterns[0].pattern
+        match = pattern.match('ws/notifications/')
+        self.assertIsNotNone(match)

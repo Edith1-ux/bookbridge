@@ -755,4 +755,107 @@ window.BookAPI = {
     }
     return await _post('/v1/notifications/read/');
   },
+
+  // ── WEBRTC CALLS & ICE CONFIGURATION ───────────────────────────────────
+
+  async getICEServers() {
+    try {
+      const data = await _get('/v1/calls/ice-servers/');
+      if (data && Array.isArray(data.ice_servers) && data.ice_servers.length > 0) {
+        return data.ice_servers;
+      }
+      return [
+        { urls: 'stun:stun.l.google.com:19302' },
+        { urls: 'stun:stun1.l.google.com:19302' }
+      ];
+    } catch (e) {
+      return [
+        { urls: 'stun:stun.l.google.com:19302' },
+        { urls: 'stun:stun1.l.google.com:19302' }
+      ];
+    }
+  },
+
+  connectNotificationSocket(onNotification, onStatusChange) {
+    if (typeof window === 'undefined') return null;
+    const token = _getToken();
+    if (!token) return null;
+
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const host = window.location.host || '127.0.0.1:8000';
+    const wsUrl = `${protocol}//${host}/ws/notifications/?token=${encodeURIComponent(token)}`;
+
+    let socket = null;
+    let reconnectTimer = null;
+    let isClosed = false;
+
+    function connect() {
+      if (isClosed) return;
+      try {
+        socket = new WebSocket(wsUrl);
+
+        socket.onopen = () => {
+          if (onStatusChange) onStatusChange('connected');
+        };
+
+        socket.onmessage = (event) => {
+          try {
+            const data = JSON.parse(event.data);
+            if (data && data.type === 'notification' && data.notification) {
+              if (onNotification) onNotification(data.notification);
+            }
+          } catch (e) {
+            console.warn('[NotificationSocket] Parse error:', e);
+          }
+        };
+
+        socket.onerror = (err) => {
+          if (onStatusChange) onStatusChange('error', err);
+        };
+
+        socket.onclose = (evt) => {
+          if (onStatusChange) onStatusChange('disconnected', evt);
+          if (!isClosed && evt.code !== 4003) {
+            clearTimeout(reconnectTimer);
+            reconnectTimer = setTimeout(connect, 5000);
+          }
+        };
+      } catch (err) {
+        if (onStatusChange) onStatusChange('error', err);
+      }
+    }
+
+    connect();
+
+    return {
+      close() {
+        isClosed = true;
+        clearTimeout(reconnectTimer);
+        if (socket) {
+          try { socket.close(); } catch (e) {}
+        }
+      }
+    };
+  },
+
+  async createPeerConnection(callId, options = {}) {
+    const iceServers = await this.getICEServers();
+    const pc = new RTCPeerConnection({ iceServers });
+
+    if (options.onIceCandidate) {
+      pc.onicecandidate = (event) => {
+        if (event.candidate) {
+          options.onIceCandidate(event.candidate);
+        }
+      };
+    }
+
+    if (options.onTrack) {
+      pc.ontrack = (event) => {
+        options.onTrack(event);
+      };
+    }
+
+    return pc;
+  }
 };

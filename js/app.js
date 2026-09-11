@@ -356,6 +356,10 @@ async function updateNavUserUI() {
   }
 
   const logoutHandler = async () => {
+    if (window._activeNotifSocket) {
+      window._activeNotifSocket.close();
+      window._activeNotifSocket = null;
+    }
     await window.BookAPI.logout();
     showToast('Logged out successfully', 'success');
     setTimeout(() => window.location.href = 'login.html', 600);
@@ -363,6 +367,37 @@ async function updateNavUserUI() {
 
   document.getElementById('btnNavLogout')?.addEventListener('click', logoutHandler);
   document.getElementById('btnMobileLogout')?.addEventListener('click', logoutHandler);
+
+  // Initialize Real-Time Push Notification Listener
+  if (window.BookAPI && typeof window.BookAPI.connectNotificationSocket === 'function' && !window._activeNotifSocket) {
+    window._activeNotifSocket = window.BookAPI.connectNotificationSocket((notif) => {
+      if (typeof showToast === 'function') {
+        const safeTitle = escapeHtml(notif.title || 'New Notification');
+        const safeMsg = escapeHtml(notif.message || '');
+        showToast(`<strong>${safeTitle}</strong><br>${safeMsg}`, 'info');
+      }
+      const notifContainer = document.getElementById('dashboardNotificationsContent');
+      if (notifContainer) {
+        const listEl = notifContainer.querySelector('.notification-list');
+        if (listEl) {
+          const item = document.createElement('div');
+          item.className = 'notification-item unread';
+          item.style.cssText = 'padding:14px;background:#fff;border-radius:12px;border:1px solid var(--color-border);display:flex;align-items:flex-start;gap:12px;';
+          item.innerHTML = `
+            <div style="width:36px;height:36px;border-radius:50%;background:rgba(62,107,58,0.1);color:var(--color-primary);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;">
+              <i class="fa-solid fa-bell"></i>
+            </div>
+            <div style="flex:1;">
+              <h4 style="margin:0 0 4px;font-size:14px;color:var(--color-dark);font-weight:700;">${escapeHtml(notif.title)}</h4>
+              <p style="margin:0 0 6px;font-size:13px;color:var(--color-gray);line-height:1.4;">${escapeHtml(notif.message)}</p>
+              <span style="font-size:11px;color:var(--color-gray);">${new Date(notif.created_at || Date.now()).toLocaleDateString()}</span>
+            </div>
+          `;
+          listEl.prepend(item);
+        }
+      }
+    });
+  }
 }
 
 /* ==========================================================================

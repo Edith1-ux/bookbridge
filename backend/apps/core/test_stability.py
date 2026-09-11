@@ -142,6 +142,14 @@ class WebSocketConsumerResilienceTestCase(TestCase):
         self.assertTrue(hasattr(consumer, 'receive'))
         self.assertTrue(hasattr(consumer, 'disconnect'))
 
+    def test_notification_consumer_module_imports_cleanly(self):
+        from apps.notifications.consumers import NotificationConsumer
+        consumer = NotificationConsumer()
+        self.assertTrue(hasattr(consumer, 'connect'))
+        self.assertTrue(hasattr(consumer, 'receive'))
+        self.assertTrue(hasattr(consumer, 'disconnect'))
+        self.assertTrue(hasattr(consumer, 'notification_message'))
+
 
 class ChannelLayerConfigurationTestCase(TestCase):
     """Test that Django Channels channel layer is configured and operational."""
