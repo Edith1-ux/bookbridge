@@ -6,6 +6,20 @@
  * ==========================================================================
  */
 
+// ── Universal Safe HTML Escaper (Anti-XSS Protection) ───────────────────────
+function escapeHtml(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+if (typeof window !== 'undefined') {
+  window.escapeHtml = escapeHtml;
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
   initGlobalComponents();
   await updateNavUserUI();
@@ -412,33 +426,33 @@ async function renderBooksGrid(container, books, actionLabel = 'View Details') {
         </div>
 
         <div class="book-cover">
-          ${isSold ? `<span class="sold-badge" style="position: absolute; top: 10px; left: 10px; background: #dc2626; color: #fff; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 4px; z-index: 2;"><i class="fa-solid fa-circle-check"></i> ${b.status}</span>` : (isDonation ? '<span class="donation-badge"><i class="fa-solid fa-gift"></i> FREE</span>' : '')}
-          <img src="${coverImg}" alt="${b.title}" loading="lazy">
+          ${isSold ? `<span class="sold-badge" style="position: absolute; top: 10px; left: 10px; background: #dc2626; color: #fff; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 4px; z-index: 2;"><i class="fa-solid fa-circle-check"></i> ${escapeHtml(b.status)}</span>` : (isDonation ? '<span class="donation-badge"><i class="fa-solid fa-gift"></i> FREE</span>' : '')}
+          <img src="${coverImg}" alt="${escapeHtml(b.title)}" loading="lazy">
         </div>
 
         <div class="book-body">
           <div class="book-meta-row">
-            <span class="book-category">${b.branch || b.genre || 'Academic'}</span>
-            <span class="book-type">${typeLabel}</span>
+            <span class="book-category">${escapeHtml(b.branch || b.genre || 'Academic')}</span>
+            <span class="book-type">${escapeHtml(typeLabel)}</span>
           </div>
 
-          <div class="book-title" onclick="handleBookAction('${b.id}', 'View Details')" style="cursor: pointer;">${b.title}</div>
-          <div class="book-author">by ${b.author || 'Unknown'} · ${b.edition || 'Latest'}</div>
+          <div class="book-title" onclick="handleBookAction('${b.id}', 'View Details')" style="cursor: pointer;">${escapeHtml(b.title)}</div>
+          <div class="book-author">by ${escapeHtml(b.author || 'Unknown')} · ${escapeHtml(b.edition || 'Latest')}</div>
 
           <div class="book-details">
-            <span class="book-detail-tag"><i class="fa-solid fa-language"></i> ${b.language || 'English'}</span>
-            <span class="book-detail-tag"><i class="fa-solid fa-tag"></i> ${b.condition || 'Good'}</span>
-            <span class="book-detail-tag"><i class="fa-solid fa-location-dot"></i> ${(b.location || 'Campus').substring(0, 15)}</span>
+            <span class="book-detail-tag"><i class="fa-solid fa-language"></i> ${escapeHtml(b.language || 'English')}</span>
+            <span class="book-detail-tag"><i class="fa-solid fa-tag"></i> ${escapeHtml(b.condition || 'Good')}</span>
+            <span class="book-detail-tag"><i class="fa-solid fa-location-dot"></i> ${escapeHtml((b.location || 'Campus').substring(0, 15))}</span>
           </div>
 
           <div class="book-rating">
             <i class="fa-solid fa-star"></i> ${ratingVal}
-            <span style="color: var(--color-gray-light); margin-left: 4px;">· ${b.status || 'Available'}</span>
+            <span style="color: var(--color-gray-light); margin-left: 4px;">· ${escapeHtml(b.status || 'Available')}</span>
           </div>
 
           <div class="book-seller">
-            <span class="book-seller-avatar">${initials}</span>
-            <span>${b.seller?.name || 'Student'}</span>
+            <span class="book-seller-avatar">${escapeHtml(initials)}</span>
+            <span>${escapeHtml(b.seller?.name || 'Student')}</span>
             ${b.seller?.is_verified ? '<i class="fa-solid fa-circle-check" style="color:var(--color-primary);font-size:12px;" title="Verified Student"></i>' : ''}
           </div>
 
@@ -805,7 +819,7 @@ async function initHomePage() {
       }
     }
   } catch (err) {
-    grid.innerHTML = `<div class="empty-state"><h3>Unable to load catalog</h3><p>${err.message}</p></div>`;
+    grid.innerHTML = `<div class="empty-state"><h3>Unable to load catalog</h3><p>${escapeHtml(err.message)}</p></div>`;
   }
 }
 
@@ -858,7 +872,7 @@ async function initBrowsePage() {
       if (resultsCount) resultsCount.textContent = `${books.length} book${books.length !== 1 ? 's' : ''} found`;
       await renderBooksGrid(grid, books, 'View Details');
     } catch (err) {
-      grid.innerHTML = `<div class="empty-state"><h3>Search Error</h3><p>${err.message}</p></div>`;
+      grid.innerHTML = `<div class="empty-state"><h3>Search Error</h3><p>${escapeHtml(err.message)}</p></div>`;
     }
   }
 
@@ -1023,7 +1037,7 @@ async function initExchangePage() {
       const books = await window.BookAPI.getBooks({ mode: 'exchange' });
       await renderBooksGrid(grid, books, 'Swap');
     } catch (err) {
-      grid.innerHTML = `<div class="empty-state"><h3>Unable to load exchange listings</h3><p>${err.message}</p></div>`;
+      grid.innerHTML = `<div class="empty-state"><h3>Unable to load exchange listings</h3><p>${escapeHtml(err.message)}</p></div>`;
     }
   }
 
@@ -1039,7 +1053,7 @@ async function initDonatePage() {
     const books = await window.BookAPI.getBooks({ mode: 'donate' });
     await renderBooksGrid(grid, books, 'Claim Free');
   } catch (err) {
-    grid.innerHTML = `<div class="empty-state"><h3>Unable to load donation listings</h3><p>${err.message}</p></div>`;
+    grid.innerHTML = `<div class="empty-state"><h3>Unable to load donation listings</h3><p>${escapeHtml(err.message)}</p></div>`;
   }
 }
 

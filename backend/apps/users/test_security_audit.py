@@ -221,3 +221,39 @@ class SecurityAuditComprehensiveTests(TestCase):
         # Empty token
         empty_user = await get_user_from_jwt("")
         self.assertFalse(empty_user.is_authenticated)
+
+    def test_07_logout_token_revocation_lifecycle(self):
+        """
+        Verify that logging out with a valid refresh token blacklists it,
+        preventing any subsequent token refresh operations.
+        """
+        refresh = RefreshToken.for_user(self.user_a)
+        refresh_str = str(refresh)
+
+        # 1. Normal refresh works before logout
+        res_refresh_1 = self.client.post('/api/token/refresh/', {'refresh': refresh_str}, format='json')
+        self.assertEqual(res_refresh_1.status_code, status.HTTP_200_OK)
+        self.assertIn('access', res_refresh_1.data)
+
+        # 2. Call logout with refresh token
+        res_logout = self.client.post('/api/logout/', {'refresh': refresh_str}, format='json')
+        self.assertEqual(res_logout.status_code, status.HTTP_200_OK)
+
+        # 3. Refreshing with blacklisted token must fail with 401 Unauthorized
+        res_refresh_2 = self.client.post('/api/token/refresh/', {'refresh': refresh_str}, format='json')
+        self.assertEqual(res_refresh_2.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_08_xss_payload_safety(self):
+        """
+        Ensure user profile updates with XSS script tags are stored safely as text
+        and do not corrupt database records.
+        """
+        token = RefreshToken.for_user(self.user_b).access_token
+        self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {token}')
+
+        xss_name = '<script>alert("xss")</script> Student B'
+        res = self.client.patch('/api/profile/', {'full_name': xss_name}, format='json')
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+
+        self.user_b.refresh_from_db()
+        self.assertEqual(self.user_b.full_name, xss_name)

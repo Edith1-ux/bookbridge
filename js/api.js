@@ -12,7 +12,19 @@ const API_BASE = (typeof window !== 'undefined' && window.location.protocol === 
   : '/api';
 let _currentUserCache = null;
 
-// ── Token helpers ──────────────────────────────────────────────────────────
+// ── XSS Sanitization & HTML Escaping Helper ─────────────────────────────────
+function escapeHtml(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+if (typeof window !== 'undefined') {
+  window.escapeHtml = escapeHtml;
+}
 
 function _getToken() {
   return localStorage.getItem('bb_access_token') || null;
@@ -274,6 +286,7 @@ function _normaliseUser(u) {
 // ── BookBridge API Surface ─────────────────────────────────────────────────
 
 window.BookAPI = {
+  escapeHtml,
 
   // ── AUTHENTICATION HELPERS ───────────────────────────────────────────────
 
