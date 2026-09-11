@@ -13,4 +13,7 @@
 /privacy            /privacy.html           200
 /terms              /terms.html             200
 /forgot-password    /forgot-password.html   200
+/api/*                https://book-bridge-2-5dbv.onrender.com/api/:splat 200
+/media/*              https://book-bridge-2-5dbv.onrender.com/media/:splat 200
 /*                  /index.html             200
+

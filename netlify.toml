@@ -2,6 +2,18 @@
   publish = "."
 
 [[redirects]]
+  from = "/api/*"
+  to = "https://book-bridge-2-5dbv.onrender.com/api/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/media/*"
+  to = "https://book-bridge-2-5dbv.onrender.com/media/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
   from = "/browse"
   to = "/browse.html"
   status = 200

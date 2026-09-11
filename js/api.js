@@ -100,6 +100,9 @@ async function _handleTokenRefresh() {
         const newAccess = data.access || data.token;
         if (newAccess) {
           localStorage.setItem('bb_access_token', newAccess);
+          if (data.refresh) {
+            localStorage.setItem('bb_refresh_token', data.refresh);
+          }
           return newAccess;
         }
       }
