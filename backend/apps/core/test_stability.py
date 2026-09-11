@@ -141,3 +141,22 @@ class WebSocketConsumerResilienceTestCase(TestCase):
         self.assertTrue(hasattr(consumer, 'connect'))
         self.assertTrue(hasattr(consumer, 'receive'))
         self.assertTrue(hasattr(consumer, 'disconnect'))
+
+
+class ChannelLayerConfigurationTestCase(TestCase):
+    """Test that Django Channels channel layer is configured and operational."""
+
+    def test_channel_layer_configured(self):
+        from django.conf import settings
+        self.assertTrue(hasattr(settings, 'CHANNEL_LAYERS'))
+        self.assertIn('default', settings.CHANNEL_LAYERS)
+        self.assertIn('BACKEND', settings.CHANNEL_LAYERS['default'])
+
+    def test_channel_layer_get_channel_layer(self):
+        from channels.layers import get_channel_layer
+        layer = get_channel_layer()
+        self.assertIsNotNone(layer)
+        self.assertTrue(hasattr(layer, 'send'))
+        self.assertTrue(hasattr(layer, 'group_send'))
+        self.assertTrue(hasattr(layer, 'group_add'))
+        self.assertTrue(hasattr(layer, 'group_discard'))

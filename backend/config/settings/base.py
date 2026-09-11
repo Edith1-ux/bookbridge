@@ -551,6 +551,27 @@ SIMPLE_JWT = {
 }
 
 # ---------------------------------------------------------------------------
+# CHANNELS & REAL-TIME WEBSOCKETS (Redis / In-Memory fallback)
+# ---------------------------------------------------------------------------
+_redis_url = os.environ.get('REDIS_URL', '').strip() or os.environ.get('REDIS_TLS_URL', '').strip()
+
+if _redis_url and not _is_testing:
+    CHANNEL_LAYERS = {
+        'default': {
+            'BACKEND': 'channels_redis.core.RedisChannelLayer',
+            'CONFIG': {
+                'hosts': [_redis_url],
+            },
+        },
+    }
+else:
+    CHANNEL_LAYERS = {
+        'default': {
+            'BACKEND': 'channels.layers.InMemoryChannelLayer',
+        },
+    }
+
+# ---------------------------------------------------------------------------
 # CORS
 # ---------------------------------------------------------------------------
 CORS_ALLOW_ALL_ORIGINS = DEBUG
