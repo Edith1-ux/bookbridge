@@ -72,7 +72,7 @@ async function _fetchWithTimeout(url, options = {}, timeoutMs = REQUEST_TIMEOUT_
       timeoutErr.status = 408;
       throw timeoutErr;
     }
-    const netErr = new Error('Network error: Unable to reach the BookBridge server. Please check your connection.');
+    const netErr = new Error('Network error: Unable to reach the BookBridgee server. Please check your connection.');
     netErr.name = 'NetworkError';
     throw netErr;
   }
@@ -286,7 +286,7 @@ function _normaliseUser(u) {
   };
 }
 
-// ── BookBridge API Surface ─────────────────────────────────────────────────
+// ── BookBridgee API Surface ─────────────────────────────────────────────────
 
 window.BookAPI = {
   escapeHtml,

@@ -22,7 +22,7 @@ class StabilityHealthCheckTestCase(TestCase):
         data = response.json()
         self.assertEqual(data['status'], 'healthy')
         self.assertTrue(data['database_connected'])
-        self.assertEqual(data['service'], 'BookBridge Enterprise Django Engine')
+        self.assertEqual(data['service'], 'BookBridgee Enterprise Django Engine')
 
     def test_health_liveness_returns_200(self):
         response = self.client.get('/api/health/liveness/')

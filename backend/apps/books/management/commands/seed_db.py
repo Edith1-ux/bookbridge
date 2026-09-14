@@ -3,10 +3,10 @@ from apps.users.models import User
 from apps.books.models import Book
 
 class Command(BaseCommand):
-    help = 'Seeds initial users and GTU textbooks into the BookBridge database.'
+    help = 'Seeds initial users and GTU textbooks into the BookBridgee database.'
 
     def handle(self, *args, **options):
-        self.stdout.write(self.style.SUCCESS('Seeding initial BookBridge data...'))
+        self.stdout.write(self.style.SUCCESS('Seeding initial BookBridgee data...'))
 
         # Create Admin User
         admin_user, created = User.objects.get_or_create(
@@ -93,4 +93,4 @@ class Command(BaseCommand):
             if b_created:
                 self.stdout.write(f"Created book: {b_obj.title}")
 
-        self.stdout.write(self.style.SUCCESS('Successfully seeded BookBridge database!'))
+        self.stdout.write(self.style.SUCCESS('Successfully seeded BookBridgee database!'))

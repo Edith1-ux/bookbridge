@@ -7,7 +7,7 @@ from django.contrib.auth import authenticate
 
 from .models import User
 from .serializers import UserSerializer, RegisterSerializer, PublicUserSerializer
-from .permissions import IsBookBridgeAdmin
+from .permissions import IsBookBridgeeAdmin
 from apps.books.models import Book
 from apps.exchange.models import ExchangeProposal
 from apps.donations.models import DonationClaim
@@ -113,7 +113,7 @@ class UserListView(generics.ListCreateAPIView):
     """Admin-only endpoint to list and search all registered users."""
     queryset = User.objects.all().select_related('college', 'department').order_by('-date_joined')
     serializer_class = UserAdminSerializer
-    permission_classes = [permissions.IsAuthenticated, IsBookBridgeAdmin]
+    permission_classes = [permissions.IsAuthenticated, IsBookBridgeeAdmin]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['role', 'is_active', 'is_college_verified', 'college', 'department']
     search_fields = ['full_name', 'email', 'enrollment_number', 'phone_number']
@@ -134,7 +134,7 @@ class UserListView(generics.ListCreateAPIView):
 class UserAdminDetailView(generics.RetrieveUpdateDestroyAPIView):
     """Admin-only endpoint to retrieve details, update, or deactivate a specific user."""
     queryset = User.objects.all().select_related('college', 'department')
-    permission_classes = [permissions.IsAuthenticated, IsBookBridgeAdmin]
+    permission_classes = [permissions.IsAuthenticated, IsBookBridgeeAdmin]
 
     def get_serializer_class(self):
         if self.request.method in ('GET',):
@@ -190,7 +190,7 @@ class UserAdminDetailView(generics.RetrieveUpdateDestroyAPIView):
 
 class AdminStatsView(APIView):
     """Admin-only endpoint returning accurate platform statistics and analytics."""
-    permission_classes = [permissions.IsAuthenticated, IsBookBridgeAdmin]
+    permission_classes = [permissions.IsAuthenticated, IsBookBridgeeAdmin]
 
     def get(self, request):
         from django.db.models import Count, Q

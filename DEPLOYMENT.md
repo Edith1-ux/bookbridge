@@ -1,6 +1,6 @@
-# 📚 BookBridge — Production Deployment & Operations Guide
+# 📚 BookBridgee — Production Deployment & Operations Guide
 
-This guide details configuring, deploying, and operating BookBridge with MySQL and Gunicorn on Render, Docker, or any cloud Linux host.
+This guide details configuring, deploying, and operating BookBridgee with MySQL and Gunicorn on Render, Docker, or any cloud Linux host.
 
 > [!IMPORTANT]
 > **Use MySQL in local and production environments. Do not use SQLite in production.**

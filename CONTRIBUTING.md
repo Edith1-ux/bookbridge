@@ -1,6 +1,6 @@
-# Contributing to BookBridge
+# Contributing to BookBridgee
 
-Thanks for helping improve BookBridge.
+Thanks for helping improve BookBridgee.
 
 ## Before you start
 

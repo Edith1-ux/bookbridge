@@ -1,4 +1,4 @@
-# 📚 BookBridge — Bridge Books. Build Minds.
+# 📚 BookBridgee — Bridge Books. Build Minds.
 
 > **India's premier student platform to Buy, Sell, Exchange, and Donate academic books and resources across colleges.**
 
@@ -12,7 +12,7 @@
 
 ## 🌟 Overview
 
-**BookBridge** empowers college and university students to make textbooks and academic resources more affordable, accessible, and eco-friendly. Students can:
+**BookBridgee** empowers college and university students to make textbooks and academic resources more affordable, accessible, and eco-friendly. Students can:
 - 🛒 **Buy pre-owned textbooks** at up to 80% discount compared to MRP.
 - 🏷️ **Sell used books** directly to peers without middleman cuts.
 - 🔄 **Swap textbooks** with semester peers (100% free exchanges).

@@ -6,7 +6,7 @@ class IsAdminOrReadOnly(permissions.BasePermission):
     Permission class that allows:
     - Anonymous GET/HEAD/OPTIONS (safe methods) -> Allowed
     - Authenticated GET/HEAD/OPTIONS -> Allowed
-    - BookBridge Admin POST/PUT/PATCH/DELETE -> Allowed
+    - BookBridgee Admin POST/PUT/PATCH/DELETE -> Allowed
     - Non-admin authenticated POST/PUT/PATCH/DELETE -> Denied (403)
     - Unauthenticated POST/PUT/PATCH/DELETE -> Denied (401)
     """

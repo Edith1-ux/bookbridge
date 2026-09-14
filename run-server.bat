@@ -11,7 +11,7 @@ where python >nul 2>nul
 if %errorlevel% neq 0 (
     echo.
     echo ❌ [ERROR] Python was not found on your system!
-    echo Please install Python 3.10+ to run the BookBridge Django server.
+    echo Please install Python 3.10+ to run the BookBridgee Django server.
     echo Starting fallback native PowerShell web server...
     powershell -NoProfile -ExecutionPolicy Bypass -File server.ps1
     pause

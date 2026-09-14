@@ -6,7 +6,7 @@ from rest_framework import filters
 
 from .models import ActivityLog
 from .serializers import ActivityLogSerializer
-from apps.users.permissions import IsBookBridgeAdmin
+from apps.users.permissions import IsBookBridgeeAdmin
 
 
 class ActivityLogListView(generics.ListAPIView):
@@ -16,7 +16,7 @@ class ActivityLogListView(generics.ListAPIView):
     """
     queryset = ActivityLog.objects.all().order_by('-created_at')
     serializer_class = ActivityLogSerializer
-    permission_classes = [permissions.IsAuthenticated, IsBookBridgeAdmin]
+    permission_classes = [permissions.IsAuthenticated, IsBookBridgeeAdmin]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['action', 'user_email']
     search_fields = ['title', 'user_email', 'user_name']
@@ -25,7 +25,7 @@ class ActivityLogListView(generics.ListAPIView):
 
 class StudentEngagementDashboardView(APIView):
     """Business Intelligence Telemetry: Student engagement, popular resources, demand forecasting."""
-    permission_classes = [permissions.IsAuthenticated, IsBookBridgeAdmin]
+    permission_classes = [permissions.IsAuthenticated, IsBookBridgeeAdmin]
 
     def get(self, request):
         return Response({

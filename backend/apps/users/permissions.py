@@ -1,9 +1,9 @@
 from rest_framework import permissions
 
-class IsBookBridgeAdmin(permissions.BasePermission):
+class IsBookBridgeeAdmin(permissions.BasePermission):
     """
     Allows access only to superusers, staff members, or users with
-    BookBridge admin roles (SUPER_ADMIN, COLLEGE_ADMIN, DEPT_ADMIN).
+    BookBridgee admin roles (SUPER_ADMIN, COLLEGE_ADMIN, DEPT_ADMIN).
     """
     def has_permission(self, request, view):
         user = request.user

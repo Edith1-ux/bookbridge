@@ -13,7 +13,7 @@ from apps.colleges.models import College, Department, Course
 from apps.analytics.models import ActivityLog
 
 
-class BookBridgeAdminComprehensiveTestCase(TestCase):
+class BookBridgeeAdminComprehensiveTestCase(TestCase):
     def setUp(self):
         self.client = APIClient()
 

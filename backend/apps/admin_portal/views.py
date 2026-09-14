@@ -13,7 +13,7 @@ from rest_framework import permissions, status
 # pyrefly: ignore [missing-import]
 from apps.core.feature_flags import FeatureFlagEngine
 # pyrefly: ignore [missing-import]
-from apps.users.permissions import IsBookBridgeAdmin
+from apps.users.permissions import IsBookBridgeeAdmin
 from apps.users.models import User
 from apps.books.models import Book
 from apps.exchange.models import ExchangeProposal
@@ -25,7 +25,7 @@ from apps.notifications.models import Notification
 
 class AdminOverviewView(APIView):
     """Enterprise Admin Portal overview: Feature flags, system KPIs, and moderation status."""
-    permission_classes = [permissions.IsAuthenticated, IsBookBridgeAdmin]
+    permission_classes = [permissions.IsAuthenticated, IsBookBridgeeAdmin]
 
     def get(self, request):
         return Response({
@@ -41,7 +41,7 @@ class AdminOverviewView(APIView):
 
 class AdminAnalyticsView(APIView):
     """Deep business intelligence: Trends, distributions, and engagement metrics."""
-    permission_classes = [permissions.IsAuthenticated, IsBookBridgeAdmin]
+    permission_classes = [permissions.IsAuthenticated, IsBookBridgeeAdmin]
 
     def get(self, request):
         # 1. Monthly Registration and Listing Trends (Past 6 months)
@@ -98,7 +98,7 @@ class AdminAnalyticsView(APIView):
 
 class AdminSystemHealthView(APIView):
     """Platform health check and live diagnostic telemetry for administrator."""
-    permission_classes = [permissions.IsAuthenticated, IsBookBridgeAdmin]
+    permission_classes = [permissions.IsAuthenticated, IsBookBridgeeAdmin]
 
     def get(self, request):
         db_ok = True
@@ -122,7 +122,7 @@ class AdminSystemHealthView(APIView):
             },
             'engine': {
                 'version': '2.0.0',
-                'service': 'BookBridge Core Engine',
+                'service': 'BookBridgee Core Engine',
                 'environment': 'Production' if not getattr(request, 'DEBUG', False) else 'Development',
             },
             'counts': {
@@ -136,7 +136,7 @@ class AdminSystemHealthView(APIView):
 
 class AdminBroadcastNotificationView(APIView):
     """Broadcast an official platform announcement or alert to users."""
-    permission_classes = [permissions.IsAuthenticated, IsBookBridgeAdmin]
+    permission_classes = [permissions.IsAuthenticated, IsBookBridgeeAdmin]
 
     def post(self, request):
         title = request.data.get('title', '').strip()
@@ -182,7 +182,7 @@ class AdminBroadcastNotificationView(APIView):
 
 class AdminReportExportView(APIView):
     """Secure CSV export for admin data reporting with strict field sanitization."""
-    permission_classes = [permissions.IsAuthenticated, IsBookBridgeAdmin]
+    permission_classes = [permissions.IsAuthenticated, IsBookBridgeeAdmin]
 
     def get(self, request):
         report_type = request.query_params.get('type', 'users').lower()

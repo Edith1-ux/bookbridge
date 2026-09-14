@@ -1,4 +1,4 @@
-name: BookBridge Continuous Integration (CI)
+name: BookBridgee Continuous Integration (CI)
 
 on:
   push:

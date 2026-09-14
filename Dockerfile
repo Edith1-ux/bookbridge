@@ -1,4 +1,4 @@
-# Python 3.11 Production Dockerfile for BookBridge Django Framework with MySQL
+# Python 3.11 Production Dockerfile for BookBridgee Django Framework with MySQL
 FROM python:3.11-slim
 
 # WORKDIR is repo root (/app). backend/ lives at /app/backend/

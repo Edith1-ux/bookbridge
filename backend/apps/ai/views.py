@@ -110,7 +110,7 @@ class AIAssistantView(APIView):
                     genai.configure(api_key=gemini_key)
                     model = genai.GenerativeModel('gemini-1.5-flash')
                     system_context = (
-                        f"You are the BookBridge Academic Study Assistant for Indian university/GTU students. "
+                        f"You are the BookBridgee Academic Study Assistant for Indian university/GTU students. "
                         f"The student is {user.full_name or 'Student'}. Be concise, helpful, and academically focused. "
                         f"User asked: {prompt}"
                     )
@@ -118,7 +118,7 @@ class AIAssistantView(APIView):
                     reply = res.text
                 except Exception as e:
                     reply = (
-                        f"Hello {user.full_name or 'Student'}, I am your BookBridge Academic Assistant. "
+                        f"Hello {user.full_name or 'Student'}, I am your BookBridgee Academic Assistant. "
                         f"Regarding '{prompt}': Please review the GTU syllabus and check our verified course listings for relevant reference materials."
                     )
             elif openai_key:
@@ -128,7 +128,7 @@ class AIAssistantView(APIView):
                     res = client.chat.completions.create(
                         model="gpt-3.5-turbo",
                         messages=[
-                            {"role": "system", "content": "You are the BookBridge Academic Study Assistant for engineering students."},
+                            {"role": "system", "content": "You are the BookBridgee Academic Study Assistant for engineering students."},
                             {"role": "user", "content": prompt}
                         ],
                         max_tokens=300
@@ -136,13 +136,13 @@ class AIAssistantView(APIView):
                     reply = res.choices[0].message.content
                 except Exception:
                     reply = (
-                        f"Hello {user.full_name or 'Student'}, I am your BookBridge Academic Assistant. "
+                        f"Hello {user.full_name or 'Student'}, I am your BookBridgee Academic Assistant. "
                         f"Regarding '{prompt}': Check our catalog for recommended GTU textbooks, lab manuals, and notes."
                     )
             else:
                 # Transparent default response when external LLM API key is not configured
                 reply = (
-                    f"Hello {user.full_name or 'Student'}! (BookBridge Academic Guide) "
+                    f"Hello {user.full_name or 'Student'}! (BookBridgee Academic Guide) "
                     f"Regarding '{prompt}': For this topic, we recommend checking books in your department branch, "
                     f"consulting your subject syllabus, and reaching out to senior students for notes."
                 )

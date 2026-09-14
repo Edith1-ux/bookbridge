@@ -1,7 +1,7 @@
 {
   "name": "bookbridge",
   "version": "2.0.0",
-  "description": "BookBridge — Student Book Sharing Platform",
+  "description": "BookBridgee — Student Book Sharing Platform",
   "main": "backend/manage.py",
   "scripts": {
     "start": "python backend/manage.py runserver 0.0.0.0:8000",

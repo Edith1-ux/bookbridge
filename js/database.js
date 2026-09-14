@@ -6,7 +6,7 @@
  * ==========================================================================
  */
 
-class BookBridgeAPIAdapter {
+class BookBridgeeAPIAdapter {
   get api() {
     return window.BookAPI || null;
   }
@@ -56,4 +56,4 @@ class BookBridgeAPIAdapter {
   }
 }
 
-window.BookDB = new BookBridgeAPIAdapter();
+window.BookDB = new BookBridgeeAPIAdapter();

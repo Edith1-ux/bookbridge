@@ -1,6 +1,6 @@
 ---
 name: Feature request
-about: Suggest an improvement to BookBridge
+about: Suggest an improvement to BookBridgee
 labels: enhancement
 ---
 

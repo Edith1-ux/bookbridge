@@ -82,7 +82,7 @@ INSTALLED_APPS = [
     'django_filters',
     'channels',
 
-    # BookBridge apps
+    # BookBridgee apps
     'apps.core.apps.CoreConfig',
     'apps.users.apps.UsersConfig',
     'apps.colleges.apps.CollegesConfig',
@@ -216,7 +216,7 @@ if not DEBUG and not _is_testing and not _is_collectstatic and not _use_sqlite:
         if not _mysql_host:
             raise ImproperlyConfigured(
                 "Production Database Error: MYSQL_HOST environment variable is missing.\n"
-                "Render requires a real cloud MySQL database to run BookBridge.\n"
+                "Render requires a real cloud MySQL database to run BookBridgee.\n"
                 "Please configure in Render Dashboard -> Environment:\n"
                 "  - MYSQL_HOST (hostname from your MySQL provider, e.g. TiDB Cloud, Aiven, Railway, AWS RDS)\n"
                 "  - MYSQL_PORT (usually 3306 or 4000)\n"

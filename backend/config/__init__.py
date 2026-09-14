@@ -1,4 +1,4 @@
-# BookBridge Configuration Package
+# BookBridgee Configuration Package
 import os
 
 try:

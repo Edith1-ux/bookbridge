@@ -1,5 +1,5 @@
 /**
- * BookBridge Service Worker
+ * BookBridgee Service Worker
  * Enables offline capability and fast caching for PWA
  */
 

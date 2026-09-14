@@ -1,5 +1,5 @@
 /* ==========================================
-   BookBridge - Unified Live Stats Counter Engine
+   BookBridgee - Unified Live Stats Counter Engine
    Real-time animated counters purely from the Django database
 ========================================== */
 

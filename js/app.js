@@ -670,7 +670,7 @@ window.handleToggleWishlist = async function(e, bookId) {
 window.handleShare = function(title, id) {
   const url = `${window.location.origin}/browse.html?book=${id}`;
   if (navigator.share) {
-    navigator.share({ title: `${title} - BookBridge`, url })
+    navigator.share({ title: `${title} - BookBridgee`, url })
       .catch(() => {});
   } else {
     navigator.clipboard.writeText(url)
@@ -714,7 +714,7 @@ window.handleBookAction = async function(bookId, actionLabel) {
       ${book.exchange_for ? `<div class="flex-between"><span style="color: var(--color-gray);">Looking to Swap For</span><span style="font-size:13px;font-weight:600;">${book.exchange_for}</span></div>` : ''}
       <div style="padding: 12px; background: rgba(0,0,0,0.02); border-radius: 8px; margin-top: 4px;">
         <span style="color: var(--color-gray); font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">Description</span>
-        <p style="margin-top: 4px; color: var(--color-dark);">${book.description || 'Academic resource listed on BookBridge.'}</p>
+        <p style="margin-top: 4px; color: var(--color-dark);">${book.description || 'Academic resource listed on BookBridgee.'}</p>
       </div>
       <div class="flex-between"><span style="color: var(--color-gray);">Listed by</span><strong>${seller.name}</strong></div>
       <div class="flex-between"><span style="color: var(--color-gray);">Campus Location</span><strong>${book.location || 'Campus'}</strong></div>

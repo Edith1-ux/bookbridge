@@ -25,7 +25,7 @@ class Command(BaseCommand):
         ssl_enabled = bool(opts.get('ssl'))
 
         self.stdout.write("=" * 64)
-        self.stdout.write("       BookBridge Database Connectivity Diagnostic Check")
+        self.stdout.write("       BookBridgee Database Connectivity Diagnostic Check")
         self.stdout.write("=" * 64)
         self.stdout.write(f"Engine:    {engine}")
         self.stdout.write(f"Database:  {name}")

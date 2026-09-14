@@ -37,14 +37,14 @@ def health_check(request):
         'status': 'healthy' if db_ok else 'degraded',
         'database_connected': db_ok,
         'database': 'connected' if db_ok else 'disconnected',
-        'service': 'BookBridge Enterprise Django Engine',
+        'service': 'BookBridgee Enterprise Django Engine',
         'version': '2.0.0',
     }, status=200 if db_ok else 503)
 
 
 def health_liveness(request):
     """Liveness probe: verifies the application worker process is alive and accepting requests."""
-    return JsonResponse({'status': 'alive', 'service': 'BookBridge'}, status=200)
+    return JsonResponse({'status': 'alive', 'service': 'BookBridgee'}, status=200)
 
 
 def health_readiness(request):
