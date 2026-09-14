@@ -23,3 +23,11 @@ Pillow>=10.3.0
 # Cloud Object Storage (S3 / R2 / S3-compatible)
 django-storages>=1.14.2
 boto3>=1.34.0
+
+# HTTP client for Razorpay & external API communication
+requests>=2.31.0
+
+# Optional AI Assistant SDKs
+google-generativeai>=0.5.0
+openai>=1.20.0
+

@@ -10,7 +10,11 @@ from django.db import connection
 
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from config.page_views import serve_html_page, statistics_api
-from apps.users.views import RegisterView, CustomLoginView, UserListView, UserAdminDetailView, AdminStatsView, UserProfileView, LogoutView
+from apps.users.views import (
+    RegisterView, CustomLoginView, UserListView, UserAdminDetailView,
+    AdminStatsView, UserProfileView, LogoutView,
+    ForgotPasswordRequestView, ResetPasswordConfirmView
+)
 from apps.admin_portal.views import AdminOverviewView, AdminAnalyticsView, AdminSystemHealthView, AdminBroadcastNotificationView, AdminReportExportView
 from apps.books.views import BookListCreateView, BookDetailView, WishlistListView, WishlistToggleView, StatisticsAPIView
 from apps.exchange.views import ExchangeProposalListCreateView, ExchangeProposalDetailView
@@ -160,6 +164,10 @@ urlpatterns = [
     path('api/login/', CustomLoginView.as_view()),
     path('api/logout', LogoutView.as_view(), name='api-logout'),
     path('api/logout/', LogoutView.as_view()),
+    path('api/forgot-password', ForgotPasswordRequestView.as_view(), name='api-forgot-password'),
+    path('api/forgot-password/', ForgotPasswordRequestView.as_view()),
+    path('api/reset-password', ResetPasswordConfirmView.as_view(), name='api-reset-password'),
+    path('api/reset-password/', ResetPasswordConfirmView.as_view()),
     path('api/token/login/', TokenObtainPairView.as_view(), name='api-token-login'),
     path('api/token/login', TokenObtainPairView.as_view()),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='api-token-refresh'),

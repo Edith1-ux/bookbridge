@@ -1,8 +1,11 @@
 import json
 import logging
 from channels.generic.websocket import AsyncWebsocketConsumer
+from channels.db import database_sync_to_async
+from .models import ChatMessage
 
 logger = logging.getLogger('apps.chat.consumers')
+
 
 
 class ChatConsumer(AsyncWebsocketConsumer):
@@ -69,6 +72,16 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
         event_type = data.get('type', 'message')
         verified_sender = user.full_name or user.email
+        message_text = str(data.get('message', '')).strip()
+
+        # Persist text message to database
+        if message_text and event_type == 'message':
+            receiver_email = data.get('receiver_email') or data.get('to_email')
+            book_title = data.get('book_title')
+            try:
+                await self._persist_chat_message(user, message_text, receiver_email, book_title)
+            except Exception as e:
+                logger.warning(f"Could not persist chat message to database: {e}")
 
         try:
             if self.channel_layer and hasattr(self, 'room_group_name'):
@@ -80,12 +93,22 @@ class ChatConsumer(AsyncWebsocketConsumer):
                         'sender': verified_sender,
                         'sender_id': str(user.id),
                         'sender_email': user.email,
-                        'message': data.get('message', ''),
+                        'message': message_text,
                         'timestamp': data.get('timestamp', '')
                     }
                 )
         except Exception as e:
             logger.error(f"Error broadcasting message in ChatConsumer: {e}", exc_info=True)
+
+    @database_sync_to_async
+    def _persist_chat_message(self, sender, text, receiver_email=None, book_title=None):
+        return ChatMessage.objects.create(
+            sender=sender,
+            text=text,
+            receiver_email=receiver_email,
+            book_title=book_title
+        )
+
 
     async def chat_event(self, event):
         try:

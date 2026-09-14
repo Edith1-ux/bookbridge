@@ -423,6 +423,14 @@ window.BookAPI = {
     localStorage.removeItem('admin_mode');
   },
 
+  async forgotPassword(email) {
+    return _post('/forgot-password/', { email });
+  },
+
+  async resetPassword(data) {
+    return _post('/reset-password/', data);
+  },
+
   // ── PUBLIC STATS ───────────────────────────────────────────────────────
 
   async getPublicStats() {

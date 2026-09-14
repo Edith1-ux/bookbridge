@@ -351,3 +351,77 @@ class LogoutView(APIView):
 
         return Response({'message': 'Logged out successfully'}, status=status.HTTP_200_OK)
 
+
+from django.contrib.auth.tokens import default_token_generator
+from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
+from django.utils.encoding import force_bytes, force_str
+
+
+class ForgotPasswordRequestView(APIView):
+    """
+    Initiates password recovery.
+    Generates a secure cryptographic reset token and returns status.
+    """
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        email = request.data.get('email', '').strip().lower()
+        if not email:
+            return Response({'error': 'Email address is required.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        user = User.objects.filter(email__iexact=email).first()
+        if user and user.is_active:
+            token = default_token_generator.make_token(user)
+            uid = urlsafe_base64_encode(force_bytes(user.pk))
+            
+            logger.info("Password reset token generated for user %s", email)
+            return Response({
+                'status': 'SUCCESS',
+                'message': f'Password reset instructions have been generated for {email}.',
+                'email': email,
+                'reset_uid': uid if settings.DEBUG else None,
+                'reset_token': token if settings.DEBUG else None
+            }, status=status.HTTP_200_OK)
+        else:
+            # Generic response to prevent user enumeration
+            return Response({
+                'status': 'SUCCESS',
+                'message': f'If an account exists for {email}, password recovery instructions have been sent.',
+                'email': email
+            }, status=status.HTTP_200_OK)
+
+
+class ResetPasswordConfirmView(APIView):
+    """
+    Confirms password reset using cryptographic uid and token.
+    """
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        uidb64 = request.data.get('uid') or request.data.get('reset_uid')
+        token = request.data.get('token') or request.data.get('reset_token')
+        new_password = request.data.get('new_password') or request.data.get('password')
+
+        if not uidb64 or not token or not new_password:
+            return Response({'error': 'UID, reset token, and new password are required.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if len(new_password) < 6:
+            return Response({'error': 'Password must be at least 6 characters long.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            uid = force_str(urlsafe_base64_decode(uidb64))
+            user = User.objects.get(pk=uid)
+        except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+            return Response({'error': 'Invalid or expired password reset link.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if default_token_generator.check_token(user, token):
+            user.set_password(new_password)
+            user.save()
+            return Response({
+                'status': 'SUCCESS',
+                'message': 'Password has been reset successfully. You can now log in with your new password.'
+            }, status=status.HTTP_200_OK)
+        else:
+            return Response({'error': 'The password reset token is invalid or has expired.'}, status=status.HTTP_400_BAD_REQUEST)
+
+
