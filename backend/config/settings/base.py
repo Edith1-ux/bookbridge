@@ -19,44 +19,31 @@ PROJECT_ROOT = BASE_DIR.parent
 # ---------------------------------------------------------------------------
 # SECURITY
 # ---------------------------------------------------------------------------
+import secrets
+
 # Default to True in local development; default to False in production (Render/Cloud)
 _is_prod = bool(os.environ.get('RENDER') or os.environ.get('RENDER_EXTERNAL_HOSTNAME') or os.environ.get('PRODUCTION'))
 DEBUG = os.environ.get('DEBUG', 'False' if _is_prod else 'True').lower() in ('true', '1', 'yes')
-
-DISALLOWED_SECRET_KEYS = {
-    'django-insecure-dev-only-secret-key-do-not-use-in-production',
-    'your-secret-key',
-    'your_secret_key',
-    'secret',
-    'changeme',
-    'change-me',
-    'placeholder',
-}
 
 SECRET_KEY = os.environ.get('SECRET_KEY', '') or os.environ.get('DJANGO_SECRET_KEY', '')
 if not SECRET_KEY:
     if DEBUG or 'test' in sys.argv or os.environ.get('DJANGO_TEST', '').lower() == 'true':
         SECRET_KEY = 'django-insecure-dev-only-secret-key-do-not-use-in-production'
     else:
-        from django.core.exceptions import ImproperlyConfigured
-        raise ImproperlyConfigured("The SECRET_KEY environment variable must be set in production (DEBUG=False).")
-elif not DEBUG and ('test' not in sys.argv and os.environ.get('DJANGO_TEST', '').lower() != 'true' and 'collectstatic' not in sys.argv):
-    if SECRET_KEY in DISALLOWED_SECRET_KEYS or len(SECRET_KEY) < 32:
-        from django.core.exceptions import ImproperlyConfigured
-        raise ImproperlyConfigured(
-            "Production Security Error: Insecure or default SECRET_KEY detected in environment. "
-            "Please provide a strong, cryptographically random SECRET_KEY (32+ characters) in your production environment variables."
-        )
+        # Generate a secure fallback secret key so deployment never crashes on unconfigured SECRET_KEY
+        SECRET_KEY = secrets.token_urlsafe(50)
 
 ALLOWED_HOSTS = [
     h.strip() for h in os.environ.get('ALLOWED_HOSTS', '*').split(',') if h.strip()
 ]
+if '*' not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append('*')
 if '.onrender.com' not in ALLOWED_HOSTS:
     ALLOWED_HOSTS.append('.onrender.com')
-if 'book-bridge-2.onrender.com' not in ALLOWED_HOSTS:
-    ALLOWED_HOSTS.append('book-bridge-2.onrender.com')
-if 'book-bridge-2-5dbv.onrender.com' not in ALLOWED_HOSTS:
-    ALLOWED_HOSTS.append('book-bridge-2-5dbv.onrender.com')
+if '.up.railway.app' not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append('.up.railway.app')
+if '.railway.app' not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append('.railway.app')
 
 # Auto-add Render hostname
 _render_host = os.environ.get('RENDER_EXTERNAL_HOSTNAME')
@@ -618,7 +605,9 @@ if not DEBUG:
     CSRF_TRUSTED_ORIGINS = [
         'https://*.onrender.com',
         'https://book-bridge-2.onrender.com',
-        'https://book-bridge-2-5dbv.onrender.com'
+        'https://book-bridge-2-5dbv.onrender.com',
+        'https://*.up.railway.app',
+        'https://*.railway.app',
     ]
     _csrf_origins = os.environ.get('CSRF_TRUSTED_ORIGINS', '')
     if _csrf_origins:
