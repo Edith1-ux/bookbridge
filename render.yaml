@@ -3,11 +3,11 @@ services:
     name: book-bridge-2
     env: python
 
-    # Build: install deps from backend/requirements.txt, then collect static files
-    buildCommand: "pip install -r backend/requirements.txt && cd backend && python manage.py collectstatic --noinput"
+    # Build: install deps, then collect static files
+    buildCommand: "pip install -r requirements.txt && python manage.py collectstatic --noinput"
 
-    # Start: cd into backend/ first so 'config' package is importable, then migrate and run Daphne ASGI
-    startCommand: "cd backend && python manage.py migrate --fake-initial --noinput && python -m daphne -b 0.0.0.0 -p $PORT config.asgi:application"
+    # Start: migrate, seed initial users & GTU books, then start Daphne ASGI
+    startCommand: "python manage.py migrate --fake-initial --noinput && python manage.py seed_db && python -m daphne -b 0.0.0.0 -p $PORT asgi:application"
 
     envVars:
       - key: PYTHON_VERSION

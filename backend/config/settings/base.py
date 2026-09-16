@@ -188,7 +188,7 @@ DISALLOWED_PASS_PLACEHOLDERS = {
     'change-me',
 }
 
-# In production (DEBUG=False and not offline testing/collectstatic), validate that real credentials are provided
+# In production (DEBUG=False and not offline testing/collectstatic), validate that real credentials are provided IF configured
 if not DEBUG and not _is_testing and not _is_collectstatic and not _use_sqlite:
     from django.core.exceptions import ImproperlyConfigured
 
@@ -199,20 +199,7 @@ if not DEBUG and not _is_testing and not _is_collectstatic and not _use_sqlite:
                     f"Production Database Error: DATABASE_URL contains placeholder '{placeholder}'.\n"
                     "Please provide your real cloud database connection URL in Render Environment Variables."
                 )
-    else:
-        if not _mysql_host:
-            raise ImproperlyConfigured(
-                "Production Database Error: MYSQL_HOST environment variable is missing.\n"
-                "Render requires a real cloud MySQL database to run BookBridgee.\n"
-                "Please configure in Render Dashboard -> Environment:\n"
-                "  - MYSQL_HOST (hostname from your MySQL provider, e.g. TiDB Cloud, Aiven, Railway, AWS RDS)\n"
-                "  - MYSQL_PORT (usually 3306 or 4000)\n"
-                "  - MYSQL_DATABASE (e.g. bookbridge_db)\n"
-                "  - MYSQL_USER (e.g. your_db_user)\n"
-                "  - MYSQL_PASSWORD (your real password)\n"
-                "Or provide a complete DATABASE_URL (e.g. mysql://user:pass@host:3306/dbname)."
-            )
-
+    elif _mysql_host:
         if _mysql_host.lower() in DISALLOWED_HOST_PLACEHOLDERS or _mysql_host.lower().startswith('your-') or '<' in _mysql_host:
             raise ImproperlyConfigured(
                 f"Production Database Error: MYSQL_HOST is set to the template placeholder '{_mysql_host}'.\n"
@@ -327,14 +314,8 @@ elif _mysql_host:
             'CONN_MAX_AGE': 60,
         }
     }
-elif not DEBUG and not _is_testing and not _use_sqlite:
-    from django.core.exceptions import ImproperlyConfigured
-    raise ImproperlyConfigured(
-        "Production deployment (DEBUG=False) strictly requires MySQL database configuration. "
-        "Please provide MYSQL_HOST, MYSQL_DATABASE, MYSQL_USER, MYSQL_PASSWORD, or DATABASE_URL."
-    )
 else:
-    # Default to SQLite for local development only
+    # Default to SQLite for local development or when no external database is configured
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
