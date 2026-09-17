@@ -312,42 +312,43 @@ async function updateNavUserUI() {
 
   if (!currentUser) return;
 
-  const isDashboard = window.location.pathname.toLowerCase().includes('dashboard');
   const isAdmin = ['SUPER_ADMIN', 'COLLEGE_ADMIN', 'DEPT_ADMIN', 'ADMIN'].includes((currentUser.role || '').toUpperCase());
-
-  // Add Dashboard link
-  if (navLinks && !navLinks.querySelector('a[href*="dashboard"]')) {
-    const dashLink = document.createElement('a');
-    dashLink.href = 'dashboard.html';
-    dashLink.className = `nav-link ${isDashboard ? 'active' : ''}`;
-    dashLink.innerHTML = `<i class="fa-solid fa-gauge" style="margin-right: 4px;"></i> Dashboard`;
-    navLinks.appendChild(dashLink);
-  }
-
-  // Add Admin link if user has admin privileges
-  if (isAdmin && navLinks && !navLinks.querySelector('a[href*="admin"]')) {
-    const adminLink = document.createElement('a');
-    adminLink.href = 'admin.html';
-    adminLink.className = 'nav-link';
-    adminLink.innerHTML = `<i class="fa-solid fa-shield-halved" style="margin-right: 4px;"></i> Admin`;
-    navLinks.appendChild(adminLink);
-  }
-
   const role = (currentUser.role || 'STUDENT').toUpperCase();
+  const safeName = (typeof escapeHtml === 'function' && currentUser.name) ? escapeHtml(currentUser.name) : (currentUser.name || 'User');
+
+  // Mobile drawer links
+  if (drawerLinks) {
+    if (!drawerLinks.querySelector('a[href*="dashboard"]')) {
+      const mobileDashLink = document.createElement('a');
+      mobileDashLink.href = 'dashboard.html';
+      mobileDashLink.className = 'drawer-link';
+      mobileDashLink.innerHTML = `Dashboard <i class="fa-solid fa-gauge"></i>`;
+      drawerLinks.appendChild(mobileDashLink);
+    }
+    if (isAdmin && !drawerLinks.querySelector('a[href*="admin"]')) {
+      const mobileAdminLink = document.createElement('a');
+      mobileAdminLink.href = 'admin.html';
+      mobileAdminLink.className = 'drawer-link';
+      mobileAdminLink.innerHTML = `Admin Console <i class="fa-solid fa-shield-halved"></i>`;
+      drawerLinks.appendChild(mobileAdminLink);
+    }
+  }
+
   const userHTML = `
-    <span style="font-size: 13px; font-weight: 600; color: var(--color-primary); display: inline-flex; align-items: center; gap: 6px;">
-      <i class="fa-solid fa-user-circle"></i> ${currentUser.name}
-    </span>
-    <a href="dashboard.html" class="btn btn-ghost btn-sm"><i class="fa-solid fa-gauge"></i> Dashboard</a>
-    ${isAdmin ? '<a href="admin.html" class="btn btn-secondary btn-sm"><i class="fa-solid fa-shield-halved"></i> Admin</a>' : ''}
-    <button id="btnNavLogout" class="btn btn-ghost btn-sm">Logout</button>
+    <div class="nav-user-pill" title="${safeName}">
+      <i class="fa-solid fa-user-circle"></i>
+      <span class="nav-user-name">${safeName}</span>
+    </div>
+    <a href="dashboard.html" class="btn btn-ghost btn-sm nav-btn-dash" title="Dashboard"><i class="fa-solid fa-gauge"></i> <span>Dashboard</span></a>
+    ${isAdmin ? '<a href="admin.html" class="btn btn-secondary btn-sm nav-btn-admin" title="Admin Portal"><i class="fa-solid fa-shield-halved"></i> <span>Admin</span></a>' : ''}
+    <button id="btnNavLogout" class="btn btn-ghost btn-sm nav-btn-logout" title="Logout">Logout</button>
   `;
 
   if (navActions && !adminNavActions) navActions.innerHTML = userHTML;
   if (mobileActions) {
     mobileActions.innerHTML = `
       <div style="font-size: 13px; font-weight: 600; color: var(--color-primary); padding: 8px 0;">
-        <i class="fa-solid fa-user-circle"></i> ${currentUser.name} (${role})
+        <i class="fa-solid fa-user-circle"></i> ${safeName} (${role})
       </div>
       <a href="dashboard.html" class="btn btn-ghost btn-block" style="margin-bottom:8px;text-decoration:none;"><i class="fa-solid fa-gauge"></i> Dashboard</a>
       ${isAdmin ? '<a href="admin.html" class="btn btn-secondary btn-block" style="margin-bottom:8px;text-decoration:none;"><i class="fa-solid fa-shield-halved"></i> Admin Portal</a>' : ''}
