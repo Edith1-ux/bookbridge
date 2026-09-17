@@ -40,10 +40,6 @@ if '*' not in ALLOWED_HOSTS:
     ALLOWED_HOSTS.append('*')
 if '.onrender.com' not in ALLOWED_HOSTS:
     ALLOWED_HOSTS.append('.onrender.com')
-if '.up.railway.app' not in ALLOWED_HOSTS:
-    ALLOWED_HOSTS.append('.up.railway.app')
-if '.railway.app' not in ALLOWED_HOSTS:
-    ALLOWED_HOSTS.append('.railway.app')
 
 # Auto-add Render hostname
 _render_host = os.environ.get('RENDER_EXTERNAL_HOSTNAME')
@@ -205,7 +201,7 @@ if not DEBUG and not _is_testing and not _is_collectstatic and not _use_sqlite:
                 f"Production Database Error: MYSQL_HOST is set to the template placeholder '{_mysql_host}'.\n"
                 "Render cannot connect to a placeholder hostname.\n\n"
                 "Action Required:\n"
-                "1. Obtain a real MySQL database (e.g. free serverless MySQL on TiDB Cloud at tidbcloud.com, Aiven at aiven.io, or Railway at railway.app).\n"
+                "1. Obtain a real MySQL database (e.g. free serverless MySQL on TiDB Cloud at tidbcloud.com or Aiven at aiven.io).\n"
                 "2. Open Render Dashboard -> your service -> Environment.\n"
                 "3. Replace placeholder host with your actual database host."
             )
@@ -587,8 +583,6 @@ if not DEBUG:
         'https://*.onrender.com',
         'https://book-bridge-2.onrender.com',
         'https://book-bridge-2-5dbv.onrender.com',
-        'https://*.up.railway.app',
-        'https://*.railway.app',
     ]
     _csrf_origins = os.environ.get('CSRF_TRUSTED_ORIGINS', '')
     if _csrf_origins:
