@@ -66,7 +66,8 @@ class BookCreateSerializer(serializers.ModelSerializer):
             'exchange_for', 'description', 'location', 'cover_url',
             'cover_image', 'pdf_url', 'pdf_file', 'status'
         ]
-        read_only_fields = ['id', 'status']
+        read_only_fields = ['id']
+
 
     def validate_price(self, value):
         if value is not None and value < 0:
