@@ -148,12 +148,23 @@ function _extractErrorMessage(errData, status) {
 async function _request(method, path, body = null, params = {}, retryOn401 = true) {
   const qs = new URLSearchParams(params).toString();
   const url = `${API_BASE}${path}${qs ? '?' + qs : ''}`;
+  const isFormData = typeof FormData !== 'undefined' && body instanceof FormData;
+  const token = _getToken();
+
+  const headers = {};
+  if (!isFormData) {
+    headers['Content-Type'] = 'application/json';
+  }
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
   const options = {
     method,
-    headers: _authHeaders(),
+    headers,
   };
   if (body !== null && method !== 'GET' && method !== 'HEAD') {
-    options.body = JSON.stringify(body);
+    options.body = isFormData ? body : JSON.stringify(body);
   }
 
   const res = await _fetchWithTimeout(url, options);
@@ -162,7 +173,7 @@ async function _request(method, path, body = null, params = {}, retryOn401 = tru
   if (res.status === 401 && retryOn401 && !path.includes('/login') && !path.includes('/register') && !path.includes('/token/refresh')) {
     const newToken = await _handleTokenRefresh();
     if (newToken) {
-      options.headers = _authHeaders();
+      options.headers['Authorization'] = `Bearer ${newToken}`;
       const retryRes = await _fetchWithTimeout(url, options);
       if (retryRes.ok) {
         if (retryRes.status === 204) return { success: true };
@@ -322,28 +333,65 @@ window.BookAPI = {
   },
 
   async addBook(bookData) {
-    const payload = {
-      title: bookData.title,
-      author: bookData.author,
-      isbn: bookData.isbn || '',
-      gtu_code: bookData.gtu_code || bookData.gtuCode || '',
-      branch: bookData.branch || 'CE',
-      semester: parseInt(bookData.semester, 10) || 1,
-      edition: bookData.edition || 'Latest Edition',
-      resource_type: bookData.resource_type || bookData.resourceType || 'textbook',
-      genre: bookData.genre || 'Academic',
-      subject: bookData.subject || 'Engineering',
-      condition: bookData.condition || 'Good',
-      language: bookData.language || 'English',
-      mode: bookData.mode || 'sell',
-      price: parseFloat(bookData.price) || 0,
-      original_price: bookData.original_price ? parseFloat(bookData.original_price) : (bookData.original ? parseFloat(bookData.original) : null),
-      exchange_for: bookData.exchange_for || bookData.exchangeFor || '',
-      description: bookData.description || '',
-      location: bookData.location || 'Campus Pickup',
-      cover_url: bookData.cover_url || bookData.cover || '',
-      pdf_url: bookData.pdf_url || '',
-    };
+    let payload;
+    const hasImageFile = bookData.cover_image && (
+      (typeof File !== 'undefined' && bookData.cover_image instanceof File) ||
+      (typeof Blob !== 'undefined' && bookData.cover_image instanceof Blob)
+    );
+
+    if (typeof FormData !== 'undefined' && bookData instanceof FormData) {
+      payload = bookData;
+    } else if (hasImageFile) {
+      const fd = new FormData();
+      fd.append('title', bookData.title || '');
+      fd.append('author', bookData.author || '');
+      if (bookData.isbn) fd.append('isbn', bookData.isbn);
+      if (bookData.gtu_code || bookData.gtuCode) fd.append('gtu_code', bookData.gtu_code || bookData.gtuCode);
+      fd.append('branch', bookData.branch || 'CE');
+      fd.append('semester', parseInt(bookData.semester, 10) || 1);
+      fd.append('edition', bookData.edition || 'Latest Edition');
+      fd.append('resource_type', bookData.resource_type || bookData.resourceType || 'textbook');
+      fd.append('genre', bookData.genre || 'Academic');
+      fd.append('subject', bookData.subject || 'Engineering');
+      fd.append('condition', bookData.condition || 'Good');
+      fd.append('language', bookData.language || 'English');
+      fd.append('mode', bookData.mode || 'sell');
+      fd.append('price', parseFloat(bookData.price) || 0);
+      if (bookData.original_price || bookData.original) {
+        fd.append('original_price', parseFloat(bookData.original_price || bookData.original));
+      }
+      if (bookData.exchange_for || bookData.exchangeFor) {
+        fd.append('exchange_for', bookData.exchange_for || bookData.exchangeFor);
+      }
+      fd.append('description', bookData.description || '');
+      fd.append('location', bookData.location || 'Campus Central Library');
+      fd.append('cover_image', bookData.cover_image);
+      if (bookData.cover_url) fd.append('cover_url', bookData.cover_url);
+      payload = fd;
+    } else {
+      payload = {
+        title: bookData.title,
+        author: bookData.author,
+        isbn: bookData.isbn || '',
+        gtu_code: bookData.gtu_code || bookData.gtuCode || '',
+        branch: bookData.branch || 'CE',
+        semester: parseInt(bookData.semester, 10) || 1,
+        edition: bookData.edition || 'Latest Edition',
+        resource_type: bookData.resource_type || bookData.resourceType || 'textbook',
+        genre: bookData.genre || 'Academic',
+        subject: bookData.subject || 'Engineering',
+        condition: bookData.condition || 'Good',
+        language: bookData.language || 'English',
+        mode: bookData.mode || 'sell',
+        price: parseFloat(bookData.price) || 0,
+        original_price: bookData.original_price ? parseFloat(bookData.original_price) : (bookData.original ? parseFloat(bookData.original) : null),
+        exchange_for: bookData.exchange_for || bookData.exchangeFor || '',
+        description: bookData.description || '',
+        location: bookData.location || 'Campus Pickup',
+        cover_url: bookData.cover_url || bookData.cover || '',
+        pdf_url: bookData.pdf_url || '',
+      };
+    }
 
     const saved = await _post('/books/', payload);
     return _normaliseBook(saved);

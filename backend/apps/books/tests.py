@@ -174,3 +174,42 @@ class BookAPITests(TestCase):
         res = self.client.post(self.books_url, payload, format='multipart')
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn('cover_image', res.json())
+
+    def test_corrupted_image_rejected(self):
+        from django.core.files.uploadedfile import SimpleUploadedFile
+
+        fake_jpg = SimpleUploadedFile("corrupted.jpg", b"not-a-real-jpeg-image-content-at-all", content_type="image/jpeg")
+        self.client.force_authenticate(user=self.seller)
+        payload = {
+            'title': 'Corrupt Book',
+            'author': 'Corrupt Author',
+            'branch': 'CE',
+            'semester': 1,
+            'price': 100,
+            'mode': 'sell',
+            'cover_image': fake_jpg,
+        }
+        res = self.client.post(self.books_url, payload, format='multipart')
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('cover_image', res.json())
+
+    def test_oversized_image_rejected(self):
+        from django.core.files.uploadedfile import SimpleUploadedFile
+
+        # Create dummy file > 10MB
+        oversized_data = b"0" * (11 * 1024 * 1024)
+        oversized_file = SimpleUploadedFile("large_cover.jpg", oversized_data, content_type="image/jpeg")
+        self.client.force_authenticate(user=self.seller)
+        payload = {
+            'title': 'Big Book',
+            'author': 'Big Author',
+            'branch': 'CE',
+            'semester': 1,
+            'price': 100,
+            'mode': 'sell',
+            'cover_image': oversized_file,
+        }
+        res = self.client.post(self.books_url, payload, format='multipart')
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('cover_image', res.json())
+

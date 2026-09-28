@@ -1,6 +1,7 @@
 from rest_framework import generics, permissions, status, filters
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from django.db import models
 from django_filters.rest_framework import DjangoFilterBackend
 from .models import Book, Wishlist
@@ -99,6 +100,7 @@ class BookStatsView(APIView):
 
 
 class BookListCreateView(generics.ListCreateAPIView):
+    parser_classes = (MultiPartParser, FormParser, JSONParser)
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['branch', 'semester', 'mode', 'condition', 'resource_type', 'status']
     search_fields = ['title', 'author', 'gtu_code', 'isbn', 'subject', 'genre', 'description']
@@ -164,8 +166,14 @@ class BookListCreateView(generics.ListCreateAPIView):
 
 
 class BookDetailView(generics.RetrieveUpdateDestroyAPIView):
+    parser_classes = (MultiPartParser, FormParser, JSONParser)
     queryset = Book.objects.select_related('seller', 'seller__college', 'seller__department').all()
     serializer_class = BookSerializer
+
+    def get_serializer_class(self):
+        if self.request.method in ('PUT', 'PATCH'):
+            return BookCreateSerializer
+        return BookSerializer
 
     def get_permissions(self):
         if self.request.method in permissions.SAFE_METHODS:

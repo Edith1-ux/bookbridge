@@ -947,6 +947,114 @@ async function initSellPage() {
   const exchangeGroup = document.getElementById('sellExchangeForGroup');
   const priceInput = document.getElementById('sellPrice');
 
+  let selectedCoverFile = null;
+
+  // File Upload Elements
+  const fileGalleryInput = document.getElementById('sellCoverFileGallery');
+  const fileCameraInput = document.getElementById('sellCoverFileCamera');
+  const uploadArea = document.getElementById('sellCoverUploadArea');
+  const previewContainer = document.getElementById('sellCoverPreviewContainer');
+  const previewImg = document.getElementById('sellCoverPreviewImg');
+  const fileNameEl = document.getElementById('sellCoverFileName');
+  const fileSizeEl = document.getElementById('sellCoverFileSize');
+  const btnTakePhoto = document.getElementById('btnSellTakePhoto');
+  const btnChooseFile = document.getElementById('btnSellChooseFile');
+  const btnChangePhoto = document.getElementById('btnSellChangePhoto');
+  const btnRemovePhoto = document.getElementById('btnSellRemovePhoto');
+
+  function handleFileSelected(file) {
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      showToast('Please select a valid book image (JPG, PNG, or WebP).', 'danger');
+      return;
+    }
+
+    // Validate size (max 10MB)
+    const maxSize = 10 * 1024 * 1024;
+    if (file.size > maxSize) {
+      showToast('Image size is too large. Please choose an image smaller than 10MB.', 'danger');
+      return;
+    }
+
+    selectedCoverFile = file;
+
+    // Display preview
+    const objectUrl = URL.createObjectURL(file);
+    if (previewImg) previewImg.src = objectUrl;
+    if (fileNameEl) fileNameEl.textContent = file.name || 'book_cover.jpg';
+    if (fileSizeEl) {
+      const sizeMb = (file.size / (1024 * 1024)).toFixed(1);
+      fileSizeEl.textContent = sizeMb >= 0.1 ? `${sizeMb} MB` : `${Math.round(file.size / 1024)} KB`;
+    }
+
+    if (uploadArea) uploadArea.style.display = 'none';
+    if (previewContainer) previewContainer.style.display = 'block';
+  }
+
+  function clearSelectedFile() {
+    selectedCoverFile = null;
+    if (fileGalleryInput) fileGalleryInput.value = '';
+    if (fileCameraInput) fileCameraInput.value = '';
+    if (previewImg) previewImg.src = '';
+    if (uploadArea) uploadArea.style.display = 'block';
+    if (previewContainer) previewContainer.style.display = 'none';
+  }
+
+  btnTakePhoto?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    fileCameraInput?.click();
+  });
+
+  btnChooseFile?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    fileGalleryInput?.click();
+  });
+
+  uploadArea?.addEventListener('click', () => {
+    fileGalleryInput?.click();
+  });
+
+  btnChangePhoto?.addEventListener('click', () => {
+    fileGalleryInput?.click();
+  });
+
+  btnRemovePhoto?.addEventListener('click', () => {
+    clearSelectedFile();
+  });
+
+  fileGalleryInput?.addEventListener('change', (e) => {
+    const file = e.target.files?.[0];
+    if (file) handleFileSelected(file);
+  });
+
+  fileCameraInput?.addEventListener('change', (e) => {
+    const file = e.target.files?.[0];
+    if (file) handleFileSelected(file);
+  });
+
+  // Drag and Drop
+  uploadArea?.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    uploadArea.style.borderColor = 'var(--color-primary)';
+    uploadArea.style.background = 'rgba(62,107,58,0.06)';
+  });
+
+  uploadArea?.addEventListener('dragleave', (e) => {
+    e.preventDefault();
+    uploadArea.style.borderColor = '#cbd5e1';
+    uploadArea.style.background = '#f8fafc';
+  });
+
+  uploadArea?.addEventListener('drop', (e) => {
+    e.preventDefault();
+    uploadArea.style.borderColor = '#cbd5e1';
+    uploadArea.style.background = '#f8fafc';
+    const file = e.dataTransfer?.files?.[0];
+    if (file) handleFileSelected(file);
+  });
+
   modeCards.forEach(card => {
     card.addEventListener('click', () => {
       modeCards.forEach(c => {
@@ -1003,8 +1111,8 @@ async function initSellPage() {
       mode: selectedMode,
       exchange_for: document.getElementById('sellExchangeFor')?.value.trim() || '',
       location: document.getElementById('sellLocation')?.value || 'Campus Central Library',
-      cover_url: document.getElementById('sellCover')?.value.trim() || '',
       description: document.getElementById('sellDescription')?.value.trim() || '',
+      cover_image: selectedCoverFile || null,
     };
 
     try {
@@ -1025,6 +1133,65 @@ async function initExchangePage() {
   const triggerBtn = document.getElementById('btnUploadBookTrigger');
   const modal = document.getElementById('uploadModal');
   const form = document.getElementById('uploadBookForm');
+
+  let exchangeCoverFile = null;
+  const dropZone = document.getElementById('uploadDropZone');
+  const fileInput = document.getElementById('uploadFileInput');
+  const fileList = document.getElementById('uploadFileList');
+
+  if (dropZone && fileInput) {
+    dropZone.addEventListener('click', () => fileInput.click());
+    dropZone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropZone.classList.add('drag-over');
+    });
+    ['dragleave', 'dragend'].forEach(evt => {
+      dropZone.addEventListener(evt, () => dropZone.classList.remove('drag-over'));
+    });
+    dropZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropZone.classList.remove('drag-over');
+      const file = e.dataTransfer?.files?.[0];
+      if (file) handleExchangeFile(file);
+    });
+    fileInput.addEventListener('change', (e) => {
+      const file = e.target.files?.[0];
+      if (file) handleExchangeFile(file);
+    });
+  }
+
+  function handleExchangeFile(file) {
+    const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'];
+    if (!validTypes.includes(file.type.toLowerCase())) {
+      showToast('Please select a valid image (JPG, PNG, or WebP)', 'danger');
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      showToast('Image is too large. Max size is 10MB.', 'danger');
+      return;
+    }
+    exchangeCoverFile = file;
+    if (fileList) {
+      const sizeMb = (file.size / (1024 * 1024)).toFixed(1);
+      fileList.innerHTML = `
+        <div style="display:flex; align-items:center; justify-content:space-between; background:var(--color-surface); padding:8px 12px; border-radius:8px; margin-top:8px; border:1px solid var(--color-border);">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <i class="fa-solid fa-image" style="color:var(--color-primary);"></i>
+            <span style="font-size:13px; font-weight:600;">${escapeHtml(file.name)}</span>
+            <span style="font-size:11px; color:var(--color-text-muted);">(${sizeMb} MB)</span>
+          </div>
+          <button type="button" class="btn btn-ghost btn-sm" id="btnRemoveExchangeCover" style="color:var(--color-danger); padding:2px 6px;">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+      `;
+      document.getElementById('btnRemoveExchangeCover')?.addEventListener('click', () => {
+        exchangeCoverFile = null;
+        if (fileInput) fileInput.value = '';
+        fileList.innerHTML = '';
+      });
+    }
+  }
 
   triggerBtn?.addEventListener('click', async () => {
     const user = await window.BookAPI.getCurrentUser();
@@ -1052,6 +1219,7 @@ async function initExchangePage() {
       exchange_for: document.getElementById('uploadExchangeFor')?.value.trim() || '',
       price: parseFloat(document.getElementById('uploadPrice')?.value) || 0,
       mode: 'exchange',
+      cover_image: exchangeCoverFile || null,
     };
 
     try {
@@ -1060,6 +1228,8 @@ async function initExchangePage() {
       showToast(`"${saved?.title || newBook.title}" listed for exchange!`, 'success');
       modal?.classList.remove('active');
       form.reset();
+      exchangeCoverFile = null;
+      if (fileList) fileList.innerHTML = '';
       fetchAndRender();
     } catch (err) {
       submitBtn.classList.remove('btn-loading');
