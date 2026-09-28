@@ -23,6 +23,7 @@ from apps.chat.views import ChatMessageListCreateView, ChatInboxView
 from apps.payments.views import CreatePaymentIntentView, WalletBalanceView
 from apps.ai.views import AIRecommendationView, AIAssistantView
 from apps.analytics.views import ActivityLogListView
+from apps.notifications.views import NotificationListView, NotificationMarkReadView
 
 
 PROJECT_ROOT = Path(settings.BASE_DIR).parent if os.path.basename(str(settings.BASE_DIR)) == 'backend' else Path(settings.BASE_DIR)
@@ -216,6 +217,11 @@ urlpatterns = [
     path('api/ai/recommend/', AIRecommendationView.as_view()),
     path('api/ai/assistant', AIAssistantView.as_view(), name='api-ai-assistant'),
     path('api/ai/assistant/', AIAssistantView.as_view()),
+    path('api/notifications', NotificationListView.as_view(), name='api-notifications'),
+    path('api/notifications/', NotificationListView.as_view()),
+    path('api/notifications/read', NotificationMarkReadView.as_view(), name='api-notifications-mark-all-read'),
+    path('api/notifications/read/', NotificationMarkReadView.as_view()),
+    path('api/notifications/<uuid:pk>/read/', NotificationMarkReadView.as_view(), name='api-notifications-mark-read'),
 
     # ── API v1 Versioned Endpoint Routes ──────────────────────────────────────
     path('api/v1/auth/', include(('apps.users.urls', 'users'), namespace='v1-users')),

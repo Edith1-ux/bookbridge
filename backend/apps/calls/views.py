@@ -26,5 +26,5 @@ class ICEServersView(APIView):
                 turn_config["credential"] = turn_cred
             ice_servers.append(turn_config)
 
-        return Response({"iceServers": ice_servers}, status=status.HTTP_200_OK)
+        return Response({"iceServers": ice_servers, "ice_servers": ice_servers}, status=status.HTTP_200_OK)
 

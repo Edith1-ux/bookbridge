@@ -55,10 +55,11 @@ class UserRegisterSerializer(serializers.ModelSerializer):
     enrollment = serializers.CharField(write_only=True, required=False, allow_blank=True)
     college_name = serializers.CharField(write_only=True, required=False, allow_blank=True)
     branch = serializers.CharField(write_only=True, required=False, allow_blank=True)
+    semester = serializers.IntegerField(required=False, default=1)
 
     class Meta:
         model = User
-        fields = ('email', 'password', 'full_name', 'name', 'enrollment', 'college_name', 'branch', 'college', 'department', 'phone_number')
+        fields = ('email', 'password', 'full_name', 'name', 'enrollment', 'college_name', 'branch', 'semester', 'college', 'department', 'phone_number')
 
     def validate_email(self, value):
         normalized = value.strip().lower()
@@ -84,6 +85,7 @@ class UserRegisterSerializer(serializers.ModelSerializer):
         enrollment = validated_data.pop('enrollment', '').strip()
         college_name = validated_data.pop('college_name', '').strip()
         branch = validated_data.pop('branch', '').strip()
+        semester = validated_data.pop('semester', 1)
 
         college = validated_data.get('college')
         department = validated_data.get('department')
@@ -113,6 +115,7 @@ class UserRegisterSerializer(serializers.ModelSerializer):
             college=college,
             department=department,
             enrollment_number=enrollment or None,
+            semester=semester,
             is_college_verified=is_verified,
             phone_number=validated_data.get('phone_number', '')
         )
