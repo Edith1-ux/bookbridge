@@ -517,6 +517,24 @@ async function renderBooksGrid(container, books, actionLabel = 'View Details') {
 }
 
 /* 🛒 BUY BOOK CHECKOUT / CAMPUS HANDOVER MODAL */
+// Helper to dynamically load the official Razorpay Checkout SDK
+function loadRazorpayScript() {
+  return new Promise((resolve) => {
+    if (typeof window.Razorpay === 'function') {
+      resolve(true);
+      return;
+    }
+    const script = document.createElement('script');
+    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    script.onload = () => resolve(true);
+    script.onerror = () => {
+      console.warn('[Razorpay] Script failed to load from CDN.');
+      resolve(false);
+    };
+    document.body.appendChild(script);
+  });
+}
+
 window.openBuyBookModal = async function(bookId) {
   let book;
   try {
@@ -538,6 +556,18 @@ window.openBuyBookModal = async function(bookId) {
     return;
   }
 
+  if (book.seller && (book.seller.id === currentUser.id || book.seller.email === currentUser.email)) {
+    showToast('You cannot purchase your own listed textbook.', 'warning');
+    return;
+  }
+
+  let walletInfo = { payment_modes_available: ['CAMPUS_DEAL'] };
+  try {
+    walletInfo = await window.BookAPI.getWalletBalance();
+  } catch (e) {}
+
+  const hasOnlineGateway = Array.isArray(walletInfo.payment_modes_available) && walletInfo.payment_modes_available.includes('ONLINE_RAZORPAY');
+
   let modal = document.getElementById('buyBookModal');
   if (!modal) {
     modal = document.createElement('div');
@@ -546,7 +576,7 @@ window.openBuyBookModal = async function(bookId) {
     modal.innerHTML = `
       <div class="modal-card" style="max-width: 540px;">
         <div class="modal-header">
-          <h3><i class="fa-solid fa-handshake" style="color: var(--color-primary);"></i> Campus Handover & Checkout</h3>
+          <h3><i class="fa-solid fa-cart-shopping" style="color: var(--color-primary);"></i> Textbook Purchase</h3>
           <button class="modal-close" onclick="document.getElementById('buyBookModal').classList.remove('active')" aria-label="Close modal">
             <i class="fa-solid fa-xmark"></i>
           </button>
@@ -575,6 +605,28 @@ window.openBuyBookModal = async function(bookId) {
     </div>
 
     <form id="buyBookCheckoutForm">
+      <div class="form-group" style="margin-bottom: 14px;">
+        <label style="display:block; font-size:13px; font-weight:700; color:var(--color-dark); margin-bottom:6px;">Choose Transaction Method:</label>
+        <div style="display:grid; grid-template-columns: ${hasOnlineGateway ? '1fr 1fr' : '1fr'}; gap: 10px;">
+          <label style="display:flex; align-items:flex-start; gap:8px; padding:10px 12px; border:2px solid var(--color-primary); border-radius:10px; cursor:pointer; background:rgba(62,107,58,0.04);">
+            <input type="radio" name="checkoutMethod" value="CAMPUS_DEAL" checked style="margin-top:3px;">
+            <div>
+              <strong style="font-size:13px; display:block; color:var(--color-dark);">🤝 Campus Deal</strong>
+              <span style="font-size:11.5px; color:var(--color-gray); line-height:1.3; display:block;">Meet seller on campus, inspect book in person, and pay directly.</span>
+            </div>
+          </label>
+          ${hasOnlineGateway ? `
+          <label style="display:flex; align-items:flex-start; gap:8px; padding:10px 12px; border:1px solid var(--color-border); border-radius:10px; cursor:pointer;" id="labelOnlinePay">
+            <input type="radio" name="checkoutMethod" value="ONLINE_RAZORPAY" style="margin-top:3px;">
+            <div>
+              <strong style="font-size:13px; display:block; color:var(--color-dark);">💳 Buy Online</strong>
+              <span style="font-size:11.5px; color:var(--color-gray); line-height:1.3; display:block;">Pay securely via Razorpay (UPI, Card, NetBanking).</span>
+            </div>
+          </label>
+          ` : ''}
+        </div>
+      </div>
+
       <div class="form-group" style="margin-bottom: 12px;">
         <input type="text" id="buyerFullName" class="form-input" value="${currentUser.name || ''}" required>
         <label class="form-label">Buyer Full Name *</label>
@@ -585,55 +637,141 @@ window.openBuyBookModal = async function(bookId) {
           <option value="Campus Central Library">Campus Central Library (Recommended)</option>
           <option value="Department CE Lab Floor">Department Lab / Classroom</option>
           <option value="Campus Canteen Area">Campus Canteen / Student Plaza</option>
+          <option value="Main College Gate">Main College Gate</option>
         </select>
-      </div>
-
-      <div class="form-group" style="margin-bottom: 14px;">
-        <select id="buyerPaymentChoice" class="form-select" required>
-          <option value="DIRECT_HANDOVER">Direct Handover (Cash on In-Person Verification)</option>
-          <option value="DIRECT_UPI">Direct UPI on Campus (GPay / PhonePe / Paytm)</option>
-        </select>
+        <label class="form-label" style="top:-8px; font-size:11px;">Preferred Campus Meeting Point *</label>
       </div>
 
       <div class="form-group" style="margin-bottom: 18px;">
-        <textarea id="buyerNotesText" class="form-input" placeholder=" " style="min-height: 60px;"></textarea>
+        <textarea id="buyerNotesText" class="form-input" placeholder=" " style="min-height: 55px;"></textarea>
         <label class="form-label">Message for Seller (Preferred meeting time / lab)</label>
       </div>
 
       <div style="display: flex; gap: 10px;">
         <button type="button" class="btn btn-ghost" style="flex: 1;" onclick="document.getElementById('buyBookModal').classList.remove('active')">Cancel</button>
-        <button type="submit" class="btn btn-primary" style="flex: 2;"><i class="fa-solid fa-check"></i> Initiate Handover (&#8377;${book.price})</button>
+        <button type="submit" id="btnSubmitPurchase" class="btn btn-primary" style="flex: 2;"><i class="fa-solid fa-check"></i> Confirm Request (&#8377;${book.price})</button>
       </div>
     </form>
   `;
 
   modal.classList.add('active');
 
+  // Radio button border toggle
+  const radios = bodyEl.querySelectorAll('input[name="checkoutMethod"]');
+  radios.forEach(r => {
+    r.addEventListener('change', () => {
+      radios.forEach(other => {
+        const parent = other.closest('label');
+        if (parent) {
+          if (other.checked) {
+            parent.style.border = '2px solid var(--color-primary)';
+            parent.style.background = 'rgba(62,107,58,0.04)';
+          } else {
+            parent.style.border = '1px solid var(--color-border)';
+            parent.style.background = 'transparent';
+          }
+        }
+      });
+      const submitBtn = document.getElementById('btnSubmitPurchase');
+      if (r.value === 'ONLINE_RAZORPAY' && r.checked) {
+        submitBtn.innerHTML = `<i class="fa-solid fa-credit-card"></i> Pay Online (&#8377;${book.price})`;
+      } else {
+        submitBtn.innerHTML = `<i class="fa-solid fa-handshake"></i> Initiate Handover (&#8377;${book.price})`;
+      }
+    });
+  });
+
   const form = document.getElementById('buyBookCheckoutForm');
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const submitBtn = form.querySelector('[type="submit"]');
+    const submitBtn = document.getElementById('btnSubmitPurchase');
     submitBtn.disabled = true;
     submitBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Processing...`;
 
+    const selectedMethod = form.querySelector('input[name="checkoutMethod"]:checked')?.value || 'CAMPUS_DEAL';
+    const pickupLoc = document.getElementById('buyerPickupPref').value;
+    const notes = document.getElementById('buyerNotesText').value.trim();
+
     try {
-      const gateway = document.getElementById('buyerPaymentChoice').value;
-      const intent = await window.BookAPI.createPaymentIntent(book.id, gateway);
+      const intent = await window.BookAPI.createPaymentIntent(book.id, selectedMethod, pickupLoc, notes);
 
-      // Send initial inquiry message to seller
-      const pickupLoc = document.getElementById('buyerPickupPref').value;
-      const notes = document.getElementById('buyerNotesText').value.trim();
-      const messageText = `Hi! I want to purchase your book "${book.title}" (₹${book.price}). Proposed pickup location: ${pickupLoc}. ${notes}`;
+      // ── ONLINE RAZORPAY FLOW ──────────────────────────────────────────
+      if (selectedMethod === 'ONLINE_RAZORPAY' && intent.gateway === 'ONLINE_RAZORPAY') {
+        const rzpLoaded = await loadRazorpayScript();
+        if (!rzpLoaded || typeof window.Razorpay !== 'function') {
+          showToast('Razorpay Checkout SDK could not be loaded. Please check your connection.', 'danger');
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = `<i class="fa-solid fa-credit-card"></i> Pay Online (&#8377;${book.price})`;
+          return;
+        }
 
+        const options = {
+          key: intent.key_id,
+          amount: Math.round(intent.amount * 100),
+          currency: intent.currency || 'INR',
+          name: 'BookBridge',
+          description: `Textbook: ${intent.book_title || book.title}`,
+          image: book.cover || 'logo.png.jpeg',
+          order_id: intent.order_id,
+          prefill: {
+            name: currentUser.name || intent.buyer_name,
+            email: currentUser.email || intent.buyer_email,
+            contact: currentUser.phone || intent.buyer_phone,
+          },
+          theme: {
+            color: '#3E6B3A',
+          },
+          handler: async function(response) {
+            submitBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Verifying Payment...`;
+            try {
+              const verifyRes = await window.BookAPI.verifyPayment(
+                response.razorpay_order_id,
+                response.razorpay_payment_id,
+                response.razorpay_signature,
+                intent.bookbridge_order_id
+              );
+              modal.classList.remove('active');
+              showToast(verifyRes.message || 'Payment verified and order confirmed!', 'success');
+              setTimeout(() => window.location.href = 'dashboard.html', 1200);
+            } catch (err) {
+              showToast(err.message || 'Payment verification failed. Please contact support.', 'danger');
+              submitBtn.disabled = false;
+              submitBtn.innerHTML = `<i class="fa-solid fa-credit-card"></i> Retry Payment`;
+            }
+          },
+          modal: {
+            ondismiss: async function() {
+              submitBtn.disabled = false;
+              submitBtn.innerHTML = `<i class="fa-solid fa-credit-card"></i> Pay Online (&#8377;${book.price})`;
+              // Release reservation if buyer cancelled checkout
+              await window.BookAPI.cancelPayment(intent.bookbridge_order_id, book.id).catch(() => {});
+              showToast('Payment cancelled. The book remains available.', 'info');
+            }
+          }
+        };
+
+        const rzp = new window.Razorpay(options);
+        rzp.on('payment.failed', function(resp) {
+          showToast(`Payment failed: ${resp.error.description || 'Transaction declined'}`, 'danger');
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = `<i class="fa-solid fa-credit-card"></i> Pay Online (&#8377;${book.price})`;
+        });
+        rzp.open();
+        return;
+      }
+
+      // ── CAMPUS DIRECT HANDOVER FLOW ────────────────────────────────────
+      const messageText = `Hi! I want to purchase your book "${book.title}" (₹${book.price}). Proposed campus pickup location: ${pickupLoc}. ${notes}`;
       await window.BookAPI.sendMessage(seller.email || 'seller@bookbridge.local', messageText, book.title).catch(() => {});
 
       modal.classList.remove('active');
       showToast(intent.message || `Handover initiated with ${seller.name}! Check your messages to coordinate meetup.`, 'success');
       setTimeout(() => window.location.href = 'dashboard.html', 1200);
+
     } catch (err) {
-      showToast(err.message || 'Failed to initiate handover request', 'danger');
+      showToast(err.message || 'Failed to initiate request. Please try again.', 'danger');
       submitBtn.disabled = false;
-      submitBtn.innerHTML = `<i class="fa-solid fa-check"></i> Initiate Handover (&#8377;${book.price})`;
+      submitBtn.innerHTML = `<i class="fa-solid fa-check"></i> Try Again`;
     }
   });
 };
@@ -1578,6 +1716,9 @@ async function initAdminPage() {
       case 'marketplace':
         loadMarketplace();
         break;
+      case 'payments':
+        loadPayments();
+        break;
       case 'exchanges':
         loadExchanges();
         break;
@@ -2089,6 +2230,92 @@ async function initAdminPage() {
     }
   }
   document.getElementById('btnRefreshMarketplace')?.addEventListener('click', loadMarketplace);
+
+  // ── 4b. PAYMENTS & ORDERS AUDIT MANAGEMENT ─────────────────────────────────
+  async function loadPayments() {
+    const tbody = document.getElementById('adminPaymentsTableBody');
+    if (tbody) tbody.innerHTML = '<tr><td colspan="12" style="text-align:center;padding:24px;color:var(--color-gray);"><i class="fa-solid fa-spinner fa-spin"></i> Loading platform payment records...</td></tr>';
+
+    const statusFilter = document.getElementById('adminPayStatusFilter')?.value || '';
+    const methodFilter = document.getElementById('adminPayMethodFilter')?.value || '';
+
+    try {
+      const data = await window.BookAPI.getAdminPayments(1, statusFilter, methodFilter);
+      const orders = data.orders || (Array.isArray(data) ? data : []);
+
+      const volEl = document.getElementById('adminTotalVolume');
+      if (volEl) volEl.innerHTML = `&#8377;${Number(data.total_volume || 0).toFixed(2)}`;
+
+      const revEl = document.getElementById('adminPlatformRevenue');
+      if (revEl) revEl.innerHTML = `&#8377;${Number(data.total_platform_revenue || 0).toFixed(2)}`;
+
+      const payEl = document.getElementById('adminSellerPayouts');
+      if (payEl) payEl.innerHTML = `&#8377;${Number(data.total_seller_payouts || 0).toFixed(2)}`;
+
+      const routeEl = document.getElementById('adminRouteStatus');
+      if (routeEl) {
+        if (data.route_status === 'ROUTE_ENABLED') {
+          routeEl.innerHTML = `<span style="color:#16a34a;"><i class="fa-solid fa-circle-check"></i> Route Active</span>`;
+        } else if (data.route_status === 'ROUTE_PENDING_APPROVAL') {
+          routeEl.innerHTML = `<span style="color:#d97706;"><i class="fa-solid fa-clock"></i> Approval Req.</span>`;
+        } else {
+          routeEl.innerHTML = `<span style="color:#64748b;">Disabled (Campus Direct)</span>`;
+        }
+      }
+
+      if (!tbody) return;
+
+      if (!orders || orders.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="12" style="text-align:center;padding:24px;color:var(--color-gray);">No payment transactions found matching the filter criteria.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = orders.map(o => {
+        let payBadgeClass = 'badge-warning';
+        if (o.payment_status === 'PAID') payBadgeClass = 'badge-success';
+        else if (o.payment_status === 'FAILED') payBadgeClass = 'badge-danger';
+
+        let settleLabel = 'Campus Handover';
+        let settleClass = 'status-pill pending';
+        if (o.settlement_status === 'ROUTE_TRANSFER_EXECUTED') {
+          settleLabel = 'Transferred';
+          settleClass = 'status-pill completed';
+        } else if (o.settlement_status === 'TEST_CAPTURED') {
+          settleLabel = 'Test Sandbox';
+          settleClass = 'status-pill accepted';
+        } else if (o.settlement_status === 'ROUTE_PENDING_APPROVAL') {
+          settleLabel = 'Pending Route';
+          settleClass = 'status-pill pending';
+        }
+
+        const gatewayId = o.razorpay_payment_id || o.razorpay_order_id || '—';
+
+        return `
+          <tr>
+            <td><strong style="font-family:monospace;font-size:12px;color:var(--color-primary);">${escapeHtml(o.order_number)}</strong></td>
+            <td><strong>${escapeHtml(o.book_title)}</strong></td>
+            <td>${escapeHtml(o.buyer_name || 'Buyer')}<br><span style="font-size:11px;color:var(--color-gray);">${escapeHtml(o.buyer_email || '')}</span></td>
+            <td>${escapeHtml(o.seller_name || 'Seller')}<br><span style="font-size:11px;color:var(--color-gray);">${escapeHtml(o.seller_email || '')}</span></td>
+            <td><strong>&#8377;${o.amount}</strong></td>
+            <td style="color:var(--color-gray);">&#8377;${o.platform_fee}</td>
+            <td style="color:var(--color-success);font-weight:700;">&#8377;${o.seller_amount}</td>
+            <td><span style="font-size:12px;">${o.payment_method === 'CAMPUS_DEAL' ? '🤝 Campus' : '💳 Razorpay'}</span></td>
+            <td><span class="badge ${payBadgeClass}">${escapeHtml(o.payment_status)}</span></td>
+            <td><span class="${settleClass}">${settleLabel}</span></td>
+            <td><span style="font-family:monospace;font-size:11px;color:var(--color-gray-dark);">${escapeHtml(gatewayId)}</span></td>
+            <td style="font-size:11.5px;color:var(--color-gray);">${new Date(o.created_at).toLocaleDateString([], {month:'short', day:'numeric'})}</td>
+          </tr>
+        `;
+      }).join('');
+
+    } catch (err) {
+      if (tbody) tbody.innerHTML = `<tr><td colspan="12" style="text-align:center;padding:24px;color:var(--color-danger);">${escapeHtml(err.message || 'Failed to load payments.')}</td></tr>`;
+    }
+  }
+
+  document.getElementById('btnRefreshPayments')?.addEventListener('click', loadPayments);
+  document.getElementById('adminPayStatusFilter')?.addEventListener('change', loadPayments);
+  document.getElementById('adminPayMethodFilter')?.addEventListener('change', loadPayments);
 
   // ── 5. EXCHANGES MANAGEMENT ───────────────────────────────────────────────
   async function loadExchanges() {
@@ -2787,6 +3014,161 @@ async function initDashboardPage() {
         msgsBadge.textContent = messages.length;
         msgsBadge.style.display = 'inline-block';
       }
+    }
+
+    // ── Load Buyer Orders ──────────────────────────────────────────
+    const ordersContainer = document.getElementById('dashOrdersContainer');
+    if (ordersContainer) {
+      const orders = await window.BookAPI.getMyOrders().catch(() => []);
+      if (!orders || orders.length === 0) {
+        ordersContainer.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-state-icon">🛒</div>
+            <h3>No Orders Found</h3>
+            <p>When you purchase or reserve books on BookBridgee, your orders will appear here.</p>
+            <a href="browse.html" class="btn btn-primary btn-sm"><i class="fa-solid fa-search"></i> Browse Textbooks</a>
+          </div>
+        `;
+      } else {
+        ordersContainer.innerHTML = `
+          <div style="display:flex; flex-direction:column; gap:14px;">
+            ${orders.map(o => {
+              const coverImg = o.book_cover || 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=400&q=80';
+              const isPaid = o.payment_status === 'PAID';
+              const isCampus = o.payment_method === 'CAMPUS_DEAL';
+              return `
+                <div class="card" style="padding:16px; display:flex; gap:16px; align-items:center; flex-wrap:wrap; border:1px solid var(--color-border);">
+                  <img src="${coverImg}" style="width:60px; height:80px; object-fit:cover; border-radius:6px; box-shadow:0 2px 6px rgba(0,0,0,0.1);">
+                  <div style="flex:1; min-width:200px;">
+                    <div style="font-size:11px; color:var(--color-gray); font-family:monospace; font-weight:700;">${o.order_number}</div>
+                    <h4 style="margin:2px 0 4px; font-size:15px; font-weight:700;">${escapeHtml(o.book_title)}</h4>
+                    <div style="font-size:12.5px; color:var(--color-gray);">Seller: <strong>${escapeHtml(o.seller_name || 'Student')}</strong> · Meetup: ${escapeHtml(o.pickup_location || 'Campus')}</div>
+                    <div style="font-size:11.5px; color:var(--color-gray-light); margin-top:3px;">Date: ${new Date(o.created_at).toLocaleDateString([], {month:'short', day:'numeric', year:'numeric'})}</div>
+                  </div>
+                  <div style="text-align:right; min-width:140px;">
+                    <div style="font-size:17px; font-weight:800; color:var(--color-primary);">&#8377;${o.amount}</div>
+                    <div style="margin:4px 0;">
+                      <span class="badge ${isPaid ? 'badge-success' : 'badge-warning'}">${isPaid ? 'PAID / CONFIRMED' : (isCampus ? 'CAMPUS MEETUP PENDING' : 'PAYMENT PENDING')}</span>
+                    </div>
+                    <span style="font-size:11px; color:var(--color-gray);">${isCampus ? '🤝 Campus Direct Handover' : '💳 Razorpay Online'}</span>
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        `;
+      }
+    }
+
+    // ── Load Seller Sales & Payouts ────────────────────────────────
+    const salesContainer = document.getElementById('dashSalesContainer');
+    if (salesContainer) {
+      const salesData = await window.BookAPI.getMySales().catch(() => ({ total_earnings: 0, pending_settlement: 0, route_status: 'ROUTE_DISABLED', sales: [] }));
+      const sales = salesData.sales || [];
+      
+      const earnEl = document.getElementById('dashTotalEarnings');
+      if (earnEl) earnEl.innerHTML = `&#8377;${Number(salesData.total_earnings || 0).toFixed(2)}`;
+
+      const pendingEl = document.getElementById('dashPendingSettlement');
+      if (pendingEl) pendingEl.innerHTML = `&#8377;${Number(salesData.pending_settlement || 0).toFixed(2)}`;
+
+      const routeBadge = document.getElementById('dashRouteBadge');
+      if (routeBadge) {
+        if (salesData.route_status === 'ROUTE_ENABLED') {
+          routeBadge.innerHTML = `<span style="color:#16a34a;"><i class="fa-solid fa-circle-check"></i> Route Active</span>`;
+        } else if (salesData.route_status === 'ROUTE_PENDING_APPROVAL') {
+          routeBadge.innerHTML = `<span style="color:#d97706;"><i class="fa-solid fa-clock"></i> Route Approval Req.</span>`;
+        } else {
+          routeBadge.innerHTML = `<span style="color:#64748b;"><i class="fa-solid fa-circle-info"></i> Campus P2P / Standard</span>`;
+        }
+      }
+
+      // Populate Payout Preferences Form
+      if (salesData.seller_account) {
+        const upiInp = document.getElementById('sellerPayoutUpi');
+        const last4Inp = document.getElementById('sellerBankLast4');
+        const ifscInp = document.getElementById('sellerBankIfsc');
+        if (upiInp && salesData.seller_account.payout_upi_id) upiInp.value = salesData.seller_account.payout_upi_id;
+        if (last4Inp && salesData.seller_account.bank_account_last4) last4Inp.value = salesData.seller_account.bank_account_last4;
+        if (ifscInp && salesData.seller_account.bank_ifsc) ifscInp.value = salesData.seller_account.bank_ifsc;
+      }
+
+      if (sales.length === 0) {
+        salesContainer.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-state-icon">📦</div>
+            <h3>No Sales Recorded Yet</h3>
+            <p>When students buy or request your listed books, their orders will appear here.</p>
+          </div>
+        `;
+      } else {
+        salesContainer.innerHTML = `
+          <div style="display:flex; flex-direction:column; gap:14px;">
+            ${sales.map(s => {
+              const coverImg = s.book_cover || 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=400&q=80';
+              let settlementLabel = 'Campus Handover';
+              let settlementClass = 'badge-info';
+              if (s.settlement_status === 'ROUTE_TRANSFER_EXECUTED') {
+                settlementLabel = 'Transferred via Route';
+                settlementClass = 'badge-success';
+              } else if (s.settlement_status === 'TEST_CAPTURED') {
+                settlementLabel = 'Test Mode Captured (Sandbox)';
+                settlementClass = 'badge-primary';
+              } else if (s.settlement_status === 'ROUTE_PENDING_APPROVAL') {
+                settlementLabel = 'Settlement Pending Route Approval';
+                settlementClass = 'badge-warning';
+              } else if (s.settlement_status === 'SETTLEMENT_PENDING_CAMPUS_HANDOVER') {
+                settlementLabel = 'Direct Campus Handover';
+                settlementClass = 'badge-secondary';
+              }
+
+              return `
+                <div class="card" style="padding:16px; display:flex; gap:16px; align-items:center; flex-wrap:wrap; border:1px solid var(--color-border);">
+                  <img src="${coverImg}" style="width:60px; height:80px; object-fit:cover; border-radius:6px; box-shadow:0 2px 6px rgba(0,0,0,0.1);">
+                  <div style="flex:1; min-width:200px;">
+                    <div style="font-size:11px; color:var(--color-gray); font-family:monospace; font-weight:700;">${s.order_number}</div>
+                    <h4 style="margin:2px 0 4px; font-size:15px; font-weight:700;">${escapeHtml(s.book_title)}</h4>
+                    <div style="font-size:12.5px; color:var(--color-gray);">Buyer: <strong>${escapeHtml(s.buyer_name || 'Student')}</strong> · Meetup: ${escapeHtml(s.pickup_location || 'Campus')}</div>
+                    <div style="font-size:11.5px; color:var(--color-gray-light); margin-top:3px;">Date: ${new Date(s.created_at).toLocaleDateString([], {month:'short', day:'numeric', year:'numeric'})}</div>
+                  </div>
+                  <div style="text-align:right; min-width:160px;">
+                    <div style="font-size:16px; font-weight:800; color:var(--color-success);">&#8377;${s.seller_amount} <span style="font-size:12px; font-weight:400; color:var(--color-gray);">(Gross: &#8377;${s.amount})</span></div>
+                    <div style="margin:4px 0;">
+                      <span class="badge ${settlementClass}">${settlementLabel}</span>
+                    </div>
+                    <span style="font-size:11px; color:var(--color-gray);">${s.payment_method === 'CAMPUS_DEAL' ? '🤝 Campus Deal' : '💳 Online Payment'}</span>
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        `;
+      }
+    }
+
+    // Payout Preferences Form Handler
+    const payoutForm = document.getElementById('sellerPayoutPrefsForm');
+    if (payoutForm) {
+      payoutForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const submitBtn = payoutForm.querySelector('[type="submit"]');
+        submitBtn.disabled = true;
+        try {
+          const upi = document.getElementById('sellerPayoutUpi')?.value || '';
+          const last4 = document.getElementById('sellerBankLast4')?.value || '';
+          const ifsc = document.getElementById('sellerBankIfsc')?.value || '';
+          await window.BookAPI.updateSellerPaymentAccount({
+            payout_upi_id: upi,
+            bank_account_last4: last4,
+            bank_ifsc: ifsc,
+          });
+          showToast('Payout preferences saved successfully!', 'success');
+        } catch (err) {
+          showToast(err.message || 'Failed to save payout preferences', 'danger');
+        } finally {
+          submitBtn.disabled = false;
+        }
+      });
     }
 
     // Load Notifications

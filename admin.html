@@ -447,6 +447,7 @@
 
         <div class="sidebar-section-title">Transactions</div>
         <nav class="sidebar-nav">
+          <a href="#" class="sidebar-link" data-admin-tab="payments"><i class="fa-solid fa-credit-card"></i> Payments & Orders</a>
           <a href="#" class="sidebar-link" data-admin-tab="exchanges"><i class="fa-solid fa-arrows-rotate"></i> Exchanges</a>
           <a href="#" class="sidebar-link" data-admin-tab="donations"><i class="fa-solid fa-gift"></i> Donations</a>
         </nav>
@@ -795,6 +796,88 @@
                 </thead>
                 <tbody id="adminExchangesTableBody">
                   <tr><td colspan="8" style="text-align:center;padding:24px;color:var(--color-gray);">Loading exchanges...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- ══════════════════════════════════════════════════════════════════
+             PAYMENTS & ORDERS AUDIT TAB
+             ══════════════════════════════════════════════════════════════════ -->
+        <div id="adminTab-payments" class="admin-content-tab">
+          <div class="flex-between" style="margin-bottom: 24px; flex-wrap: wrap; gap: 12px;">
+            <div>
+              <h2>Platform Payments & Order Settlement</h2>
+              <p class="text-small">Live marketplace transactions, verified gateway charges, platform fees, and seller settlement status.</p>
+            </div>
+            <button class="btn btn-secondary btn-sm" id="btnRefreshPayments"><i class="fa-solid fa-rotate"></i> Refresh</button>
+          </div>
+
+          <!-- Financial KPIs -->
+          <div class="grid-4" style="margin-bottom: 24px;">
+            <div class="stat-card">
+              <div class="stat-icon" style="background:var(--color-primary-light);color:var(--color-primary);"><i class="fa-solid fa-indian-rupee-sign"></i></div>
+              <div class="stat-value" id="adminTotalVolume">&#8377;0.00</div>
+              <div class="stat-label">Total Verified Volume</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon" style="background:var(--color-success-light);color:var(--color-success);"><i class="fa-solid fa-building-columns"></i></div>
+              <div class="stat-value" id="adminPlatformRevenue">&#8377;0.00</div>
+              <div class="stat-label">Platform Service Revenue</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon" style="background:var(--color-info-light);color:var(--color-info);"><i class="fa-solid fa-wallet"></i></div>
+              <div class="stat-value" id="adminSellerPayouts">&#8377;0.00</div>
+              <div class="stat-label">Student Seller Payouts</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon" style="background:var(--color-warning-light);color:var(--color-warning);"><i class="fa-solid fa-store"></i></div>
+              <div class="stat-value" id="adminRouteStatus" style="font-size:15px; font-weight:700;">Disabled</div>
+              <div class="stat-label">Razorpay Route Status</div>
+            </div>
+          </div>
+
+          <!-- Orders Table Card -->
+          <div class="card" style="padding: 24px;">
+            <div class="flex-between" style="margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
+              <h3 style="margin: 0;"><i class="fa-solid fa-list-check" style="color:var(--color-primary);"></i> Transaction Ledger</h3>
+              <div style="display:flex; gap: 10px;">
+                <select id="adminPayStatusFilter" class="form-select" style="padding: 6px 12px; font-size: 13px; height: 36px;">
+                  <option value="">All Payment Statuses</option>
+                  <option value="PAID">PAID</option>
+                  <option value="PENDING">PENDING</option>
+                  <option value="FAILED">FAILED</option>
+                  <option value="CANCELLED">CANCELLED</option>
+                </select>
+                <select id="adminPayMethodFilter" class="form-select" style="padding: 6px 12px; font-size: 13px; height: 36px;">
+                  <option value="">All Gateways</option>
+                  <option value="ONLINE_RAZORPAY">Razorpay Online</option>
+                  <option value="CAMPUS_DEAL">Campus Direct Handover</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="data-table-wrap">
+              <table class="data-table" id="adminPaymentsTable">
+                <thead>
+                  <tr>
+                    <th>Order #</th>
+                    <th>Book</th>
+                    <th>Buyer</th>
+                    <th>Seller</th>
+                    <th>Total</th>
+                    <th>Fee</th>
+                    <th>Seller Net</th>
+                    <th>Method</th>
+                    <th>Payment</th>
+                    <th>Settlement Status</th>
+                    <th>Gateway ID</th>
+                    <th>Date</th>
+                  </tr>
+                </thead>
+                <tbody id="adminPaymentsTableBody">
+                  <tr><td colspan="12" style="text-align:center;padding:24px;color:var(--color-gray);">Loading orders...</td></tr>
                 </tbody>
               </table>
             </div>

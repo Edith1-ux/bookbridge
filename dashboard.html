@@ -53,6 +53,8 @@
         <div class="sidebar-section-title">My Account</div>
         <nav class="sidebar-nav">
           <a href="#" class="sidebar-link active" data-tab="overview"><i class="fa-solid fa-chart-pie"></i> Overview</a>
+          <a href="#" class="sidebar-link" data-tab="my-orders"><i class="fa-solid fa-cart-shopping"></i> My Orders</a>
+          <a href="#" class="sidebar-link" data-tab="my-sales"><i class="fa-solid fa-receipt"></i> My Sales & Payouts</a>
           <a href="#" class="sidebar-link" data-tab="my-books"><i class="fa-solid fa-book"></i> My Books</a>
           <a href="#" class="sidebar-link" data-tab="wishlist"><i class="fa-solid fa-heart"></i> Wishlist</a>
           <a href="#" class="sidebar-link" data-tab="messages" style="display:flex;align-items:center;gap:6px;"><i class="fa-solid fa-envelope"></i> Messages<span id="msgsBadge" class="badge-dot" style="display:none;">0</span></a>
@@ -102,6 +104,75 @@
               <a href="browse.html" class="btn btn-secondary"><i class="fa-solid fa-search"></i> Browse Books</a>
               <a href="donate.html" class="btn btn-ghost" style="border: 1px solid var(--color-border);"><i class="fa-solid fa-gift"></i> Donate</a>
             </div>
+          </div>
+        </div>
+
+        <!-- MY ORDERS TAB -->
+        <div id="tab-my-orders" class="tab-content">
+          <h2>My Orders & Purchases</h2>
+          <p class="text-small" style="margin-bottom: 24px;">Track your campus handovers and verified online payments.</p>
+          <div id="dashOrdersContainer">
+            <div class="empty-state">
+              <div class="empty-state-icon">🛒</div>
+              <h3>No Orders Found</h3>
+              <p>When you purchase or reserve books on BookBridgee, your orders will appear here.</p>
+              <a href="browse.html" class="btn btn-primary btn-sm"><i class="fa-solid fa-search"></i> Browse Textbooks</a>
+            </div>
+          </div>
+        </div>
+
+        <!-- MY SALES & PAYOUTS TAB -->
+        <div id="tab-my-sales" class="tab-content">
+          <h2>My Sales & Payouts</h2>
+          <p class="text-small" style="margin-bottom: 20px;">Review your textbook sales, buyer details, and payout settlement status.</p>
+          
+          <div class="grid-3" style="margin-bottom: 24px;">
+            <div class="stat-card">
+              <div class="stat-icon" style="background:var(--color-success-light);color:var(--color-success);"><i class="fa-solid fa-indian-rupee-sign"></i></div>
+              <div class="stat-value" id="dashTotalEarnings">&#8377;0.00</div>
+              <div class="stat-label">Total Verified Earnings</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon" style="background:var(--color-warning-light);color:var(--color-warning);"><i class="fa-solid fa-clock-rotate-left"></i></div>
+              <div class="stat-value" id="dashPendingSettlement">&#8377;0.00</div>
+              <div class="stat-label">Pending Settlements</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon" style="background:var(--color-info-light);color:var(--color-info);"><i class="fa-solid fa-store"></i></div>
+              <div class="stat-value" id="dashRouteBadge" style="font-size: 15px; font-weight: 700; color: #475569;">Checking...</div>
+              <div class="stat-label">Marketplace Route Status</div>
+            </div>
+          </div>
+
+          <div id="dashSalesContainer" style="margin-bottom: 32px;">
+            <div class="empty-state">
+              <div class="empty-state-icon">📦</div>
+              <h3>No Sales Recorded Yet</h3>
+              <p>When students buy or request your listed books, their orders will appear here.</p>
+            </div>
+          </div>
+
+          <!-- Payout Preferences Card -->
+          <div class="card" style="padding: 24px; max-width: 600px;">
+            <h3 style="margin-bottom: 8px;"><i class="fa-solid fa-building-columns" style="color:var(--color-primary);"></i> Seller Payout Preferences</h3>
+            <p class="text-small" style="margin-bottom: 18px;">Configure your UPI or bank details for receiving student payouts.</p>
+            <form id="sellerPayoutPrefsForm">
+              <div class="form-group" style="margin-bottom: 14px;">
+                <input type="text" id="sellerPayoutUpi" class="form-input" placeholder=" ">
+                <label class="form-label">UPI ID (e.g. name@okhdfcbank / number@paytm)</label>
+              </div>
+              <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
+                <div class="form-group">
+                  <input type="text" id="sellerBankLast4" class="form-input" maxlength="4" placeholder=" ">
+                  <label class="form-label">Bank A/C Last 4 Digits</label>
+                </div>
+                <div class="form-group">
+                  <input type="text" id="sellerBankIfsc" class="form-input" placeholder=" ">
+                  <label class="form-label">IFSC Code (e.g. SBIN0001234)</label>
+                </div>
+              </div>
+              <button type="submit" class="btn btn-primary btn-sm"><i class="fa-solid fa-save"></i> Save Payout Preferences</button>
+            </form>
           </div>
         </div>
 

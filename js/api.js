@@ -775,11 +775,73 @@ window.BookAPI = {
 
   // ── PAYMENTS & CHECKOUT ────────────────────────────────────────────────
 
-  async createPaymentIntent(bookId, gateway = 'DIRECT_HANDOVER') {
-    return await _post('/payments/intent/', {
+  async createPaymentIntent(bookId, gateway = 'CAMPUS_DEAL', pickupLocation = '', notes = '') {
+    return await _post('/payments/create-intent/', {
       book_id: bookId,
       gateway: gateway,
+      pickup_location: pickupLocation,
+      notes: notes,
     });
+  },
+
+  async verifyPayment(razorpayOrderId, razorpayPaymentId, razorpaySignature, bookbridgeOrderId = '') {
+    return await _post('/payments/verify/', {
+      razorpay_order_id: razorpayOrderId,
+      razorpay_payment_id: razorpayPaymentId,
+      razorpay_signature: razorpaySignature,
+      bookbridge_order_id: bookbridgeOrderId,
+    });
+  },
+
+  async cancelPayment(orderId = '', bookId = '') {
+    return await _post('/payments/cancel/', {
+      order_id: orderId,
+      book_id: bookId,
+    });
+  },
+
+  async getWalletBalance() {
+    try {
+      return await _get('/payments/wallet/');
+    } catch (e) {
+      return { balance: 0.00, escrow_held: 0.00, payment_modes_available: ['CAMPUS_DEAL'] };
+    }
+  },
+
+  async getMyOrders() {
+    try {
+      const data = await _get('/payments/my-orders/');
+      return data && data.orders ? data.orders : (Array.isArray(data) ? data : []);
+    } catch (e) {
+      return [];
+    }
+  },
+
+  async getMySales() {
+    try {
+      return await _get('/payments/my-sales/');
+    } catch (e) {
+      return { count: 0, total_earnings: 0.00, pending_settlement: 0.00, sales: [] };
+    }
+  },
+
+  async getSellerPaymentAccount() {
+    try {
+      return await _get('/payments/seller-account/');
+    } catch (e) {
+      return null;
+    }
+  },
+
+  async updateSellerPaymentAccount(data) {
+    return await _post('/payments/seller-account/', data);
+  },
+
+  async getAdminPayments(page = 1, status = '', method = '') {
+    const params = { page };
+    if (status) params.payment_status = status;
+    if (method) params.payment_method = method;
+    return await _get('/admin/payments/', params);
   },
 
   // ── AI RECOMMENDATIONS & ASSISTANT ─────────────────────────────────────

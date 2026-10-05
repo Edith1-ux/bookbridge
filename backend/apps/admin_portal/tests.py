@@ -67,12 +67,12 @@ class AdminPortalAPITests(TestCase):
             'target_role': 'ALL'
         }
         res = self.client.post(self.broadcast_url, payload, format='json')
-        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
         self.assertGreaterEqual(res.data['recipients_count'], 1)
 
     def test_admin_can_export_csv_report(self):
         self.client.force_authenticate(user=self.admin)
         res = self.client.get(f'{self.export_url}?type=books')
         self.assertEqual(res.status_code, status.HTTP_200_OK)
-        self.assertEqual(res['Content-Type'], 'text/csv')
+        self.assertIn('text/csv', res['Content-Type'])
         self.assertIn('attachment; filename="bookbridge_books_', res['Content-Disposition'])

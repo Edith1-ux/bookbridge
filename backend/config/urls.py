@@ -20,7 +20,11 @@ from apps.books.views import BookListCreateView, BookDetailView, WishlistListVie
 from apps.exchange.views import ExchangeProposalListCreateView, ExchangeProposalDetailView
 from apps.donations.views import DonationClaimListCreateView, DonationClaimDetailView
 from apps.chat.views import ChatMessageListCreateView, ChatInboxView
-from apps.payments.views import CreatePaymentIntentView, WalletBalanceView
+from apps.payments.views import (
+    CreatePaymentIntentView, WalletBalanceView, VerifyPaymentView,
+    RazorpayWebhookView, CancelOrReleasePaymentView, BuyerOrdersListView,
+    SellerSalesListView, SellerPaymentAccountView, AdminOrdersListView
+)
 from apps.ai.views import AIRecommendationView, AIAssistantView
 from apps.analytics.views import ActivityLogListView
 from apps.notifications.views import NotificationListView, NotificationMarkReadView
@@ -213,6 +217,24 @@ urlpatterns = [
     path('api/wishlist/toggle/', WishlistToggleView.as_view()),
     path('api/payments/intent', CreatePaymentIntentView.as_view(), name='api-payment-intent'),
     path('api/payments/intent/', CreatePaymentIntentView.as_view()),
+    path('api/payments/create-intent', CreatePaymentIntentView.as_view(), name='api-payment-create-intent'),
+    path('api/payments/create-intent/', CreatePaymentIntentView.as_view()),
+    path('api/payments/verify', VerifyPaymentView.as_view(), name='api-payment-verify'),
+    path('api/payments/verify/', VerifyPaymentView.as_view()),
+    path('api/payments/cancel', CancelOrReleasePaymentView.as_view(), name='api-payment-cancel'),
+    path('api/payments/cancel/', CancelOrReleasePaymentView.as_view()),
+    path('api/payments/webhook', RazorpayWebhookView.as_view(), name='api-payment-webhook'),
+    path('api/payments/webhook/', RazorpayWebhookView.as_view()),
+    path('api/payments/my-orders', BuyerOrdersListView.as_view(), name='api-payment-my-orders'),
+    path('api/payments/my-orders/', BuyerOrdersListView.as_view()),
+    path('api/payments/my-sales', SellerSalesListView.as_view(), name='api-payment-my-sales'),
+    path('api/payments/my-sales/', SellerSalesListView.as_view()),
+    path('api/payments/seller-account', SellerPaymentAccountView.as_view(), name='api-payment-seller-account'),
+    path('api/payments/seller-account/', SellerPaymentAccountView.as_view()),
+    path('api/payments/wallet', WalletBalanceView.as_view(), name='api-payment-wallet'),
+    path('api/payments/wallet/', WalletBalanceView.as_view()),
+    path('api/admin/payments', AdminOrdersListView.as_view(), name='api-admin-payments'),
+    path('api/admin/payments/', AdminOrdersListView.as_view()),
     path('api/ai/recommend', AIRecommendationView.as_view(), name='api-ai-recommend'),
     path('api/ai/recommend/', AIRecommendationView.as_view()),
     path('api/ai/assistant', AIAssistantView.as_view(), name='api-ai-assistant'),

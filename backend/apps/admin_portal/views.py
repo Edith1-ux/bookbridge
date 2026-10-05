@@ -114,6 +114,7 @@ class AdminSystemHealthView(APIView):
         vendor = connection.vendor
         return Response({
             'status': 'HEALTHY' if db_ok else 'DEGRADED',
+            'database_status': 'CONNECTED' if db_ok else 'DISCONNECTED',
             'server_time': timezone.now().isoformat(),
             'database': {
                 'connected': db_ok,
@@ -142,13 +143,14 @@ class AdminBroadcastNotificationView(APIView):
         title = request.data.get('title', '').strip()
         message = request.data.get('message', '').strip()
         target = request.data.get('target', 'all') # all, role, college
-        target_value = request.data.get('target_value', '')
+        target_role = request.data.get('target_role', '')
+        target_value = request.data.get('target_value', '') or target_role
 
         if not title or not message:
             return Response({'error': 'Title and message are required.'}, status=status.HTTP_400_BAD_REQUEST)
 
         recipients = User.objects.filter(is_active=True)
-        if target == 'role' and target_value:
+        if (target == 'role' or target_role) and target_value and target_value.upper() != 'ALL':
             recipients = recipients.filter(role__iexact=target_value)
         elif target == 'college' and target_value:
             recipients = recipients.filter(Q(college__id=target_value) | Q(college__code__iexact=target_value))
@@ -176,7 +178,8 @@ class AdminBroadcastNotificationView(APIView):
 
         return Response({
             'message': f"Broadcast notification sent successfully to {len(created_notifications)} users.",
-            'count': len(created_notifications)
+            'count': len(created_notifications),
+            'recipients_count': len(created_notifications)
         }, status=status.HTTP_201_CREATED)
 
 
