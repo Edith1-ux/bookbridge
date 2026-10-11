@@ -416,6 +416,11 @@ else:
 # Custom User Model
 AUTH_USER_MODEL = 'users.User'
 
+AUTHENTICATION_BACKENDS = [
+    'apps.users.backends.FlexibleAuthBackend',
+    'django.contrib.auth.backends.ModelBackend',
+]
+
 # Password Validation
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
