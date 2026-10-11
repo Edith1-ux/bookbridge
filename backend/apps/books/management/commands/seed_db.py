@@ -8,34 +8,56 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         self.stdout.write(self.style.SUCCESS('Seeding initial BookBridgee data...'))
 
-        # Create Admin User
-        admin_user, created = User.objects.get_or_create(
-            email='admin@bookbridge.edu',
-            defaults={
-                'full_name': 'System Administrator',
-                'role': 'SUPER_ADMIN',
-                'is_staff': True,
-                'is_superuser': True
-            }
-        )
-        if created:
-            admin_user.set_password('Admin@123456')
-            admin_user.save()
-            self.stdout.write(f"Created admin user: {admin_user.email}")
+        # 1. Admin Users (ensure password, role and active state)
+        admin_emails = [
+            ('admin@bookbridge.edu', 'System Administrator'),
+            ('admin@rcti.ac.in', 'Campus Administrator')
+        ]
+        admin_user = None
+        for a_email, a_name in admin_emails:
+            u, created = User.objects.get_or_create(
+                email=a_email,
+                defaults={
+                    'full_name': a_name,
+                    'role': 'SUPER_ADMIN',
+                    'is_staff': True,
+                    'is_superuser': True,
+                    'is_active': True,
+                }
+            )
+            u.set_password('Admin@123456')
+            u.role = 'SUPER_ADMIN'
+            u.is_staff = True
+            u.is_superuser = True
+            u.is_active = True
+            u.save()
+            if admin_user is None:
+                admin_user = u
+            self.stdout.write(f"Configured admin user: {u.email} (Password: Admin@123456)")
 
-        # Create Demo Student User
-        student_user, created = User.objects.get_or_create(
-            email='student@rcti.ac.in',
-            defaults={
-                'full_name': 'Rahul Patel',
-                'phone_number': '+919876543210',
-                'role': 'STUDENT',
-            }
-        )
-        if created:
-            student_user.set_password('Student@123')
-            student_user.save()
-            self.stdout.write(f"Created student user: {student_user.email}")
+        # 2. Demo Student Users (ensure password and role)
+        student_emails = [
+            ('student@rcti.ac.in', 'Rahul Patel', '+919876543210'),
+            ('student@bookbridge.edu', 'Test Student', '+919876543211')
+        ]
+        student_user = None
+        for s_email, s_name, s_phone in student_emails:
+            s, created = User.objects.get_or_create(
+                email=s_email,
+                defaults={
+                    'full_name': s_name,
+                    'phone_number': s_phone,
+                    'role': 'STUDENT',
+                    'is_active': True,
+                }
+            )
+            s.set_password('Student@123')
+            s.role = 'STUDENT'
+            s.is_active = True
+            s.save()
+            if student_user is None:
+                student_user = s
+            self.stdout.write(f"Configured student user: {s.email} (Password: Student@123)")
 
         # Seed GTU Books
         initial_books = [

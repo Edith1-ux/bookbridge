@@ -50,40 +50,56 @@ class CustomLoginView(APIView):
     throttle_scope = 'auth'
 
     def post(self, request):
-        email = request.data.get('email', '').strip()
-        password = request.data.get('password', '')
+        identifier = (
+            request.data.get('email') or
+            request.data.get('username') or
+            request.data.get('identifier') or
+            ''
+        ).strip()
+        password = str(request.data.get('password', '') or '')
 
-        if not email or not password:
-            return Response({'error': 'Email and password are required.'}, status=status.HTTP_400_BAD_REQUEST)
+        if not identifier or not password:
+            return Response({'error': 'Email/Username and password are required.'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Robust case-insensitive user lookup and authentication
+        # Robust case-insensitive lookup: by email or enrollment number
         user = None
         try:
-            u = User.objects.filter(email__iexact=email).first()
+            from django.db.models import Q
+            u = User.objects.filter(
+                Q(email__iexact=identifier) | Q(enrollment_number__iexact=identifier)
+            ).first()
             if u and u.check_password(password):
                 user = u
         except Exception:
             user = None
 
         if user is None:
-            user = authenticate(request, email=email, password=password)
+            user = authenticate(request, email=identifier, password=password)
         if user is None:
-            user = authenticate(request, username=email, password=password)
+            user = authenticate(request, username=identifier, password=password)
 
         if user is None:
-            return Response({'error': 'Invalid email or password. Please check your credentials.'}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response({'error': 'Invalid email/username or password. Please check your credentials.'}, status=status.HTTP_401_UNAUTHORIZED)
 
         if not user.is_active:
-            return Response({'error': 'Account is inactive. Please contact support.'}, status=status.HTTP_403_FORBIDDEN)
+            return Response({'error': 'Account is inactive. Please contact administrator.'}, status=status.HTTP_403_FORBIDDEN)
 
-        from apps.analytics.models import log_activity
-        log_activity(
-            request=request,
-            user=user,
-            action='LOGIN',
-            title=f"Student login: {user.full_name or user.email}",
-            details={'email': user.email}
-        )
+        try:
+            from apps.analytics.models import log_activity
+            is_admin_user = (
+                user.is_staff or user.is_superuser or
+                getattr(user, 'role', '').upper() in ('SUPER_ADMIN', 'COLLEGE_ADMIN', 'DEPT_ADMIN', 'ADMIN')
+            )
+            role_label = 'Admin' if is_admin_user else 'User'
+            log_activity(
+                request=request,
+                user=user,
+                action='LOGIN',
+                title=f"{role_label} login: {user.full_name or user.email}",
+                details={'email': user.email, 'role': user.role}
+            )
+        except Exception:
+            pass
 
         refresh = RefreshToken.for_user(user)
         return Response({

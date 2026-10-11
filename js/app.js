@@ -312,9 +312,9 @@ async function updateNavUserUI() {
 
   if (!currentUser) return;
 
-  const isAdmin = ['SUPER_ADMIN', 'COLLEGE_ADMIN', 'DEPT_ADMIN', 'ADMIN'].includes((currentUser.role || '').toUpperCase());
+  const isAdmin = ['SUPER_ADMIN', 'COLLEGE_ADMIN', 'DEPT_ADMIN', 'ADMIN'].includes((currentUser.role || '').toUpperCase()) || Boolean(currentUser.is_staff || currentUser.is_superuser);
   const role = (currentUser.role || 'STUDENT').toUpperCase();
-  const safeName = (typeof escapeHtml === 'function' && currentUser.name) ? escapeHtml(currentUser.name) : (currentUser.name || 'User');
+  const safeName = (typeof escapeHtml === 'function' && (currentUser.name || currentUser.full_name)) ? escapeHtml(currentUser.name || currentUser.full_name) : (currentUser.name || currentUser.full_name || 'User');
 
   // Mobile drawer links
   if (drawerLinks) {
@@ -1456,12 +1456,16 @@ function initLoginPage() {
       if (submitBtn) submitBtn.classList.remove('btn-loading');
 
       if (user) {
-        showToast(`Welcome back, ${user.name}!`, 'success');
+        showToast(`Welcome back, ${user.name || user.full_name || 'User'}!`, 'success');
         // Validate redirect URL to prevent open redirect attacks
-        const rawRedirect = new URLSearchParams(window.location.search).get('redirect') || 'browse.html';
-        const safeRedirect = (rawRedirect.startsWith('/') || /^[a-zA-Z0-9_\-]+\.html$/.test(rawRedirect))
-          ? rawRedirect
-          : 'browse.html';
+        const rawRedirect = new URLSearchParams(window.location.search).get('redirect');
+        let safeRedirect = 'dashboard.html';
+        if (rawRedirect && (rawRedirect.startsWith('/') || /^[a-zA-Z0-9_\-]+\.html$/.test(rawRedirect))) {
+          safeRedirect = rawRedirect;
+        } else {
+          const isAdmin = ['SUPER_ADMIN', 'COLLEGE_ADMIN', 'DEPT_ADMIN', 'ADMIN'].includes((user.role || '').toUpperCase()) || Boolean(user.is_staff || user.is_superuser);
+          safeRedirect = isAdmin ? 'admin.html' : 'dashboard.html';
+        }
         setTimeout(() => window.location.href = safeRedirect, 800);
       } else {
         showToast('Invalid credentials.', 'danger');

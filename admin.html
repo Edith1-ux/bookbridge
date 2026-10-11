@@ -366,7 +366,7 @@
           <label class="form-label" for="adminEmailInput" style="color: #cbd5e1;">Admin Email / Identifier</label>
           <div class="input-with-icon">
             <i class="fa-solid fa-envelope input-icon"></i>
-            <input type="email" id="adminEmailInput" class="form-input" placeholder="admin@rcti.ac.in" required>
+            <input type="text" id="adminEmailInput" class="form-input" placeholder="admin@bookbridge.edu or admin@rcti.ac.in" required>
           </div>
         </div>
 
@@ -1762,6 +1762,7 @@
       }
 
       function unlockDashboard(userObj, isNewLogin = true) {
+        localStorage.setItem('admin_mode', 'true');
         if (overlay) {
           overlay.classList.add('hidden');
           setTimeout(() => { overlay.style.display = 'none'; }, 300);

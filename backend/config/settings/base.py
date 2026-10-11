@@ -17,13 +17,42 @@ if str(BASE_DIR) not in sys.path:
 PROJECT_ROOT = BASE_DIR.parent
 
 # ---------------------------------------------------------------------------
+# ENVIRONMENT VARIABLES LOADER (.env)
+# ---------------------------------------------------------------------------
+def _load_env_file(env_path):
+    if env_path.exists() and env_path.is_file():
+        try:
+            with open(env_path, 'r', encoding='utf-8') as f:
+                for line in f:
+                    line = line.strip()
+                    if not line or line.startswith('#') or '=' not in line:
+                        continue
+                    key, val = line.split('=', 1)
+                    key = key.strip()
+                    val = val.strip().strip("'\"")
+                    if key and key not in os.environ:
+                        os.environ[key] = val
+        except Exception:
+            pass
+
+_has_local_env = (PROJECT_ROOT / '.env').exists() or (BASE_DIR / '.env').exists()
+_load_env_file(PROJECT_ROOT / '.env')
+_load_env_file(BASE_DIR / '.env')
+if not _has_local_env:
+    _load_env_file(PROJECT_ROOT / '.env.example')
+
+
+# ---------------------------------------------------------------------------
 # SECURITY
 # ---------------------------------------------------------------------------
 import secrets
 
 # Default to True in local development; default to False in production (Render/Cloud)
 _is_prod = bool(os.environ.get('RENDER') or os.environ.get('RENDER_EXTERNAL_HOSTNAME') or os.environ.get('PRODUCTION'))
-DEBUG = os.environ.get('DEBUG', 'False' if _is_prod else 'True').lower() in ('true', '1', 'yes')
+if not _is_prod and not _has_local_env:
+    DEBUG = True
+else:
+    DEBUG = os.environ.get('DEBUG', 'False' if _is_prod else 'True').lower() in ('true', '1', 'yes')
 
 SECRET_KEY = os.environ.get('SECRET_KEY', '') or os.environ.get('DJANGO_SECRET_KEY', '')
 if not SECRET_KEY:
@@ -177,6 +206,7 @@ DISALLOWED_HOST_PLACEHOLDERS = {
 DISALLOWED_PASS_PLACEHOLDERS = {
     'your-mysql-password',
     'your_mysql_password',
+    'your_mysql_password_here',
     'your_secure_mysql_password',
     'your-password',
     'password',
@@ -184,8 +214,8 @@ DISALLOWED_PASS_PLACEHOLDERS = {
     'change-me',
 }
 
-# In production (DEBUG=False and not offline testing/collectstatic), validate that real credentials are provided IF configured
-if not DEBUG and not _is_testing and not _is_collectstatic and not _use_sqlite:
+# In production (Render/Cloud), validate that real credentials are provided IF configured
+if _is_prod and not DEBUG and not _is_testing and not _is_collectstatic and not _use_sqlite:
     from django.core.exceptions import ImproperlyConfigured
 
     if _database_url and ('postgres://' in _database_url or 'postgresql://' in _database_url):
@@ -297,7 +327,7 @@ elif _database_url and ('postgres://' in _database_url or 'postgresql://' in _da
             'CONN_MAX_AGE': 60,
         }
     }
-elif _mysql_host:
+elif _mysql_host and _mysql_password not in DISALLOWED_PASS_PLACEHOLDERS and not _use_sqlite:
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.mysql',
