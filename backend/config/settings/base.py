@@ -35,10 +35,13 @@ def _load_env_file(env_path):
         except Exception:
             pass
 
+# Default to True in local development; default to False in production (Render/Cloud)
+_is_prod = bool(os.environ.get('RENDER') or os.environ.get('RENDER_EXTERNAL_HOSTNAME') or os.environ.get('PRODUCTION'))
+
 _has_local_env = (PROJECT_ROOT / '.env').exists() or (BASE_DIR / '.env').exists()
 _load_env_file(PROJECT_ROOT / '.env')
 _load_env_file(BASE_DIR / '.env')
-if not _has_local_env:
+if not _has_local_env and not _is_prod:
     _load_env_file(PROJECT_ROOT / '.env.example')
 
 
@@ -47,8 +50,6 @@ if not _has_local_env:
 # ---------------------------------------------------------------------------
 import secrets
 
-# Default to True in local development; default to False in production (Render/Cloud)
-_is_prod = bool(os.environ.get('RENDER') or os.environ.get('RENDER_EXTERNAL_HOSTNAME') or os.environ.get('PRODUCTION'))
 if not _is_prod and not _has_local_env:
     DEBUG = True
 else:
@@ -226,47 +227,40 @@ if _is_prod and not DEBUG and not _is_testing and not _is_collectstatic and not 
                     "Please provide your real cloud database connection URL in Render Environment Variables."
                 )
     elif _mysql_host:
-        if _mysql_host.lower() in DISALLOWED_HOST_PLACEHOLDERS or _mysql_host.lower().startswith('your-') or '<' in _mysql_host:
-            raise ImproperlyConfigured(
-                f"Production Database Error: MYSQL_HOST is set to the template placeholder '{_mysql_host}'.\n"
-                "Render cannot connect to a placeholder hostname.\n\n"
-                "Action Required:\n"
-                "1. Obtain a real MySQL database (e.g. free serverless MySQL on TiDB Cloud at tidbcloud.com or Aiven at aiven.io).\n"
-                "2. Open Render Dashboard -> your service -> Environment.\n"
-                "3. Replace placeholder host with your actual database host."
+        if (_mysql_host.lower() in DISALLOWED_HOST_PLACEHOLDERS or _mysql_host.lower().startswith('your-') or '<' in _mysql_host or _mysql_host.lower() in ('localhost', '127.0.0.1')) and not _force_mysql:
+            import warnings
+            warnings.warn(
+                f"Production Database Notice: MYSQL_HOST is set to '{_mysql_host}'. "
+                "In Render production, localhost or placeholder host is not accessible. Falling back to SQLite. "
+                "To use persistent MySQL, provide an external managed MySQL host in Render Environment Variables."
             )
+            _use_sqlite = True
 
-        if _mysql_host.lower() in ('localhost', '127.0.0.1') and not _force_mysql:
-            raise ImproperlyConfigured(
-                f"Production Database Error: MYSQL_HOST is set to '{_mysql_host}'.\n"
-                "In Render production, the database cannot run on localhost because Render web services run in isolated containers.\n"
-                "Please provide an external managed MySQL host in Render Environment Variables."
-            )
+        if not _use_sqlite:
+            if not _mysql_password or _mysql_password.lower() in DISALLOWED_PASS_PLACEHOLDERS:
+                raise ImproperlyConfigured(
+                    "Production Database Error: MYSQL_PASSWORD is missing or set to a placeholder.\n"
+                    "Please set your real MySQL database password in Render Environment Variables."
+                )
 
-        if not _mysql_password or _mysql_password.lower() in DISALLOWED_PASS_PLACEHOLDERS:
-            raise ImproperlyConfigured(
-                "Production Database Error: MYSQL_PASSWORD is missing or set to a placeholder.\n"
-                "Please set your real MySQL database password in Render Environment Variables."
-            )
+            if not _mysql_user or _mysql_user.lower().startswith('your-'):
+                raise ImproperlyConfigured(
+                    "Production Database Error: MYSQL_USER is missing or set to a placeholder.\n"
+                    "Please set your real MySQL username in Render Environment Variables."
+                )
 
-        if not _mysql_user or _mysql_user.lower().startswith('your-'):
-            raise ImproperlyConfigured(
-                "Production Database Error: MYSQL_USER is missing or set to a placeholder.\n"
-                "Please set your real MySQL username in Render Environment Variables."
-            )
+            if 'tidbcloud.com' in _mysql_host.lower() and '.' not in _mysql_user:
+                raise ImproperlyConfigured(
+                    f"TiDB Cloud Configuration Error: MYSQL_USER is set to '{_mysql_user}'.\n"
+                    "TiDB Serverless requires the full username including the cluster prefix (e.g. '2t3ToPWdqgY8uQT.root').\n"
+                    "Please update MYSQL_USER in Render Dashboard to the complete prefixed username from TiDB."
+                )
 
-        if 'tidbcloud.com' in _mysql_host.lower() and '.' not in _mysql_user:
-            raise ImproperlyConfigured(
-                f"TiDB Cloud Configuration Error: MYSQL_USER is set to '{_mysql_user}'.\n"
-                "TiDB Serverless requires the full username including the cluster prefix (e.g. '2t3ToPWdqgY8uQT.root').\n"
-                "Please update MYSQL_USER in Render Dashboard to the complete prefixed username from TiDB."
-            )
-
-        if not _mysql_db or _mysql_db.lower().startswith('your-'):
-            raise ImproperlyConfigured(
-                "Production Database Error: MYSQL_DATABASE is missing or set to a placeholder.\n"
-                "Please set your real MySQL database name in Render Environment Variables."
-            )
+            if not _mysql_db or _mysql_db.lower().startswith('your-'):
+                raise ImproperlyConfigured(
+                    "Production Database Error: MYSQL_DATABASE is missing or set to a placeholder.\n"
+                    "Please set your real MySQL database name in Render Environment Variables."
+                )
 
 # Cloud SSL detection & configuration (TiDB Cloud, Aiven, Azure, DigitalOcean require SSL)
 _mysql_ssl_ca = os.environ.get('MYSQL_SSL_CA', '').strip()
