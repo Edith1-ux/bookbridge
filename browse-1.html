@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Browse Books | BookBridgee</title>
+  <meta name="description"
+    content="Browse, buy, exchange, and claim academic textbooks and GTU lab manuals shared by students across departments on BookBridgee.">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="BookBridgee">
+  <meta property="og:title" content="Browse Books & Study Materials – BookBridgee">
+  <meta property="og:description" content="Browse, buy, exchange, and claim academic textbooks and GTU lab manuals shared by students across departments on BookBridgee.">
+  <meta property="og:url" content="https://bookbridge.in/browse.html">
+  <meta property="og:image" content="https://bookbridge.in/logo.png.jpeg">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Browse Books & Study Materials – BookBridgee">
+  <meta name="twitter:description" content="Browse, buy, exchange, and claim academic textbooks and GTU lab manuals shared by students on BookBridgee.">
+  <meta name="twitter:image" content="https://bookbridge.in/logo.png.jpeg">
+  <link rel="icon" href="logo.png.jpeg" type="image/jpeg">
+  <link rel="apple-touch-icon" href="logo.png.jpeg">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#3E6B3A">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <link rel="stylesheet" href="css/design-tokens.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+  <!-- SKIP TO CONTENT -->
+  <a href="#main-content" class="skip-link">Skip to main content</a>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       NAVBAR
+       ═══════════════════════════════════════════════════════════════ -->
+  <header class="navbar" id="navbar">
+    <div class="navbar-inner">
+      <a href="index.html" class="brand" aria-label="BookBridgee Home">
+        <div class="brand-icon"><img src="logo.png.jpeg" alt="BookBridgee Logo"></div>
+        <div>
+          <div class="brand-name">BookBridgee</div>
+          <div class="brand-tagline">Bridge the Gap Between Books and Readers</div>
+        </div>
+      </a>
+
+      <nav class="nav-links" aria-label="Main Navigation">
+        <a href="index.html" class="nav-link" data-i18n="home">Home</a>
+        <a href="browse.html" class="nav-link active" data-i18n="buy">Buy Books</a>
+        <a href="sell.html" class="nav-link" data-i18n="sell">Sell Books</a>
+        <a href="exchange.html" class="nav-link" data-i18n="exchange">Exchange</a>
+        <a href="donate.html" class="nav-link" data-i18n="donate">Donate</a>
+        <a href="about.html" class="nav-link" data-i18n="about">About</a>
+        <a href="contact.html" class="nav-link" data-i18n="contact">Contact</a>
+      </nav>
+
+      <div class="nav-actions">
+        <div class="lang-selector">
+          <button class="lang-select-btn" title="Change Language"><i class="fa-solid fa-globe"></i> <span>EN</span></button>
+        </div>
+        <a href="login.html" class="btn btn-ghost" id="navLoginBtn" data-i18n="login">Login</a>
+        <a href="register.html" class="btn btn-primary" id="navRegisterBtn" data-i18n="register">Get Started</a>
+      </div>
+
+      <button class="mobile-toggle" id="mobileMenuToggle" aria-label="Toggle Navigation Menu" aria-expanded="false">
+        <i class="fa-solid fa-bars"></i>
+      </button>
+    </div>
+  </header>
+
+  <!-- MOBILE DRAWER -->
+  <div class="mobile-drawer" id="mobileNavDrawer" role="navigation" aria-label="Mobile Navigation">
+    <div class="drawer-links">
+      <a href="index.html" class="drawer-link">Home <i class="fa-solid fa-chevron-right"></i></a>
+      <a href="browse.html" class="drawer-link active">Buy Books <i class="fa-solid fa-chevron-right"></i></a>
+      <a href="sell.html" class="drawer-link">Sell Books <i class="fa-solid fa-chevron-right"></i></a>
+      <a href="exchange.html" class="drawer-link">Exchange <i class="fa-solid fa-chevron-right"></i></a>
+      <a href="donate.html" class="drawer-link">Donate <i class="fa-solid fa-chevron-right"></i></a>
+      <a href="about.html" class="drawer-link">About <i class="fa-solid fa-chevron-right"></i></a>
+      <a href="contact.html" class="drawer-link">Contact <i class="fa-solid fa-chevron-right"></i></a>
+    </div>
+    <div style="padding: 16px 20px; border-top: 1px solid var(--color-border);" class="drawer-actions">
+      <a href="login.html" class="btn btn-ghost btn-block" style="margin-bottom: 8px; text-decoration: none;">Login</a>
+      <a href="register.html" class="btn btn-primary btn-block" style="text-decoration: none;">Get Started</a>
+    </div>
+  </div>
+
+  <!-- MAIN CONTENT -->
+  <main id="main-content">
+    
+    <!-- PAGE HERO -->
+    <section class="page-header">
+      <div class="page-header-inner">
+        <h1><i class="fa-solid fa-book-open" style="color: var(--color-primary); margin-right: 8px;"></i> Browse Academic Books</h1>
+        <p>Explore GTU manuals, engineering textbooks, and reference materials listed by students across all departments. Buy affordable books or swap with peers.</p>
+
+        <!-- Search Bar -->
+        <div class="hero-search-box" style="margin: 24px auto 0; max-width: 680px; display: flex; gap: 10px; flex-wrap: wrap;">
+          <div style="flex: 1; min-width: 260px; position: relative;">
+            <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: var(--color-gray);"></i>
+            <input type="text" id="browseSearchInput" class="form-input" placeholder="Search by title, author, subject, or GTU code (e.g. 3330704)..." style="padding-left: 44px; height: 48px; border-radius: 24px;">
+          </div>
+          <button id="btnBrowseSearch" class="btn btn-primary" style="height: 48px; border-radius: 24px; padding: 0 24px;">
+            <i class="fa-solid fa-magnifying-glass"></i> Search
+          </button>
+          <a href="sell.html" id="btnSellBookLink" class="btn btn-secondary" style="height: 48px; border-radius: 24px; padding: 0 24px; display: inline-flex; align-items: center; gap: 6px; text-decoration: none;">
+            <i class="fa-solid fa-plus"></i> Sell / List Book
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- DEPARTMENT FILTER PILLS -->
+    <section class="section" style="padding: 24px 0 12px;">
+      <div class="container">
+        <div id="deptPillsBar" style="display: flex; gap: 8px; overflow-x: auto; padding-bottom: 8px; scrollbar-width: none;">
+          <button class="filter-pill active" data-dept="ALL">All Departments</button>
+          <button class="filter-pill" data-dept="CE">Computer (CE)</button>
+          <button class="filter-pill" data-dept="IT">Information Tech (IT)</button>
+          <button class="filter-pill" data-dept="EE">Electrical (EE)</button>
+          <button class="filter-pill" data-dept="ME">Mechanical (ME)</button>
+          <button class="filter-pill" data-dept="Civil">Civil</button>
+          <button class="filter-pill" data-dept="IC">IC</button>
+          <button class="filter-pill" data-dept="EC">Electronics (EC)</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- BROWSE FILTERS & BOOKS GRID SECTION -->
+    <section class="section" style="padding-top: 12px;">
+      <div class="container">
+        
+        <!-- Filter Controls Bar -->
+        <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center; justify-content: space-between; margin-bottom: 24px; background: #fff; padding: 16px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.04); border: 1px solid var(--color-border);">
+          <div style="display: flex; gap: 12px; flex-wrap: wrap; flex: 1;">
+            <select id="browseSubjectSelect" class="form-select" style="max-width: 200px; font-size: 13px;">
+              <option value="All Subjects">All Subjects / Genres</option>
+              <option value="Computer Science">Computer Science</option>
+              <option value="Engineering">Engineering Mechanics</option>
+              <option value="Mathematics">Mathematics & Calculus</option>
+              <option value="Physics">Physics</option>
+              <option value="Chemistry">Chemistry</option>
+            </select>
+
+            <select id="browseConditionSelect" class="form-select" style="max-width: 170px; font-size: 13px;">
+              <option value="Any Condition">Any Condition</option>
+              <option value="Like New">Like New</option>
+              <option value="Good">Good</option>
+              <option value="Fair">Fair</option>
+              <option value="Worn">Worn</option>
+            </select>
+
+            <div style="display: flex; align-items: center; gap: 6px; font-size: 13px;">
+              <span style="color: var(--color-gray);">Max Price:</span>
+              <input type="number" id="browseMaxPrice" class="form-input" placeholder="₹ Any" min="0" style="width: 100px; padding: 6px 10px; font-size: 13px;">
+            </div>
+          </div>
+
+          <div style="display: flex; gap: 12px; align-items: center;">
+            <span id="browseResultsCount" style="font-size: 14px; font-weight: 600; color: var(--color-primary);">Loading books...</span>
+            <select id="browseSortSelect" class="form-select" style="max-width: 160px; font-size: 13px;">
+              <option value="default">Sort by: Default</option>
+              <option value="price-low">Price: Low to High</option>
+              <option value="price-high">Price: High to Low</option>
+              <option value="rating">Highest Rated</option>
+              <option value="semester">Semester</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Books Grid Container -->
+        <div id="browseBooksGrid" class="books-grid"></div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       FOOTER
+       ═══════════════════════════════════════════════════════════════ -->
+  <footer class="footer">
+    <div class="footer-inner">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <div class="brand" style="margin-bottom: 4px;">
+            <div class="brand-icon"><img src="logo.png.jpeg" alt="BookBridgee Logo"></div>
+            <div>
+              <div class="brand-name">BookBridgee</div>
+              <div class="brand-tagline">Bridge Books. Build Minds.</div>
+            </div>
+          </div>
+          <p>India's premier student platform for buying, selling, exchanging and donating academic books across colleges.</p>
+          <div class="footer-social">
+            <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" aria-label="Twitter"><i class="fa-brands fa-x-twitter"></i></a>
+            <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" aria-label="Instagram"><i class="fa-brands fa-instagram"></i></a>
+            <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn"><i class="fa-brands fa-linkedin-in"></i></a>
+            <a href="https://github.com" target="_blank" rel="noopener noreferrer" aria-label="GitHub"><i class="fa-brands fa-github"></i></a>
+          </div>
+        </div>
+
+        <div class="footer-col">
+          <h4>Platform</h4>
+          <a href="browse.html">Browse Books</a>
+          <a href="exchange.html">Exchange</a>
+          <a href="donate.html">Donate</a>
+          <a href="dashboard.html">Dashboard</a>
+        </div>
+
+        <div class="footer-col">
+          <h4>Company</h4>
+          <a href="about.html">About Us</a>
+          <a href="contact.html">Contact</a>
+          <a href="privacy.html">Privacy Policy</a>
+          <a href="terms.html">Terms of Service</a>
+        </div>
+
+        <div class="footer-col">
+          <h4>Support</h4>
+          <a href="contact.html">Help Center</a>
+          <a href="contact.html#faq">FAQs</a>
+          <a href="contact.html">Report Issue</a>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <span>© 2026 BookBridgee — India's Student Book Sharing Platform. All rights reserved.</span>
+        <span>Built with ❤️ by RCTI Students</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- SCROLL TO TOP -->
+  <button class="scroll-top" id="scrollTopBtn" aria-label="Scroll to top">
+    <i class="fa-solid fa-arrow-up"></i>
+  </button>
+
+  <!-- TOAST CONTAINER -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- BOOK DETAILS MODAL -->
+  <div class="modal-overlay" id="bookDetailsModal">
+    <div class="modal-card" style="max-width: 560px;">
+      <div class="modal-header">
+        <h3 id="modalBookTitle">Book Details</h3>
+        <button class="modal-close" id="closeBookDetailsModal" aria-label="Close modal">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <div id="modalBookBody" style="line-height: 1.8; font-size: 14px; margin-bottom: 24px;"></div>
+      <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+        <a id="btnModalWhatsapp" target="_blank" class="btn btn-primary"
+          style="flex: 1; text-decoration: none; background: #25D366; border-color: #25D366;">
+          <i class="fa-brands fa-whatsapp"></i> WhatsApp
+        </a>
+        <button id="btnModalActionConfirm" class="btn btn-brown" style="flex: 1;">Confirm Request</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- BUY BOOK MODAL -->
+  <div class="modal-overlay" id="buyBookModal">
+    <div class="modal-card" style="max-width: 540px;">
+      <div class="modal-header">
+        <h3><i class="fa-solid fa-cart-shopping" style="color: var(--color-primary);"></i> Buy Book Checkout</h3>
+        <button class="modal-close" id="closeBuyBookModal" aria-label="Close modal">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <div id="buyBookModalBody"></div>
+    </div>
+  </div>
+
+  <!-- UPLOAD / SELL BOOK MODAL -->
+  <div class="modal-overlay" id="uploadModal">
+    <div class="modal-card" style="max-width: 620px;">
+      <div class="modal-header">
+        <h3><i class="fa-solid fa-cloud-arrow-up" style="color: var(--color-primary);"></i> Sell / List Book Resource</h3>
+        <button class="modal-close" id="closeUploadModal" aria-label="Close modal"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <div class="mode-selector">
+        <div class="mode-option active" data-mode="sell">
+          <span class="mode-icon">🏷️</span>
+          Sell
+        </div>
+        <div class="mode-option" data-mode="exchange">
+          <span class="mode-icon">🔄</span>
+          Exchange
+        </div>
+        <div class="mode-option" data-mode="donate">
+          <span class="mode-icon">🎁</span>
+          Donate (Free)
+        </div>
+      </div>
+
+      <form id="uploadBookForm">
+        <div class="form-group">
+          <input type="text" id="uploadTitle" class="form-input" placeholder=" " required>
+          <label class="form-label">Book Title *</label>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+          <div class="form-group">
+            <input type="text" id="uploadAuthor" class="form-input" placeholder=" " required>
+            <label class="form-label">Author Name *</label>
+          </div>
+          <div class="form-group">
+            <input type="text" id="uploadGtuCode" class="form-input" placeholder=" ">
+            <label class="form-label">GTU Subject Code (e.g. 3330704)</label>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+          <div class="form-group">
+            <select id="uploadBranch" class="form-select" required>
+              <option value="CE">Computer Engineering (CE)</option>
+              <option value="IT">Information Tech (IT)</option>
+              <option value="EE">Electrical (EE)</option>
+              <option value="ME">Mechanical (ME)</option>
+              <option value="Civil">Civil</option>
+              <option value="IC">IC</option>
+              <option value="EC">Electronics (EC)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <select id="uploadSemester" class="form-select">
+              <option value="1">Semester 1</option>
+              <option value="2">Semester 2</option>
+              <option value="3">Semester 3</option>
+              <option value="4">Semester 4</option>
+              <option value="5" selected>Semester 5</option>
+              <option value="6">Semester 6</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+          <div class="form-group">
+            <select id="uploadCondition" class="form-select">
+              <option value="Like New">Like New</option>
+              <option value="Good" selected>Good</option>
+              <option value="Fair">Fair</option>
+              <option value="Worn">Worn</option>
+            </select>
+          </div>
+          <div class="form-group" id="uploadPriceGroup">
+            <input type="number" id="uploadPrice" class="form-input" placeholder=" " min="0" value="150">
+            <label class="form-label">Price in ₹ (0 if Free)</label>
+          </div>
+        </div>
+
+        <div class="form-group" id="exchangeForGroup" style="display: none;">
+          <input type="text" id="uploadExchangeFor" class="form-input" placeholder=" ">
+          <label class="form-label">Swap Request (e.g. Swap for Operating Systems or Sem 6 books)</label>
+        </div>
+
+        <div class="form-group">
+          <textarea id="uploadDescription" class="form-input" placeholder=" " style="min-height: 70px;"></textarea>
+          <label class="form-label">Description (edition, highlights, notes, lab manual details)</label>
+        </div>
+
+        <div style="display: flex; gap: 10px; margin-top: 14px;">
+          <button type="button" class="btn btn-ghost" style="flex: 1;" onclick="document.getElementById('uploadModal').classList.remove('active')">Cancel</button>
+          <button type="submit" class="btn btn-primary" style="flex: 2;"><i class="fa-solid fa-check"></i> List Book for Sale</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="js/database.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/live-stats.js"></script>
+  <script src="js/app.js"></script>
+
+  <!-- FIX: force the Sell / navigation links to open their pages.
+       Runs in the capture phase, so no other script can block the navigation. -->
+  <script>
+    document.addEventListener('click', function (e) {
+      var link = e.target.closest('a[href]');
+      if (!link) return;
+      var href = link.getAttribute('href');
+      if (/^(sell|exchange|donate|index|about|contact|login|register|dashboard)\.html/.test(href)) {
+        e.stopImmediatePropagation();
+        window.location.href = href;
+        e.preventDefault();
+      }
+    }, true);
+  </script>
+
+</body>
+
+</html>
