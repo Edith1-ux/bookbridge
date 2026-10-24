@@ -3,7 +3,7 @@
  * Enables offline capability and fast caching for PWA
  */
 
-const CACHE_NAME = 'bookbridge-v2.1';
+const CACHE_NAME = 'bookbridge-v2.2';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
@@ -60,19 +60,19 @@ self.addEventListener('fetch', (e) => {
     return; // Pass through directly to network
   }
 
-  // Cache-first strategy for static assets, falling back to network
+  // Network-first: always try the newest page/script/style, and only use the
+  // cached copy when offline. (Cache-first kept old app.js on phones after a
+  // deploy, which is why fixed bugs such as "messages.map is not a function"
+  // kept showing up.)
   e.respondWith(
-    caches.match(e.request).then((cached) => {
-      const networked = fetch(e.request)
-        .then((response) => {
-          if (response.status === 200) {
-            const cacheCopy = response.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(e.request, cacheCopy));
-          }
-          return response;
-        })
-        .catch(() => cached);
-      return cached || networked;
-    })
+    fetch(e.request)
+      .then((response) => {
+        if (response.status === 200) {
+          const cacheCopy = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(e.request, cacheCopy));
+        }
+        return response;
+      })
+      .catch(() => caches.match(e.request))
   );
 });
