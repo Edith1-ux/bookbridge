@@ -35,29 +35,36 @@ class Command(BaseCommand):
         self.stdout.write(f"SSL:       {'Enabled' if ssl_enabled else 'Disabled'}")
         self.stdout.write("-" * 64)
 
-        try:
-            with connection.cursor() as cursor:
-                cursor.execute("SELECT 1")
-                row = cursor.fetchone()
-                if row and row[0] == 1:
-                    version_str = 'Unknown'
-                    try:
-                        cursor.execute("SELECT VERSION()")
-                        ver = cursor.fetchone()
-                        if ver:
-                            version_str = str(ver[0])
-                    except Exception:
-                        pass
+        import time
+        max_retries = 3
+        for attempt in range(1, max_retries + 1):
+            try:
+                with connection.cursor() as cursor:
+                    cursor.execute("SELECT 1")
+                    row = cursor.fetchone()
+                    if row and row[0] == 1:
+                        version_str = 'Unknown'
+                        try:
+                            cursor.execute("SELECT VERSION()")
+                            ver = cursor.fetchone()
+                            if ver:
+                                version_str = str(ver[0])
+                        except Exception:
+                            pass
 
-                    self.stdout.write(self.style.SUCCESS(" [PASS] Database connection verified successfully!"))
-                    self.stdout.write(self.style.SUCCESS(f" [INFO] Database Vendor: {connection.vendor}"))
-                    self.stdout.write(self.style.SUCCESS(f" [INFO] Engine Version:  {version_str}"))
-                    self.stdout.write("=" * 64)
-                    return
-        except Exception as err:
-            err_msg = str(err)
-            self.stdout.write(self.style.ERROR(" [FAIL] Database connection failed!"))
-            self.stdout.write(self.style.ERROR(f" Error Type: {type(err).__name__}"))
+                        self.stdout.write(self.style.SUCCESS(" [PASS] Database connection verified successfully!"))
+                        self.stdout.write(self.style.SUCCESS(f" [INFO] Database Vendor: {connection.vendor}"))
+                        self.stdout.write(self.style.SUCCESS(f" [INFO] Engine Version:  {version_str}"))
+                        self.stdout.write("=" * 64)
+                        return
+            except Exception as err:
+                if attempt < max_retries:
+                    self.stdout.write(self.style.WARNING(f" [ATTEMPT {attempt}/{max_retries}] Connecting to database... retrying in 2s ({err})"))
+                    time.sleep(2)
+                    continue
+                err_msg = str(err)
+                self.stdout.write(self.style.ERROR(" [FAIL] Database connection failed!"))
+                self.stdout.write(self.style.ERROR(f" Error Type: {type(err).__name__}"))
             self.stdout.write(self.style.ERROR(f" Details:    {err_msg}"))
             self.stdout.write("-" * 64)
             self.stdout.write(self.style.WARNING("Troubleshooting Guide:"))

@@ -30,15 +30,36 @@ Before launching to production, set the following environment variables:
 
 ---
 
-## 🚀 Deploying to Render (Render.com)
+## 🚀 Deploying to Render (Render.com) with MySQL
 
+Render provides Python web hosting, while the persistent MySQL database is hosted on a cloud MySQL provider (such as TiDB Cloud Serverless or Aiven, both offer free tiers).
+
+### Step 1: Provision a Free Cloud MySQL Database (e.g., TiDB Cloud)
+1. Go to [TiDB Cloud](https://tidbcloud.com/) (or [Aiven](https://aiven.io/)) and create a free account.
+2. Create a free **Serverless Cluster**.
+3. Under cluster settings, note your connection details:
+   - **Host**: e.g., `gateway01.us-east-1.prod.aws.tidbcloud.com`
+   - **Port**: `4000` (or `3306` for Aiven/standard MySQL)
+   - **Database**: `bookbridge_db` (or create one using the SQL console: `CREATE DATABASE bookbridge_db;`)
+   - **User**: your full username including cluster prefix (e.g. `2t3ToPWdqgY8uQT.root`)
+   - **Password**: your generated password
+
+### Step 2: Deploy to Render
 1. Push this repository to GitHub.
-2. In [Render Dashboard](https://dashboard.render.com/):
+2. In the [Render Dashboard](https://dashboard.render.com/):
    - Click **New +** → **Blueprint** and select your repository.
-3. Render automatically loads [`render.yaml`](render.yaml):
-   - **Build Command**: `pip install -r backend/requirements.txt && cd backend && python manage.py collectstatic --noinput`
-   - **Start Command**: `cd backend && python manage.py migrate --noinput && daphne -b 0.0.0.0 -p $PORT config.asgi:application`
-4. Provide your real cloud MySQL credentials (`MYSQL_HOST`, `MYSQL_PORT`, `MYSQL_DATABASE`, `MYSQL_USER`, `MYSQL_PASSWORD`) in the Render environment settings.
+3. Render automatically reads [`render.yaml`](render.yaml):
+   - **Build Command**: `pip install -r requirements.txt && python manage.py collectstatic --noinput`
+   - **Start Command**: `python manage.py check_db && python manage.py migrate --fake-initial --noinput && python manage.py seed_db && python -m daphne -b 0.0.0.0 -p $PORT asgi:application`
+4. In the **Environment Variables** prompt on Render (or under Service → Environment):
+   * `MYSQL_HOST`: (your cloud MySQL host)
+   * `MYSQL_PORT`: `4000` (or `3306`)
+   * `MYSQL_DATABASE`: `bookbridge_db`
+   * `MYSQL_USER`: (your cloud MySQL username)
+   * `MYSQL_PASSWORD`: (your cloud MySQL password)
+   * `MYSQL_SSL`: `true`
+   *(Or alternatively, simply paste your full connection string into `DATABASE_URL`)*
+5. Click **Apply**. Render will deploy the web service, run `check_db` to verify connectivity, apply migrations, seed the initial academic catalog, and start Daphne ASGI.
 
 ---
 

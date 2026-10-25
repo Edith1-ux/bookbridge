@@ -171,7 +171,8 @@ _mysql_user = os.environ.get('MYSQL_USER', os.environ.get('MYSQLUSER', 'root')).
 _mysql_password = os.environ.get('MYSQL_PASSWORD', os.environ.get('MYSQLPASSWORD', '')).strip()
 
 # Early parsing of DATABASE_URL if mysql scheme is provided
-if _database_url and ('mysql://' in _database_url or 'mariadb://' in _database_url):
+_mysql_url_has_ssl = False
+if _database_url and ('mysql://' in _database_url or 'mysqls://' in _database_url or 'mariadb://' in _database_url):
     import urllib.parse
     _parsed_db = urllib.parse.urlparse(_database_url)
     if _parsed_db.hostname:
@@ -184,6 +185,8 @@ if _database_url and ('mysql://' in _database_url or 'mariadb://' in _database_u
         _mysql_user = urllib.parse.unquote(_parsed_db.username)
     if _parsed_db.password:
         _mysql_password = urllib.parse.unquote(_parsed_db.password)
+    if 'mysqls://' in _database_url or 'ssl' in _parsed_db.query.lower():
+        _mysql_url_has_ssl = True
 
 _is_testing = 'test' in sys.argv or os.environ.get('DJANGO_TEST', '').lower() == 'true'
 _is_collectstatic = 'collectstatic' in sys.argv
@@ -261,12 +264,20 @@ if _is_prod and not DEBUG and not _is_testing and not _is_collectstatic and not 
                     "Production Database Error: MYSQL_DATABASE is missing or set to a placeholder.\n"
                     "Please set your real MySQL database name in Render Environment Variables."
                 )
+    else:
+        import warnings
+        warnings.warn(
+            "Production Database Notice: Neither MYSQL_HOST nor DATABASE_URL is configured in Render Environment Variables. "
+            "Falling back to temporary SQLite. To ensure persistent data storage on Render, please configure your cloud MySQL credentials "
+            "(MYSQL_HOST, MYSQL_USER, MYSQL_PASSWORD, MYSQL_DATABASE) in the Render Dashboard."
+        )
 
 # Cloud SSL detection & configuration (TiDB Cloud, Aiven, Azure, DigitalOcean require SSL)
 _mysql_ssl_ca = os.environ.get('MYSQL_SSL_CA', '').strip()
 _mysql_ssl_mode = os.environ.get('MYSQL_SSL_MODE', '').strip()
 _mysql_ssl_required = (
     os.environ.get('MYSQL_SSL', '').lower() in ('true', '1', 'yes', 'required') or
+    _mysql_url_has_ssl or
     any(domain in _mysql_host.lower() for domain in ('tidbcloud.com', 'aivencloud.com', 'azure.com', 'digitalocean.com'))
 )
 
