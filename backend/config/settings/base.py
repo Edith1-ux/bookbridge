@@ -60,8 +60,19 @@ if not SECRET_KEY:
     if DEBUG or 'test' in sys.argv or os.environ.get('DJANGO_TEST', '').lower() == 'true':
         SECRET_KEY = 'django-insecure-dev-only-secret-key-do-not-use-in-production'
     else:
-        # Generate a secure fallback secret key so deployment never crashes on unconfigured SECRET_KEY
-        SECRET_KEY = secrets.token_urlsafe(50)
+        # Check if a persistent secret key file already exists so restarts do not invalidate JWT sessions
+        _key_file = BASE_DIR / '.django_secret_key'
+        if _key_file.exists():
+            try:
+                SECRET_KEY = _key_file.read_text().strip()
+            except Exception:
+                pass
+        if not SECRET_KEY:
+            SECRET_KEY = secrets.token_urlsafe(50)
+            try:
+                _key_file.write_text(SECRET_KEY)
+            except Exception:
+                pass
 
 ALLOWED_HOSTS = [
     h.strip() for h in os.environ.get('ALLOWED_HOSTS', '*').split(',') if h.strip()
@@ -321,6 +332,13 @@ if (_is_testing or _is_collectstatic) and not os.environ.get('FORCE_MYSQL_TEST')
 elif _database_url and ('postgres://' in _database_url or 'postgresql://' in _database_url):
     import urllib.parse
     parsed = urllib.parse.urlparse(_database_url)
+    pg_options = {}
+    query_params = urllib.parse.parse_qs(parsed.query)
+    if 'sslmode' in query_params:
+        pg_options['sslmode'] = query_params['sslmode'][0]
+    elif _is_prod or (parsed.hostname and any(k in parsed.hostname for k in ('render.com', 'neon.tech', 'supabase.co', 'amazonaws.com'))):
+        pg_options['sslmode'] = 'require'
+
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql',
@@ -329,7 +347,8 @@ elif _database_url and ('postgres://' in _database_url or 'postgresql://' in _da
             'PASSWORD': urllib.parse.unquote(parsed.password or ''),
             'HOST': parsed.hostname or '',
             'PORT': str(parsed.port or '5432'),
-            'CONN_MAX_AGE': 60,
+            'OPTIONS': pg_options,
+            'CONN_MAX_AGE': 600,
         }
     }
 elif _mysql_host and _mysql_password not in DISALLOWED_PASS_PLACEHOLDERS and not _use_sqlite:
@@ -342,15 +361,26 @@ elif _mysql_host and _mysql_password not in DISALLOWED_PASS_PLACEHOLDERS and not
             'HOST': _mysql_host,
             'PORT': _mysql_port,
             'OPTIONS': _mysql_options,
-            'CONN_MAX_AGE': 60,
+            'CONN_MAX_AGE': 600,
         }
     }
 else:
-    # Default to SQLite for local development or when no external database is configured
+    # Automatic persistent disk support for Render / Cloud (mounts at /var/data, /data, /mnt/data, or DATA_DIR)
+    _persistent_dir = None
+    for cand in [os.environ.get('DATA_DIR', ''), os.environ.get('SQLITE_DATA_DIR', ''), '/var/data', '/data', '/mnt/data']:
+        if cand and os.path.exists(cand) and os.access(cand, os.W_OK):
+            _persistent_dir = Path(cand)
+            break
+
+    if _persistent_dir:
+        _sqlite_file = _persistent_dir / 'db.sqlite3'
+    else:
+        _sqlite_file = BASE_DIR / 'db.sqlite3'
+
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
+            'NAME': _sqlite_file,
         }
     }
 
@@ -508,7 +538,10 @@ else:
         },
     }
     MEDIA_URL = '/media/'
-    MEDIA_ROOT = BASE_DIR / 'media'
+    if '_persistent_dir' in locals() and _persistent_dir:
+        MEDIA_ROOT = _persistent_dir / 'media'
+    else:
+        MEDIA_ROOT = BASE_DIR / 'media'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
@@ -544,8 +577,8 @@ REST_FRAMEWORK = {
 }
 
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=30),
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
+    'ACCESS_TOKEN_LIFETIME': timedelta(hours=2),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=30),
     'ROTATE_REFRESH_TOKENS': True,
     'BLACKLIST_AFTER_ROTATION': True,
     'UPDATE_LAST_LOGIN': True,

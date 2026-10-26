@@ -17,6 +17,9 @@ redis>=5.0.0
 # avoiding a native mysqlclient build during cloud deployment.
 PyMySQL>=1.1.0
 
+# PostgreSQL driver for native Render PostgreSQL, Supabase, Neon
+psycopg2-binary>=2.9.9
+
 # Required by Django ImageField.
 Pillow>=10.3.0
 

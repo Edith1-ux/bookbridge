@@ -30,36 +30,47 @@ Before launching to production, set the following environment variables:
 
 ---
 
-## 🚀 Deploying to Render (Render.com) with MySQL
+## 🚀 Permanent Data Storage on Render (Render.com)
 
-Render provides Python web hosting, while the persistent MySQL database is hosted on a cloud MySQL provider (such as TiDB Cloud Serverless or Aiven, both offer free tiers).
+Render web services run in **stateless containers**. On the free tier, Render automatically spins down services after 15 minutes of inactivity. When restarted or redeployed, any local file created inside the temporary container (such as the default `db.sqlite3`) is reset to the git commit state.
 
-### Step 1: Provision a Free Cloud MySQL Database (e.g., TiDB Cloud)
-1. Go to [TiDB Cloud](https://tidbcloud.com/) (or [Aiven](https://aiven.io/)) and create a free account.
-2. Create a free **Serverless Cluster**.
-3. Under cluster settings, note your connection details:
+To make sure your **user logins, student registrations, book listings, and uploaded photos remain permanently stored forever** (until deleted or sold), choose one of the following 3 production-grade options:
+
+### 🌟 Option 1: Native Render PostgreSQL (Recommended — 1-Click Setup)
+Render provides managed PostgreSQL that persists permanently across all redeploys, restarts, and sleep cycles.
+1. In the [Render Dashboard](https://dashboard.render.com/):
+   - Click **New +** → **PostgreSQL**.
+   - Name it `bookbridge-db` and select the **Free** instance type.
+   - Click **Create Database**.
+2. Once provisioned, copy the **Internal Database URL** (e.g. `postgres://bookbridge_user:...@dpg-...-a/bookbridge_db`).
+3. Open your **BookBridge Web Service** in Render:
+   - Go to **Environment**.
+   - Add an environment variable:
+     - **Key**: `DATABASE_URL`
+     - **Value**: *(paste your copied Internal Database URL)*
+4. Click **Save Changes**. Render will automatically redeploy. Your database is now permanent and will never lose any listings or accounts!
+
+### 🐬 Option 2: Managed Cloud MySQL (TiDB Serverless or Aiven)
+1. Create a free MySQL cluster on [TiDB Cloud](https://tidbcloud.com/) or [Aiven](https://aiven.io/).
+2. Under your cluster, get your connection credentials:
    - **Host**: e.g., `gateway01.us-east-1.prod.aws.tidbcloud.com`
-   - **Port**: `4000` (or `3306` for Aiven/standard MySQL)
-   - **Database**: `bookbridge_db` (or create one using the SQL console: `CREATE DATABASE bookbridge_db;`)
-   - **User**: your full username including cluster prefix (e.g. `2t3ToPWdqgY8uQT.root`)
-   - **Password**: your generated password
+   - **Port**: `4000` (or `3306`)
+   - **Database**: `bookbridge_db`
+   - **User**: your full username (including cluster prefix for TiDB)
+   - **Password**: your database password
+3. In your Render Web Service **Environment**:
+   - Set `MYSQL_HOST`, `MYSQL_PORT`, `MYSQL_DATABASE`, `MYSQL_USER`, `MYSQL_PASSWORD`, `MYSQL_SSL=true`.
+   *(Or simply set `DATABASE_URL=mysql://user:pass@host:port/database`)*
 
-### Step 2: Deploy to Render
-1. Push this repository to GitHub.
-2. In the [Render Dashboard](https://dashboard.render.com/):
-   - Click **New +** → **Blueprint** and select your repository.
-3. Render automatically reads [`render.yaml`](render.yaml):
-   - **Build Command**: `pip install -r requirements.txt && python manage.py collectstatic --noinput`
-   - **Start Command**: `python manage.py check_db && python manage.py migrate --fake-initial --noinput && python manage.py seed_db && python -m daphne -b 0.0.0.0 -p $PORT asgi:application`
-4. In the **Environment Variables** prompt on Render (or under Service → Environment):
-   * `MYSQL_HOST`: (your cloud MySQL host)
-   * `MYSQL_PORT`: `4000` (or `3306`)
-   * `MYSQL_DATABASE`: `bookbridge_db`
-   * `MYSQL_USER`: (your cloud MySQL username)
-   * `MYSQL_PASSWORD`: (your cloud MySQL password)
-   * `MYSQL_SSL`: `true`
-   *(Or alternatively, simply paste your full connection string into `DATABASE_URL`)*
-5. Click **Apply**. Render will deploy the web service, run `check_db` to verify connectivity, apply migrations, seed the initial academic catalog, and start Daphne ASGI.
+### 💾 Option 3: Render Persistent Disk (For SQLite & Media Files)
+If you prefer using SQLite without external database servers:
+1. In your Render Web Service settings, scroll down to **Disks**.
+2. Click **Add Disk**:
+   - **Name**: `bookbridge-data`
+   - **Mount Path**: `/var/data`
+   - **Size**: `1 GB` (or more)
+3. Click **Save Changes**.
+4. BookBridge automatically detects `/var/data` and stores both `db.sqlite3` and uploaded book covers in `/var/data/` permanently across all redeploys and restarts!
 
 ---
 
