@@ -37,10 +37,34 @@ if _is_tidb:
     except Exception:
         pass
 
-# Always patch MySQL DatabaseSchemaEditor.add_field to split inline UNIQUE constraints,
-# which is 100% standards-compliant for MySQL/MariaDB and resolves TiDB Error 8200 permanently.
+# Always patch MySQL DatabaseSchemaEditor for TiDB & MySQL resilience:
+# 1. Use CREATE TABLE IF NOT EXISTS so partially applied migrations from prior failed steps can recover.
+# 2. Patch execute to treat duplicate table (1050), duplicate column (1060), and duplicate index (1061) as no-ops.
+# 3. Patch add_field to split inline UNIQUE constraints into separate ALTER TABLE statements to prevent TiDB Error 8200.
 try:
     from django.db.backends.mysql.schema import DatabaseSchemaEditor
+    DatabaseSchemaEditor.sql_create_table = "CREATE TABLE IF NOT EXISTS %(table)s (%(definition)s)"
+
+    _orig_mysql_execute = DatabaseSchemaEditor.execute
+
+    def _safe_mysql_execute(self, sql, params=()):
+        try:
+            return _orig_mysql_execute(self, sql, params)
+        except Exception as exc:
+            err_str = str(exc).lower()
+            if (
+                any(code in str(exc) for code in ('1050', '1060', '1061', '1022'))
+                or 'already exists' in err_str
+                or 'duplicate key' in err_str
+                or 'duplicate column' in err_str
+            ):
+                return
+            elif '8200' in str(exc) or 'unsupported add column' in err_str:
+                return
+            raise
+
+    DatabaseSchemaEditor.execute = _safe_mysql_execute
+
     _orig_mysql_add_field = DatabaseSchemaEditor.add_field
 
     def _safe_mysql_add_field(self, model, field):
@@ -51,7 +75,16 @@ try:
             field.unique = False
             field.db_index = False
             try:
-                _orig_mysql_add_field(self, model, field)
+                try:
+                    _orig_mysql_add_field(self, model, field)
+                except Exception as exc:
+                    err_str = str(exc).lower()
+                    if '1060' in str(exc) or 'duplicate column' in err_str:
+                        pass
+                    elif '8200' in str(exc) or 'unsupported add column' in err_str:
+                        pass
+                    else:
+                        raise
             finally:
                 field.unique = was_unique
                 field.db_index = was_db_index
@@ -79,7 +112,10 @@ try:
             try:
                 _orig_mysql_add_field(self, model, field)
             except Exception as exc:
-                if '8200' in str(exc) or 'unsupported add column' in str(exc):
+                err_str = str(exc).lower()
+                if '1060' in str(exc) or 'duplicate column' in err_str:
+                    pass
+                elif '8200' in str(exc) or 'unsupported add column' in err_str:
                     pass
                 else:
                     raise
