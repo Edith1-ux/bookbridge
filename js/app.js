@@ -1433,6 +1433,24 @@ function initContactPage() {
 /* 🔑 LOGIN */
 function initLoginPage() {
   const form = document.getElementById('dedicatedLoginForm');
+  const emailInput = document.getElementById('loginEmail');
+  const passwordInput = document.getElementById('loginPassword');
+
+  // Check URL parameters for prefilled email (e.g. from registration redirect)
+  const urlEmail = new URLSearchParams(window.location.search).get('email');
+  if (urlEmail && emailInput) {
+    emailInput.value = urlEmail;
+    passwordInput?.focus();
+  }
+
+  // If already logged in, redirect smoothly
+  window.BookAPI.getCurrentUser().then(user => {
+    if (user) {
+      showToast(`Already signed in as ${user.name || user.full_name || 'User'}. Redirecting...`, 'info');
+      setTimeout(() => window.location.href = 'browse.html', 1000);
+    }
+  }).catch(() => {});
+
   form?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const email = document.getElementById('loginEmail')?.value.trim();
@@ -1491,6 +1509,14 @@ function initRegisterPage() {
   const enrollmentInput = document.getElementById('regEnrollment');
   const collegeSelect = document.getElementById('regCollege');
   const helpText = document.getElementById('collegeVerifyHelpText');
+
+  // If already logged in, redirect smoothly
+  window.BookAPI.getCurrentUser().then(user => {
+    if (user) {
+      showToast(`Already signed in as ${user.name || user.full_name || 'Student'}. Redirecting...`, 'info');
+      setTimeout(() => window.location.href = 'browse.html', 1000);
+    }
+  }).catch(() => {});
 
   if (enrollmentInput) {
     enrollmentInput.addEventListener('input', () => {
@@ -1594,11 +1620,30 @@ function initRegisterPage() {
       const user = await window.BookAPI.register(userData);
       if (submitBtn) submitBtn.classList.remove('btn-loading');
       if (user) {
-        showToast(`🎉 Verified! Welcome, ${user.name}! Your college account is active.`, 'success');
+        showToast(`🎉 Verified! Welcome, ${user.name || user.full_name || 'Student'}! Your college account is active.`, 'success');
         setTimeout(() => window.location.href = 'browse.html', 1000);
       }
     } catch (err) {
       if (submitBtn) submitBtn.classList.remove('btn-loading');
+      const msg = (err.message || '').toLowerCase();
+      // If user already exists, seamlessly log them in or redirect with prefilled credentials
+      if (msg.includes('already exists') || msg.includes('already registered')) {
+        showToast('Account already exists for this email. Authenticating...', 'info');
+        try {
+          const loggedInUser = await window.BookAPI.login(userData.email, userData.password);
+          if (loggedInUser) {
+            showToast(`🎉 Welcome back, ${loggedInUser.name || loggedInUser.full_name || 'Student'}! Logged in successfully.`, 'success');
+            setTimeout(() => window.location.href = 'browse.html', 800);
+            return;
+          }
+        } catch (loginErr) {
+          showToast('An account with this email already exists! Redirecting to login...', 'warning');
+          setTimeout(() => {
+            window.location.href = 'login.html?email=' + encodeURIComponent(userData.email);
+          }, 1200);
+          return;
+        }
+      }
       showToast(err.message || 'Registration failed. Please check your details.', 'danger');
     }
   });

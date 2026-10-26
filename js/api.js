@@ -10,11 +10,21 @@
 // - http://127.0.0.1:8000/api when running from file: protocol or a separate local dev port (e.g. VS Code Live Server 5500, Vite 5173, etc.)
 const API_BASE = (function() {
   if (typeof window === 'undefined') return '/api';
-  const isLocalHost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+  const hostname = window.location.hostname || '';
+  const isLocalHost = hostname === 'localhost' || hostname === '127.0.0.1';
   const isFile = window.location.protocol === 'file:';
+
+  // Local development
   if (isFile || (isLocalHost && window.location.port && window.location.port !== '8000')) {
     return 'http://127.0.0.1:8000/api';
   }
+
+  // GitHub Pages or static external hosts pointing to Render backend
+  if (hostname.includes('github.io') || hostname.includes('pages.dev') || hostname.includes('netlify.app')) {
+    return 'https://book-bridge-2-5dbv.onrender.com/api';
+  }
+
+  // Same origin (Render app, custom domain proxy, or Django running directly on port 8000)
   return '/api';
 })();
 let _currentUserCache = null;
