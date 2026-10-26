@@ -10,6 +10,14 @@
       "destination": "/browse.html"
     },
     {
+      "source": "/browse-1",
+      "destination": "/browse.html"
+    },
+    {
+      "source": "/browse-1.html",
+      "destination": "/browse.html"
+    },
+    {
       "source": "/sell",
       "destination": "/sell.html"
     },

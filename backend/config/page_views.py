@@ -14,6 +14,13 @@ def serve_html_page(filename):
     def view(request):
         root_dir = _get_root_dir()
         file_path = os.path.join(root_dir, filename)
+        if not os.path.exists(file_path):
+            # Fallback for upload duplicate renames (e.g. browse-1.html <-> browse.html)
+            if filename == 'browse.html' and os.path.exists(os.path.join(root_dir, 'browse-1.html')):
+                file_path = os.path.join(root_dir, 'browse-1.html')
+            elif filename == 'browse-1.html' and os.path.exists(os.path.join(root_dir, 'browse.html')):
+                file_path = os.path.join(root_dir, 'browse.html')
+
         if os.path.exists(file_path):
             with open(file_path, 'r', encoding='utf-8') as f:
                 return HttpResponse(f.read(), content_type='text/html; charset=utf-8')

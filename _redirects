@@ -1,5 +1,7 @@
 /browse             /browse.html            200
 /browse-books       /browse.html            200
+/browse-1           /browse.html            301
+/browse-1.html      /browse.html            301
 /sell               /sell.html              200
 /exchange           /exchange.html          200
 /donate             /donate.html            200
