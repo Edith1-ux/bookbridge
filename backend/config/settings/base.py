@@ -488,10 +488,10 @@ REST_FRAMEWORK = {
         'rest_framework.throttling.ScopedRateThrottle',
     ],
     'DEFAULT_THROTTLE_RATES': {
-        'anon': '10000/hour' if _is_testing else '300/hour',
-        'user': '10000/hour' if _is_testing else '3000/hour',
-        'auth': '10000/minute' if _is_testing else '10/minute',     # Login & registration
-        'ai_chat': '10000/minute' if _is_testing else '20/minute',  # AI Assistant - prevent budget exhaustion
+        'anon': '10000/hour' if _is_testing else '1000/hour',
+        'user': '10000/hour' if _is_testing else '5000/hour',
+        'auth': '10000/minute' if _is_testing else '120/minute',     # Login & registration
+        'ai_chat': '10000/minute' if _is_testing else '60/minute',  # AI Assistant - prevent budget exhaustion
     },
     'DEFAULT_FILTER_BACKENDS': (
         'django_filters.rest_framework.DjangoFilterBackend',
@@ -538,28 +538,24 @@ else:
 # ---------------------------------------------------------------------------
 # CORS
 # ---------------------------------------------------------------------------
-CORS_ALLOW_ALL_ORIGINS = DEBUG
+CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_CREDENTIALS = True
 
 _cors_origins = os.environ.get('CORS_ALLOWED_ORIGINS', '')
 if _cors_origins:
     CORS_ALLOWED_ORIGINS = [o.strip() for o in _cors_origins.split(',') if o.strip()]
-elif not DEBUG:
-    # In production with no explicit config, allow Render origins
+else:
     CORS_ALLOWED_ORIGINS = [
         'https://book-bridge-2.onrender.com',
         'https://book-bridge-2-5dbv.onrender.com',
-    ]
-    if _render_host and f'https://{_render_host}' not in CORS_ALLOWED_ORIGINS:
-        CORS_ALLOWED_ORIGINS.append(f'https://{_render_host}')
-else:
-    CORS_ALLOWED_ORIGINS = [
+        'https://book-bridge-2-o57m.onrender.com',
         'http://localhost:8000',
         'http://127.0.0.1:8000',
         'http://localhost:3000',
         'http://127.0.0.1:3000',
     ]
-
-CORS_ALLOW_CREDENTIALS = True
+    if _render_host and f'https://{_render_host}' not in CORS_ALLOWED_ORIGINS:
+        CORS_ALLOWED_ORIGINS.append(f'https://{_render_host}')
 
 # ---------------------------------------------------------------------------
 # SECURITY HARDENING (production only)
@@ -583,6 +579,7 @@ if not DEBUG:
         'https://*.onrender.com',
         'https://book-bridge-2.onrender.com',
         'https://book-bridge-2-5dbv.onrender.com',
+        'https://book-bridge-2-o57m.onrender.com',
     ]
     _csrf_origins = os.environ.get('CSRF_TRUSTED_ORIGINS', '')
     if _csrf_origins:
