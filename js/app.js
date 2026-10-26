@@ -893,9 +893,17 @@ function initLoginPage() {
     }
     if (!valid) return;
 
+    let wakeTimer = null;
+    const originalBtnHtml = submitBtn ? submitBtn.innerHTML : '';
     if (submitBtn) {
       submitBtn.classList.add('btn-loading');
       submitBtn.disabled = true;
+      submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Signing In...';
+      wakeTimer = setTimeout(() => {
+        if (submitBtn && submitBtn.disabled) {
+          submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Waking cloud server (~15s)...';
+        }
+      }, 3500);
     }
 
     try {
@@ -911,9 +919,11 @@ function initLoginPage() {
       const msg = err.data?.error || err.data?.detail || err.message || 'Login failed. Please check your credentials.';
       showToast(msg, 'danger');
     } finally {
+      if (wakeTimer) clearTimeout(wakeTimer);
       if (submitBtn) {
         submitBtn.classList.remove('btn-loading');
         submitBtn.disabled = false;
+        submitBtn.innerHTML = originalBtnHtml;
       }
     }
   });
@@ -986,20 +996,40 @@ function initRegisterPage() {
 
     if (!valid) return;
 
-    submitBtn.classList.add('btn-loading');
+    let wakeTimer = null;
+    const origBtnHtml = submitBtn ? submitBtn.innerHTML : '';
+    if (submitBtn) {
+      submitBtn.classList.add('btn-loading');
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Creating Account...';
+      wakeTimer = setTimeout(() => {
+        if (submitBtn && submitBtn.disabled) {
+          submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Waking cloud server (~15s)...';
+        }
+      }, 3500);
+    }
+
     try {
       const user = await window.BookAPI.register(userData);
-      submitBtn.classList.remove('btn-loading');
       if (user) {
-        showToast(`Welcome, ${user.name}! Account created.`, 'success');
-        // FIX: relative path (not /login.html)
+        showToast(`Welcome, ${user.name || 'Student'}! Account created successfully.`, 'success');
         setTimeout(() => window.location.href = 'login.html', 1200);
       } else {
         showToast('Registration failed. Please try again.', 'danger');
       }
     } catch (err) {
-      submitBtn.classList.remove('btn-loading');
-      showToast(err.message || 'Registration failed. Please try again.', 'danger');
+      let msg = err.data?.error || err.data?.email?.[0] || err.message || 'Registration failed. Please check details.';
+      if (typeof msg === 'string' && msg.toLowerCase().includes('already exists')) {
+        msg = 'An account with this email already exists. Please log in or use Forgot Password.';
+      }
+      showToast(msg, 'danger');
+    } finally {
+      if (wakeTimer) clearTimeout(wakeTimer);
+      if (submitBtn) {
+        submitBtn.classList.remove('btn-loading');
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = origBtnHtml;
+      }
     }
   });
 

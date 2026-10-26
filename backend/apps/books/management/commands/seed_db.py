@@ -3,45 +3,38 @@ from apps.users.models import User
 from apps.books.models import Book
 
 class Command(BaseCommand):
-    help = 'Seeds initial users and GTU textbooks into the BookBridge database.'
+    help = 'Seeds initial users and GTU textbooks into the BookBridgee database.'
 
     def handle(self, *args, **options):
-        self.stdout.write(self.style.SUCCESS('Seeding initial BookBridge data...'))
+        self.stdout.write(self.style.SUCCESS('Seeding initial BookBridgee data...'))
 
-        # Create Admin User
-        admin_user, created = User.objects.get_or_create(
-            email='admin@bookbridge.edu',
-            defaults={
-                'full_name': 'System Administrator',
-                'enrollment': '200000000000',
-                'branch': 'CE',
-                'semester': 8,
-                'role': 'admin',
-                'is_staff': True,
-                'is_superuser': True
-            }
-        )
-        if created:
-            admin_user.set_password('Admin@123456')
-            admin_user.save()
-            self.stdout.write(f"Created admin user: {admin_user.email}")
+        # Create/Update Standard Demo Accounts & User Account
+        demo_accounts = [
+            {'email': 'admin@rcti.ac.in', 'name': 'RCTI Admin', 'role': 'SUPER_ADMIN', 'is_staff': True, 'is_superuser': True, 'pass': 'password123'},
+            {'email': 'keval.ce@rcti.ac.in', 'name': 'Keval (Student Lead)', 'role': 'STUDENT', 'is_staff': False, 'is_superuser': False, 'pass': 'password123'},
+            {'email': 'student@rcti.ac.in', 'name': 'Demo Student', 'role': 'STUDENT', 'is_staff': False, 'is_superuser': False, 'pass': 'password123'},
+            {'email': 'prajapatived814@gmail.com', 'name': 'Ved Prajapati', 'role': 'STUDENT', 'is_staff': False, 'is_superuser': False, 'pass': 'password123'},
+            {'email': 'admin@bookbridge.edu', 'name': 'System Administrator', 'role': 'SUPER_ADMIN', 'is_staff': True, 'is_superuser': True, 'pass': 'Admin@123456'},
+        ]
+        student_user = None
+        for acc in demo_accounts:
+            u, created = User.objects.get_or_create(
+                email=acc['email'],
+                defaults={
+                    'full_name': acc['name'],
+                    'role': acc['role'],
+                    'is_staff': acc['is_staff'],
+                    'is_superuser': acc['is_superuser']
+                }
+            )
+            u.set_password(acc['pass'])
+            u.is_active = True
+            u.full_name = acc['name']
+            u.save()
+            if acc['email'] == 'student@rcti.ac.in':
+                student_user = u
+            self.stdout.write(f"Configured account: {u.email} (password: {acc['pass']})")
 
-        # Create Demo Student User
-        student_user, created = User.objects.get_or_create(
-            email='student@rcti.ac.in',
-            defaults={
-                'full_name': 'Rahul Patel',
-                'enrollment': '216400307001',
-                'branch': 'CE',
-                'semester': 5,
-                'role': 'student',
-                'whatsapp': '+919876543210'
-            }
-        )
-        if created:
-            student_user.set_password('Student@123')
-            student_user.save()
-            self.stdout.write(f"Created student user: {student_user.email}")
 
         # Seed GTU Books
         initial_books = [
@@ -99,4 +92,4 @@ class Command(BaseCommand):
             if b_created:
                 self.stdout.write(f"Created book: {b_obj.title}")
 
-        self.stdout.write(self.style.SUCCESS('Successfully seeded BookBridge database!'))
+        self.stdout.write(self.style.SUCCESS('Successfully seeded BookBridgee database!'))

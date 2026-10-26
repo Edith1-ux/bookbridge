@@ -11,7 +11,11 @@ class IsOwnerOrAdmin(permissions.BasePermission):
         if not request.user or not request.user.is_authenticated:
             return False
 
-        if getattr(request.user, 'role', None) == 'admin' or request.user.is_staff or request.user.is_superuser:
+        if request.user.is_staff or request.user.is_superuser:
+            return True
+
+        user_role = getattr(request.user, 'role', '').upper()
+        if user_role in ('SUPER_ADMIN', 'COLLEGE_ADMIN', 'DEPT_ADMIN', 'ADMIN'):
             return True
 
         return getattr(obj, 'seller', None) == request.user

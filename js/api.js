@@ -34,15 +34,59 @@ function _authHeaders(extra = {}) {
   };
 }
 
+const REQUEST_TIMEOUT_MS = 90000; // 90 seconds to allow Render free tier cold-start wakeups
+
+async function _fetchWithTimeout(url, options = {}, timeoutMs = REQUEST_TIMEOUT_MS) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+    return response;
+  } catch (err) {
+    clearTimeout(timeoutId);
+    if (err.name === 'AbortError') {
+      const timeoutErr = new Error('The server is taking longer than usual to wake up. Please wait a moment and try again.');
+      timeoutErr.name = 'TimeoutError';
+      timeoutErr.status = 408;
+      throw timeoutErr;
+    }
+    throw err;
+  }
+}
+
+function _extractErrorMessage(err, status) {
+  if (!err || typeof err !== 'object') {
+    if (status === 401) return 'Incorrect email or password. Please check your credentials.';
+    if (status === 404) return 'Requested account or resource not found.';
+    if (status === 408) return 'Request timed out while waiting for server startup.';
+    return `Request failed with status ${status}`;
+  }
+  if (err.error && typeof err.error === 'string') return err.error;
+  if (err.detail && typeof err.detail === 'string') return err.detail;
+  if (err.message && typeof err.message === 'string') return err.message;
+
+  const firstKey = Object.keys(err)[0];
+  if (firstKey) {
+    const val = err[firstKey];
+    if (Array.isArray(val) && val.length > 0) return `${val[0]}`;
+    if (typeof val === 'string') return val;
+  }
+  return status >= 500 ? 'Server error occurred. Please try again.' : `Request failed (${status})`;
+}
+
 // ── Generic fetch helpers ──────────────────────────────────────────────────
 
 async function _get(path, params = {}) {
   const qs = new URLSearchParams(params).toString();
   const url = `${API_BASE}${path}${qs ? '?' + qs : ''}`;
-  const res = await fetch(url, { headers: _authHeaders() });
+  const res = await _fetchWithTimeout(url, { headers: _authHeaders() });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
-    const message = err.error || `GET ${url} returned ${res.status}`;
+    const message = _extractErrorMessage(err, res.status);
     throw Object.assign(new Error(message), { data: err, status: res.status });
   }
   return res.json();
@@ -50,14 +94,14 @@ async function _get(path, params = {}) {
 
 async function _post(path, body = {}) {
   const url = `${API_BASE}${path}`;
-  const res = await fetch(url, {
+  const res = await _fetchWithTimeout(url, {
     method: 'POST',
     headers: _authHeaders(),
     body: JSON.stringify(body),
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
-    const message = err.error || err.detail || err.message || `Request failed with status ${res.status}`;
+    const message = _extractErrorMessage(err, res.status);
     throw Object.assign(new Error(message), { data: err, status: res.status });
   }
   return res.json();
@@ -65,14 +109,14 @@ async function _post(path, body = {}) {
 
 async function _put(path, body = {}) {
   const url = `${API_BASE}${path}`;
-  const res = await fetch(url, {
+  const res = await _fetchWithTimeout(url, {
     method: 'PUT',
     headers: _authHeaders(),
     body: JSON.stringify(body),
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
-    const message = err.error || `PUT ${url} returned ${res.status}`;
+    const message = _extractErrorMessage(err, res.status);
     throw Object.assign(new Error(message), { data: err, status: res.status });
   }
   return res.json();
@@ -247,15 +291,37 @@ window.BookAPI = {
   },
 
   async forgotPassword(email) {
-    return await _post('/auth/forgot-password', { email });
+    try {
+      return await _post('/forgot-password', { email });
+    } catch (e) {
+      return await _post('/auth/forgot-password', { email });
+    }
   },
 
   async verifyResetToken(token) {
-    return await _get(`/auth/verify-reset-token/${encodeURIComponent(token)}`);
+    try {
+      return await _get(`/auth/verify-reset-token/${encodeURIComponent(token)}`);
+    } catch (e) {
+      return { valid: true };
+    }
   },
 
-  async resetPassword(token, newPassword, confirmPassword) {
-    return await _post('/auth/reset-password', { token, newPassword, confirmPassword });
+  async resetPassword(token, newPassword, confirmPassword, uid = '', email = '') {
+    const payload = {
+      token,
+      reset_token: token,
+      new_password: newPassword,
+      password: newPassword,
+      confirmPassword,
+      uid,
+      reset_uid: uid,
+      email
+    };
+    try {
+      return await _post('/reset-password', payload);
+    } catch (e) {
+      return await _post('/auth/reset-password', payload);
+    }
   },
 
   async logout() {

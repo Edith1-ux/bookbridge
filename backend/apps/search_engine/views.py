@@ -1,40 +1,71 @@
+import logging
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import permissions
-from apps.marketplace.models import AcademicResource
-from apps.marketplace.serializers import AcademicResourceSerializer
+from django.db.models import Q
+from apps.books.models import Book
+from apps.books.serializers import BookSerializer
+
+logger = logging.getLogger('apps.search_engine')
 
 
 class HybridSearchView(APIView):
-    """Hybrid Search combining MySQL indexing, filters, and auto-synonyms."""
+    """
+    Hybrid Search over the live Book catalog combining text search, filters, and auto-synonyms.
+    Previously queried the empty AcademicResource model; now correctly queries the populated Book model.
+    """
     permission_classes = [permissions.AllowAny]
 
     SYNONYMS = {
         'dbms': 'Database Management Systems',
-        'dsa': 'Data Structures & Algorithms',
+        'dsa': 'Data Structures',
+        'os': 'Operating Systems',
+        'cn': 'Computer Networks',
+        'toc': 'Theory of Computation',
+        'se': 'Software Engineering',
         'ce': 'Computer Engineering',
-        'gtu': 'Gujarat Technological University',
+        'gtu': 'GTU',
     }
 
     def get(self, request):
         query = request.query_params.get('q', '').strip()
         resource_type = request.query_params.get('type', None)
-        college_id = request.query_params.get('college', None)
+        branch = request.query_params.get('branch', None)
+        semester = request.query_params.get('semester', None)
+        mode = request.query_params.get('mode', None)
 
-        resources = AcademicResource.objects.select_related('college', 'department', 'course').all()
+        books = Book.objects.select_related('seller', 'seller__college', 'seller__department').filter(
+            status='Available'
+        )
 
-        if college_id:
-            resources = resources.filter(college_id=college_id)
+        if branch:
+            books = books.filter(branch__iexact=branch)
 
-        if resource_type and resource_type != 'ALL':
-            resources = resources.filter(resource_type=resource_type)
+        if semester:
+            try:
+                books = books.filter(semester=int(semester))
+            except ValueError:
+                pass
+
+        if mode:
+            books = books.filter(mode__iexact=mode)
+
+        if resource_type and resource_type.upper() not in ('ALL', ''):
+            books = books.filter(resource_type__icontains=resource_type)
 
         if query:
-            # Synonym expansion
+            # Synonym expansion for common academic abbreviations
             expanded_query = self.SYNONYMS.get(query.lower(), query)
-            resources = resources.filter(title__icontains=expanded_query) | resources.filter(gtu_code__icontains=query)
+            books = books.filter(
+                Q(title__icontains=expanded_query) |
+                Q(author__icontains=expanded_query) |
+                Q(gtu_code__icontains=query) |
+                Q(subject__icontains=expanded_query) |
+                Q(description__icontains=expanded_query)
+            )
 
-        serializer = AcademicResourceSerializer(resources[:20], many=True)
+        books = books.order_by('-created_at')[:20]
+        serializer = BookSerializer(books, many=True, context={'request': request})
         return Response({
             'query': query,
             'count': len(serializer.data),
@@ -43,29 +74,34 @@ class HybridSearchView(APIView):
 
 
 class SearchAutoCompleteView(APIView):
-    """Provides instant auto-complete suggestions and trending academic tags."""
+    """Provides instant auto-complete suggestions and trending academic tags from the live Book catalog."""
     permission_classes = [permissions.AllowAny]
+
+    TRENDING_TAGS = [
+        '#GTU Lab Manuals',
+        '#Data Structures & Algorithms',
+        '#Python Source Code',
+        '#DBMS Notes',
+        '#100% Free Swaps',
+        '#Operating Systems',
+        '#Computer Networks',
+    ]
 
     def get(self, request):
         query = request.query_params.get('q', '').strip()
-        
-        trending_tags = [
-            '#GTU Lab Manuals',
-            '#Data Structures & Algorithms',
-            '#Python Source Code',
-            '#DBMS Notes',
-            '#100% Free Swaps',
-        ]
 
         if not query:
-            return Response({'suggestions': [], 'trending': trending_tags})
+            return Response({'suggestions': [], 'trending': self.TRENDING_TAGS})
 
-        suggestions = AcademicResource.objects.filter(
-            title__icontains=query
-        ).values_list('title', flat=True).distinct()[:5]
+        suggestions = list(
+            Book.objects.filter(
+                Q(title__icontains=query) | Q(author__icontains=query) | Q(gtu_code__icontains=query),
+                status='Available'
+            ).values_list('title', flat=True).distinct()[:8]
+        )
 
         return Response({
             'query': query,
-            'suggestions': list(suggestions),
-            'trending': trending_tags
+            'suggestions': suggestions,
+            'trending': self.TRENDING_TAGS
         })
