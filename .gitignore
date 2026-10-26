@@ -1,33 +1,30 @@
-# Local JSON DB runtime storage
-data/
+# Local database runtime files
+*.sqlite
+*.sqlite3
+*.sqlite-journal
+data/*.sqlite
+data/*.sqlite3
 
-# Environment variables
+# Environment variables (NEVER commit real secrets)
 .env
 .env.local
-.env.development.local
-.env.production.local
+.env.*.local
+!.env.example
 
 # Node modules & dependencies
 node_modules/
 npm-debug.log*
 yarn-debug.log*
-yarn-error.log*
 
 # System & OS files
 .DS_Store
 Thumbs.db
 
-# Python & Django
+# Python bytecode & cache
 __pycache__/
 *.py[cod]
 *$py.class
-*.sqlite3
-*.db
-backend/db.sqlite3
 
-# Agent skills & config
-.agents/
-.claude/
-ui-ux-pro-max-skill/
-.vscode/
+# Temporary IDE & test logs
 *.log
+.vscode/

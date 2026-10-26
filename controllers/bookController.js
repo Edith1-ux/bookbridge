@@ -1,180 +1,267 @@
 /**
  * ==========================================================================
- * BOOK CONTROLLER (MySQL Sequelize Queries + JSON Fallback Engine)
+ * BOOKBRIDGE BOOK CONTROLLER
+ * Full GTU Marketplace CRUD, Filter & Search Queries backed by MySQL
  * ==========================================================================
  */
 
-const fs = require('fs');
-const path = require('path');
 const { Op } = require('sequelize');
-const Book = require('../models/Book');
-const { getSQLStatus, getMongoStatus } = require('../config/db');
+const { Book, User } = require('../models');
 
-const DB_FILE = path.join(__dirname, '..', 'data', 'db.json');
-
-function readJSONDB() {
-  try {
-    if (!fs.existsSync(DB_FILE)) return { users: [], books: [], messages: [], reviews: [] };
-    const db = JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
-    if (!db.books) db.books = [];
-    return db;
-  } catch (err) {
-    return { users: [], books: [], messages: [], reviews: [] };
-  }
-}
-
-function writeJSONDB(data) {
-  try {
-    const dir = path.dirname(DB_FILE);
-    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-    fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2), 'utf8');
-  } catch (err) {}
-}
-
-const isDBConnected = () => (getSQLStatus && getSQLStatus()) || (getMongoStatus && getMongoStatus());
-
+/**
+ * GET /api/books
+ * Supports search query, branch, semester, category, mode, and condition filters
+ */
 exports.getBooks = async (req, res, next) => {
   try {
-    const { query, mode, genre, semester, branch, resourceType, condition, category } = req.query;
+    const { query, mode, genre, semester, branch, resourceType, condition, category, sellerId } = req.query;
 
-    if (isDBConnected() && Book && Book.findAll) {
-      let where = {};
+    let where = {};
 
-      if (query && query.trim() !== '') {
-        const searchTerm = `%${query.trim()}%`;
-        where[Op.or] = [
-          { title: { [Op.like]: searchTerm } },
-          { author: { [Op.like]: searchTerm } },
-          { subject: { [Op.like]: searchTerm } },
-          { gtuCode: { [Op.like]: searchTerm } }
-        ];
-      }
-
-      if (category && category.toLowerCase() !== 'all') where.category = category;
-      if (mode && mode.toLowerCase() !== 'all') where.mode = mode;
-      if (branch && branch.toLowerCase() !== 'all') where.branch = branch;
-      if (semester && semester.toLowerCase() !== 'all') where.semester = parseInt(semester, 10);
-      if (resourceType && resourceType.toLowerCase() !== 'all') where.resourceType = resourceType;
-      if (condition && condition.toLowerCase() !== 'all') where.condition = condition;
-
-      const books = await Book.findAll({
-        where,
-        order: [['createdAt', 'DESC']]
-      });
-
-      return res.json(books);
-    }
-
-    // JSON Fallback Engine
-    const db = readJSONDB();
-    let books = db.books || [];
-
+    // Text search on title, author, subject, or gtuCode
     if (query && query.trim() !== '') {
-      const q = query.toLowerCase().trim();
-      books = books.filter(b =>
-        (b.title || '').toLowerCase().includes(q) ||
-        (b.author || '').toLowerCase().includes(q) ||
-        (b.genre || '').toLowerCase().includes(q) ||
-        (b.subject || '').toLowerCase().includes(q)
-      );
+      const searchTerm = `%${query.trim()}%`;
+      where[Op.or] = [
+        { title: { [Op.like]: searchTerm } },
+        { author: { [Op.like]: searchTerm } },
+        { subject: { [Op.like]: searchTerm } },
+        { gtuCode: { [Op.like]: searchTerm } }
+      ];
     }
 
-    if (category && category.toLowerCase() !== 'all') books = books.filter(b => (b.category || 'physical').toLowerCase() === category.toLowerCase());
-    if (mode && mode.toLowerCase() !== 'all') books = books.filter(b => b.mode.toLowerCase() === mode.toLowerCase());
-    if (genre && genre.toLowerCase() !== 'all') books = books.filter(b => b.genre.toLowerCase() === genre.toLowerCase() || (b.branch && b.branch.toLowerCase() === genre.toLowerCase()));
-    if (semester && semester.toLowerCase() !== 'all') books = books.filter(b => b.semester && b.semester.toString() === semester.toString());
-    if (branch && branch.toLowerCase() !== 'all') books = books.filter(b => b.branch === 'All' || (b.branch && b.branch.toLowerCase() === branch.toLowerCase()));
-    if (resourceType && resourceType.toLowerCase() !== 'all') books = books.filter(b => b.resourceType === resourceType);
-    if (condition && condition.toLowerCase() !== 'all') books = books.filter(b => b.condition === condition);
+    if (category && category.toLowerCase() !== 'all') {
+      where.category = category;
+    }
 
-    res.json(books);
+    if (mode && mode.toLowerCase() !== 'all') {
+      where.mode = mode.toLowerCase();
+    }
+
+    if (branch && branch.toLowerCase() !== 'all') {
+      where.branch = branch;
+    }
+
+    if (semester && semester.toLowerCase() !== 'all') {
+      const semNum = parseInt(semester, 10);
+      if (!isNaN(semNum)) where.semester = semNum;
+    }
+
+    if (resourceType && resourceType.toLowerCase() !== 'all') {
+      where.resourceType = resourceType;
+    }
+
+    if (condition && condition.toLowerCase() !== 'all') {
+      where.condition = condition;
+    }
+
+    if (sellerId) {
+      where.sellerId = sellerId;
+    }
+
+    const books = await Book.findAll({
+      where,
+      order: [['createdAt', 'DESC']]
+    });
+
+    return res.json(books);
   } catch (error) {
     next(error);
   }
 };
 
+/**
+ * GET /api/books/:id
+ */
+exports.getBookById = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const book = await Book.findByPk(id, {
+      include: [
+        {
+          model: User,
+          as: 'seller',
+          attributes: ['id', 'name', 'email', 'role', 'whatsapp', 'branch', 'semester', 'avatarUrl']
+        }
+      ]
+    });
+
+    if (!book) {
+      return res.status(404).json({ error: 'Book listing not found.', status: 404 });
+    }
+
+    return res.json(book);
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * POST /api/books
+ */
 exports.createBook = async (req, res, next, io) => {
   try {
-    const { seller } = req.body;
+    const userId = req.user ? req.user.id : null;
+    let seller = req.user;
 
-    if (isDBConnected() && Book && Book.create) {
-      const newBook = await Book.create({
-        ...req.body,
-        semester: parseInt(req.body.semester || 5, 10),
-        price: parseFloat(req.body.price || 0),
-        sellerId: seller ? seller.id : null,
-        sellerName: seller ? seller.name : null,
-        sellerEmail: seller ? seller.email : null,
-        sellerRole: seller ? seller.role : null,
-        sellerWhatsapp: seller ? seller.whatsapp : null
-      });
-
-      if (io) io.emit('newBook', newBook);
-      return res.status(201).json(newBook);
+    if (userId && !seller.email) {
+      seller = await User.findByPk(userId);
     }
 
-    // JSON Fallback Engine
-    const db = readJSONDB();
-    const newBook = {
-      id: 'rcti-' + Date.now(),
-      ...req.body,
-      createdAt: new Date().toISOString()
-    };
-    db.books.unshift(newBook);
-    writeJSONDB(db);
+    const {
+      title,
+      author,
+      gtuCode,
+      category,
+      resourceType,
+      genre,
+      subject,
+      semester,
+      branch,
+      edition,
+      condition,
+      mode,
+      price,
+      exchangeFor,
+      description,
+      coverUrl,
+      pdfUrl
+    } = req.body;
 
-    if (io) io.emit('newBook', newBook);
-    res.status(201).json(newBook);
+    const newBook = await Book.create({
+      title: title.trim(),
+      author: author.trim(),
+      gtuCode: gtuCode ? gtuCode.trim() : '',
+      category: category || 'physical',
+      resourceType: resourceType || 'textbook',
+      genre: genre || 'Computer Engineering',
+      subject: subject || 'General',
+      semester: semester ? parseInt(semester, 10) : 1,
+      branch: branch || 'CE',
+      edition: edition || 'GTU Edition',
+      condition: condition || 'Good',
+      mode: (mode || 'sell').toLowerCase(),
+      price: (mode && mode.toLowerCase() === 'donate') ? 0.00 : (parseFloat(price) || 0.00),
+      exchangeFor: exchangeFor ? exchangeFor.trim() : '',
+      description: description ? description.trim() : '',
+      coverUrl: coverUrl || '',
+      pdfUrl: pdfUrl || '',
+      status: 'Available',
+      sellerId: seller ? seller.id : null,
+      sellerName: seller ? seller.name : 'Anonymous',
+      sellerEmail: seller ? seller.email : '',
+      sellerRole: seller ? seller.role : 'student',
+      sellerWhatsapp: seller ? (seller.whatsapp || '') : ''
+    });
+
+    // Real-time broadcast to all connected clients
+    if (io) {
+      io.emit('newBook', newBook);
+    }
+
+    return res.status(201).json(newBook);
   } catch (error) {
     next(error);
   }
 };
 
+/**
+ * PUT /api/books/:id
+ */
 exports.updateBook = async (req, res, next, io) => {
   try {
-    const bookId = req.params.id;
+    const { id } = req.params;
+    const book = await Book.findByPk(id);
 
-    if (isDBConnected() && Book && Book.findByPk) {
-      const book = await Book.findByPk(bookId);
-      if (!book) return res.status(404).json({ error: 'Resource not found' });
-
-      await book.update(req.body);
-      if (io) io.emit('bookUpdated', book);
-      return res.json(book);
+    if (!book) {
+      return res.status(404).json({ error: 'Book listing not found.', status: 404 });
     }
 
-    // JSON Fallback Engine
-    const db = readJSONDB();
-    const index = db.books.findIndex(b => b.id.toString() === bookId.toString());
-    if (index >= 0) {
-      db.books[index] = { ...db.books[index], ...req.body };
-      writeJSONDB(db);
-      if (io) io.emit('bookUpdated', db.books[index]);
-      return res.json(db.books[index]);
+    // Permission check: only seller or admin can edit
+    if (req.user && req.user.role !== 'admin' && book.sellerId !== req.user.id) {
+      return res.status(403).json({ error: 'Permission denied. You can only edit your own listings.' });
     }
-    res.status(404).json({ error: 'Resource not found' });
+
+    const updatable = [
+      'title', 'author', 'gtuCode', 'category', 'resourceType', 'genre',
+      'subject', 'semester', 'branch', 'edition', 'condition', 'mode',
+      'price', 'exchangeFor', 'description', 'coverUrl', 'pdfUrl', 'status'
+    ];
+
+    updatable.forEach((field) => {
+      if (req.body[field] !== undefined) {
+        book[field] = req.body[field];
+      }
+    });
+
+    if (req.body.price !== undefined) {
+      book.price = parseFloat(req.body.price) || 0;
+    }
+
+    await book.save();
+
+    if (io) {
+      io.emit('bookUpdated', book);
+    }
+
+    return res.json(book);
   } catch (error) {
     next(error);
   }
 };
 
+/**
+ * DELETE /api/books/:id
+ */
 exports.deleteBook = async (req, res, next, io) => {
   try {
-    const bookId = req.params.id;
+    const { id } = req.params;
+    const book = await Book.findByPk(id);
 
-    if (isDBConnected() && Book && Book.destroy) {
-      await Book.destroy({ where: { id: bookId } });
-      if (io) io.emit('bookDeleted', bookId);
-      return res.json({ message: 'Book deleted successfully', id: bookId });
+    if (!book) {
+      return res.status(404).json({ error: 'Book listing not found.', status: 404 });
     }
 
-    // JSON Fallback Engine
-    const db = readJSONDB();
-    db.books = db.books.filter(b => b.id.toString() !== bookId.toString());
-    writeJSONDB(db);
+    // Permission check
+    if (req.user && req.user.role !== 'admin' && book.sellerId !== req.user.id) {
+      return res.status(403).json({ error: 'Permission denied. You can only delete your own listings.' });
+    }
 
-    if (io) io.emit('bookDeleted', bookId);
-    res.json({ message: 'Book deleted successfully', id: bookId });
+    await book.destroy();
+
+    if (io) {
+      io.emit('bookDeleted', { id: parseInt(id, 10) });
+    }
+
+    return res.json({ message: 'Listing removed successfully.', id });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * GET /api/statistics
+ * Live platform statistics computed from real database records
+ */
+exports.getStatistics = async (req, res, next) => {
+  try {
+    const activeStudents = await User.count({ where: { role: 'student', isActive: true } });
+    const booksListed = await Book.count({ where: { status: 'Available' } });
+    const successfulExchanges = await Book.count({ where: { status: 'Sold', mode: 'exchange' } });
+    const booksDonated = await Book.count({ where: { mode: 'donate' } });
+    const totalTransactions = await Book.count({ where: { status: 'Sold' } });
+
+    return res.json({
+      active_students: activeStudents,
+      books_listed: booksListed,
+      successful_exchanges: successfulExchanges,
+      books_donated: booksDonated,
+      total_transactions: totalTransactions,
+      students: activeStudents,
+      books: booksListed,
+      exchanges: successfulExchanges,
+      donated: booksDonated,
+      timestamp: new Date().toISOString()
+    });
   } catch (error) {
     next(error);
   }

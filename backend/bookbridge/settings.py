@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'channels',
 
     # BookBridge Local Apps
+    'apps.core',
     'apps.users',
     'apps.books',
     'apps.exchange',

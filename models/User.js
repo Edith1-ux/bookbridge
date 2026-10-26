@@ -1,6 +1,7 @@
 /**
  * ==========================================================================
- * SEQUELIZE USER MODEL (GTU Attributes, Bcrypt Hashing, RBAC)
+ * SEQUELIZE USER MODEL
+ * Enterprise User Schema with GTU Academic Attributes, RBAC & Status
  * ==========================================================================
  */
 
@@ -17,51 +18,70 @@ if (sequelize) {
       primaryKey: true
     },
     name: {
-      type: DataTypes.STRING,
+      type: DataTypes.STRING(255),
       allowNull: false
     },
     email: {
-      type: DataTypes.STRING,
+      type: DataTypes.STRING(255),
       allowNull: false,
       unique: true,
-      validate: { isEmail: true }
+      validate: {
+        isEmail: true
+      }
     },
     passwordHash: {
-      type: DataTypes.STRING,
+      type: DataTypes.STRING(255),
       allowNull: false
     },
     enrollment: {
-      type: DataTypes.STRING,
-      unique: true,
-      allowNull: true
+      type: DataTypes.STRING(100),
+      allowNull: true,
+      unique: true
     },
     branch: {
-      type: DataTypes.ENUM('CE', 'IT', 'ICT', 'EE', 'ME', 'CIVIL', 'PRINT', 'TMT', 'TPT'),
+      type: DataTypes.STRING(50),
       defaultValue: 'CE'
     },
     semester: {
       type: DataTypes.INTEGER,
-      defaultValue: 5
+      defaultValue: 1,
+      validate: { min: 1, max: 8 }
     },
     division: {
-      type: DataTypes.STRING,
+      type: DataTypes.STRING(50),
       defaultValue: 'Div A'
     },
     academicYear: {
-      type: DataTypes.STRING,
+      type: DataTypes.STRING(50),
       defaultValue: '2025-2026'
     },
     whatsapp: {
-      type: DataTypes.STRING,
+      type: DataTypes.STRING(50),
       defaultValue: ''
     },
     role: {
-      type: DataTypes.ENUM('student', 'faculty', 'alumni', 'admin'),
-      defaultValue: 'student'
+      type: DataTypes.STRING(50),
+      defaultValue: 'student', // 'student', 'faculty', 'alumni', 'admin'
+      validate: {
+        isIn: [['student', 'faculty', 'alumni', 'admin']]
+      }
+    },
+    isActive: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: true
+    },
+    avatarUrl: {
+      type: DataTypes.STRING(500),
+      defaultValue: ''
     }
   }, {
     tableName: 'users',
-    timestamps: true
+    timestamps: true,
+    indexes: [
+      { unique: true, fields: ['email'] },
+      { unique: true, fields: ['enrollment'] },
+      { fields: ['role'] }
+    ]
   });
 }
 

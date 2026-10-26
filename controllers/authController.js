@@ -1,203 +1,401 @@
 /**
  * ==========================================================================
- * AUTH CONTROLLER (MySQL Sequelize / Bcrypt Password Hashing & JWT)
+ * BOOKBRIDGE AUTH CONTROLLER
+ * Enterprise Authentication, Bcrypt Hashing, JWTs & Forgot-Password Flow
  * ==========================================================================
  */
 
-const fs = require('fs');
-const path = require('path');
+const crypto = require('crypto');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const { Op } = require('sequelize');
+const { User, PasswordResetToken, AuditLog, Book, Conversation } = require('../models');
 
-let bcrypt = null;
-let jwt = null;
-try { bcrypt = require('bcryptjs'); } catch (e) { bcrypt = null; }
-try { jwt = require('jsonwebtoken'); } catch (e) { jwt = null; }
+const JWT_SECRET = process.env.JWT_SECRET || 'bookbridge_jwt_secret_production_enterprise_2026';
+const TOKEN_EXPIRY = process.env.JWT_EXPIRES_IN || '7d';
 
-const User = require('../models/User');
-const { getSQLStatus, getMongoStatus } = require('../config/db');
-
-const DB_FILE = path.join(__dirname, '..', 'data', 'db.json');
-
-const JWT_SECRET = process.env.JWT_SECRET || 'super_secret_enterprise_bookbridge_key_2026_DEV_ONLY';
-
-function readJSONDB() {
-  try {
-    if (!fs.existsSync(DB_FILE)) return { users: [], books: [], messages: [], reviews: [] };
-    const db = JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
-    if (!db.users) db.users = [];
-    return db;
-  } catch (err) {
-    return { users: [], books: [], messages: [], reviews: [] };
-  }
+/**
+ * Helper to generate JWT token
+ */
+function signToken(user) {
+  return jwt.sign(
+    {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      role: user.role,
+      branch: user.branch,
+      semester: user.semester,
+      enrollment: user.enrollment
+    },
+    JWT_SECRET,
+    { expiresIn: TOKEN_EXPIRY }
+  );
 }
 
-function writeJSONDB(data) {
-  try {
-    const dir = path.dirname(DB_FILE);
-    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-    fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2), 'utf8');
-  } catch (err) {
-    console.error('[DB Write Error] Failed to persist JSON data:', err.message);
-  }
+/**
+ * Safely format user response without password hash
+ */
+function formatSafeUser(user) {
+  const plain = user.get ? user.get({ plain: true }) : { ...user };
+  delete plain.passwordHash;
+  delete plain.password;
+  return plain;
 }
 
-function signToken(payload) {
-  if (!jwt) return 'no-jwt-module-' + Date.now();
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: '7d' });
-}
-
-function assignRole(requestedRole) {
-  const allowedRoles = ['student', 'faculty'];
-  if (requestedRole && allowedRoles.includes(requestedRole.toLowerCase())) {
-    return requestedRole.toLowerCase();
-  }
-  return 'student';
-}
-
-const isDBConnected = () => (getSQLStatus && getSQLStatus()) || (getMongoStatus && getMongoStatus());
-
+/**
+ * POST /api/register or /api/auth/register
+ */
 exports.register = async (req, res, next) => {
   try {
-    const { name, email, password, enrollment, branch, semester, whatsapp, division, academicYear } = req.body;
+    const { name, email, password, enrollment, branch, semester, division, academicYear, whatsapp, role } = req.body;
 
-    if (!email || !name) return res.status(400).json({ error: 'Name and email are required' });
-    if (!password || password.length < 6) return res.status(400).json({ error: 'Password must be at least 6 characters' });
+    const normalizedEmail = (email || '').trim().toLowerCase();
 
-    let passwordHash;
-    if (bcrypt) {
-      const salt = await bcrypt.genSalt(12);
-      passwordHash = await bcrypt.hash(password, salt);
-    } else {
-      const crypto = require('crypto');
-      passwordHash = 'sha256:' + crypto.createHash('sha256').update(password + 'bookbridge_salt_v1').digest('hex');
-    }
-
-    const userRole = assignRole(null);
-
-    // MySQL Database Branch
-    if (isDBConnected() && User && User.findOne) {
-      const existing = await User.findOne({ where: { email } });
-      if (existing) return res.status(400).json({ error: 'User account already exists' });
-
-      const newUser = await User.create({
-        name,
-        email,
-        passwordHash,
-        enrollment: enrollment || null,
-        branch: branch || 'CE',
-        semester: parseInt(semester || 1),
-        division: division || 'Div A',
-        academicYear: academicYear || '2025-2026',
-        whatsapp: whatsapp || '',
-        role: userRole
+    // Check if email already registered
+    const existingEmail = await User.findOne({ where: { email: normalizedEmail } });
+    if (existingEmail) {
+      return res.status(409).json({
+        error: 'An account with this email address already exists. Please login.',
+        field: 'email',
+        status: 409
       });
-
-      const token = signToken({ id: newUser.id, role: newUser.role, email: newUser.email });
-      const safeUser = newUser.get ? newUser.get({ plain: true }) : newUser;
-      delete safeUser.passwordHash;
-
-      return res.status(201).json({ token, user: safeUser });
     }
 
-    // JSON Fallback Engine
-    const db = readJSONDB();
-    const existing = db.users.find(u => u.email.toLowerCase() === email.toLowerCase());
-    if (existing) return res.status(400).json({ error: 'User account already exists' });
+    // Check enrollment uniqueness if provided
+    if (enrollment && enrollment.trim() !== '') {
+      const existingEnrollment = await User.findOne({ where: { enrollment: enrollment.trim() } });
+      if (existingEnrollment) {
+        return res.status(409).json({
+          error: 'An account with this GTU Enrollment Number already exists.',
+          field: 'enrollment',
+          status: 409
+        });
+      }
+    }
 
-    const newUser = {
-      id: 'usr-' + Date.now(),
-      name,
-      enrollment: enrollment || '',
-      email,
+    // Hash password with bcrypt (work factor 12)
+    const passwordHash = await bcrypt.hash(password, 12);
+
+    // Create user in MySQL
+    const newUser = await User.create({
+      name: name.trim(),
+      email: normalizedEmail,
       passwordHash,
+      enrollment: enrollment ? enrollment.trim() : null,
       branch: branch || 'CE',
-      semester: parseInt(semester || 1),
+      semester: semester ? parseInt(semester, 10) : 1,
       division: division || 'Div A',
       academicYear: academicYear || '2025-2026',
-      whatsapp: whatsapp || '',
-      role: userRole,
-      createdAt: new Date().toISOString()
-    };
+      whatsapp: whatsapp ? whatsapp.trim() : '',
+      role: (role && ['faculty', 'student'].includes(role.toLowerCase())) ? role.toLowerCase() : 'student',
+      isActive: true
+    });
 
-    db.users.push(newUser);
-    writeJSONDB(db);
+    const token = signToken(newUser);
+    const safeUser = formatSafeUser(newUser);
 
-    const token = signToken({ id: newUser.id, role: newUser.role, email: newUser.email });
-    const { passwordHash: _h, ...safeUser } = newUser;
-    res.status(201).json({ token, user: safeUser });
+    // Record audit log
+    try {
+      await AuditLog.create({
+        userId: newUser.id,
+        action: 'USER_REGISTERED',
+        ipAddress: req.ip || '',
+        userAgent: req.headers['user-agent'] || '',
+        details: `User registered: ${newUser.email}`
+      });
+    } catch (e) {}
+
+    return res.status(201).json({
+      message: 'Account created successfully!',
+      token,
+      user: safeUser,
+      status: 201
+    });
   } catch (error) {
     next(error);
   }
 };
 
+/**
+ * POST /api/login or /api/auth/login
+ */
 exports.login = async (req, res, next) => {
   try {
-    const { email, password } = req.body;
+    const { email, identifier, password } = req.body;
+    const loginIdentifier = (email || identifier || '').trim();
 
-    if (!email) return res.status(400).json({ error: 'Email is required' });
-    if (!password) return res.status(400).json({ error: 'Password is required' });
-
-    // MySQL Database Branch
-    if (isDBConnected() && User && User.findOne) {
-      const user = await User.findOne({ where: { email } });
-
-      if (!user) {
-        return res.status(401).json({ error: 'Invalid email or password.' });
-      }
-
-      let passwordMatch = false;
-      if (bcrypt && user.passwordHash) {
-        passwordMatch = await bcrypt.compare(password, user.passwordHash);
-      } else {
-        const crypto = require('crypto');
-        const hash = 'sha256:' + crypto.createHash('sha256').update(password + 'bookbridge_salt_v1').digest('hex');
-        passwordMatch = (hash === user.passwordHash);
-      }
-
-      if (!passwordMatch) {
-        return res.status(401).json({ error: 'Invalid email or password.' });
-      }
-
-      const token = signToken({ id: user.id, role: user.role, email: user.email });
-      const safeUser = user.get ? user.get({ plain: true }) : user;
-      delete safeUser.passwordHash;
-      return res.json({ token, user: safeUser });
+    if (!loginIdentifier || !password) {
+      return res.status(400).json({
+        error: 'Email or Enrollment Number and password are required.',
+        status: 400
+      });
     }
 
-    // JSON Fallback Engine
-    const db = readJSONDB();
-    const user = db.users.find(u => u.email.toLowerCase() === email.toLowerCase());
+    // Lookup by either email or enrollment number
+    const user = await User.findOne({
+      where: {
+        [Op.or]: [
+          { email: loginIdentifier.toLowerCase() },
+          { enrollment: loginIdentifier }
+        ]
+      }
+    });
 
     if (!user) {
-      return res.status(401).json({ error: 'Invalid email or password.' });
+      return res.status(401).json({
+        error: 'Invalid credentials. Please check your email/enrollment and password.',
+        status: 401
+      });
     }
 
-    let passwordMatch = false;
-    if (user.password === password || user.passwordHash === password || user.passwordHash === 'plain:' + password) {
-      passwordMatch = true;
-    } else if (user.passwordHash) {
-      if (bcrypt && user.passwordHash.startsWith('$2')) {
-        passwordMatch = await bcrypt.compare(password, user.passwordHash);
-      } else if (user.passwordHash.startsWith('sha256:')) {
-        const crypto = require('crypto');
-        const hash = 'sha256:' + crypto.createHash('sha256').update(password + 'bookbridge_salt_v1').digest('hex');
-        passwordMatch = (hash === user.passwordHash);
+    if (!user.isActive) {
+      return res.status(403).json({
+        error: 'This account has been deactivated. Please contact the administrator.',
+        status: 403
+      });
+    }
+
+    // Verify password hash
+    const isMatch = await bcrypt.compare(password, user.passwordHash);
+    if (!isMatch) {
+      return res.status(401).json({
+        error: 'Invalid credentials. Please check your email/enrollment and password.',
+        status: 401
+      });
+    }
+
+    const token = signToken(user);
+    const safeUser = formatSafeUser(user);
+
+    // Record audit log
+    try {
+      await AuditLog.create({
+        userId: user.id,
+        action: 'USER_LOGIN',
+        ipAddress: req.ip || '',
+        userAgent: req.headers['user-agent'] || '',
+        details: `User logged in: ${user.email}`
+      });
+    } catch (e) {}
+
+    return res.status(200).json({
+      message: 'Login successful!',
+      token,
+      user: safeUser,
+      status: 200
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * GET /api/auth/me or /api/users/profile
+ */
+exports.getMe = async (req, res, next) => {
+  try {
+    const user = await User.findByPk(req.user.id);
+    if (!user) {
+      return res.status(404).json({ error: 'User account not found.' });
+    }
+
+    const safeUser = formatSafeUser(user);
+
+    // Fetch user statistics
+    const myBooksCount = await Book.count({ where: { sellerId: user.id } });
+    const myConversationsCount = await Conversation.count({
+      where: {
+        [Op.or]: [{ user1Id: user.id }, { user2Id: user.id }]
       }
-    }
+    });
 
-    if (!passwordMatch && (password === 'password123' || password === '123456')) {
-      const emailLower = user.email.toLowerCase();
-      if (emailLower === 'keval.ce@rcti.ac.in' || emailLower === 'admin@rcti.ac.in' || emailLower === 'student@rcti.ac.in') {
-        passwordMatch = true;
+    return res.json({
+      ...safeUser,
+      stats: {
+        booksListed: myBooksCount,
+        activeConversations: myConversationsCount
       }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * PUT /api/users/profile
+ */
+exports.updateProfile = async (req, res, next) => {
+  try {
+    const user = await User.findByPk(req.user.id);
+    if (!user) {
+      return res.status(404).json({ error: 'User account not found.' });
     }
 
-    if (!passwordMatch) {
-      return res.status(401).json({ error: 'Invalid email or password.' });
+    const { name, whatsapp, branch, semester, division, academicYear } = req.body;
+
+    if (name && name.trim()) user.name = name.trim();
+    if (whatsapp !== undefined) user.whatsapp = whatsapp.trim();
+    if (branch) user.branch = branch;
+    if (semester) user.semester = parseInt(semester, 10);
+    if (division) user.division = division;
+    if (academicYear) user.academicYear = academicYear;
+
+    await user.save();
+
+    return res.json({
+      message: 'Profile updated successfully!',
+      user: formatSafeUser(user)
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * POST /api/auth/forgot-password
+ * Initiates single-use expiring password reset token
+ */
+exports.forgotPassword = async (req, res, next) => {
+  try {
+    const { email } = req.body;
+    const normalizedEmail = (email || '').trim().toLowerCase();
+
+    // Look up user without revealing if user exists (security best practice)
+    const user = await User.findOne({ where: { email: normalizedEmail } });
+
+    if (user && user.isActive) {
+      // Invalidate any previously active tokens for this user
+      await PasswordResetToken.update(
+        { usedAt: new Date() },
+        { where: { userId: user.id, usedAt: null } }
+      );
+
+      // Generate cryptographically secure 32-byte hex token
+      const rawToken = crypto.randomBytes(32).toString('hex');
+      const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
+
+      // Expires in 1 hour
+      const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
+
+      await PasswordResetToken.create({
+        userId: user.id,
+        tokenHash,
+        expiresAt
+      });
+
+      const resetUrl = `${req.protocol}://${req.get('host')}/forgot-password.html?token=${rawToken}`;
+      console.log(`===================================================`);
+      console.log(`🔐 [PASSWORD RESET LINK GENERATED]`);
+      console.log(` 📧 User: ${user.email}`);
+      console.log(` 🔗 URL:  ${resetUrl}`);
+      console.log(` ⏳ Valid for: 1 hour`);
+      console.log(`===================================================`);
+
+      // Record audit log
+      try {
+        await AuditLog.create({
+          userId: user.id,
+          action: 'PASSWORD_RESET_REQUESTED',
+          ipAddress: req.ip || '',
+          userAgent: req.headers['user-agent'] || '',
+          details: `Password reset requested for ${user.email}`
+        });
+      } catch (e) {}
     }
 
-    const token = signToken({ id: user.id, role: user.role, email: user.email });
-    const { passwordHash: _h, ...safeUser } = user;
-    res.json({ token, user: safeUser });
+    // Always return same response to prevent email enumeration
+    return res.json({
+      message: 'If an account with that email address exists, a password reset link has been dispatched.',
+      status: 200
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * GET /api/auth/verify-reset-token/:token
+ */
+exports.verifyResetToken = async (req, res, next) => {
+  try {
+    const { token } = req.params;
+    if (!token) return res.status(400).json({ error: 'Token is required.' });
+
+    const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+    const resetRecord = await PasswordResetToken.findOne({
+      where: {
+        tokenHash,
+        usedAt: null,
+        expiresAt: { [Op.gt]: new Date() }
+      }
+    });
+
+    if (!resetRecord) {
+      return res.status(400).json({
+        valid: false,
+        error: 'This password reset link is invalid or has expired.'
+      });
+    }
+
+    return res.json({ valid: true, message: 'Token is valid.' });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * POST /api/auth/reset-password
+ * Executes password update with single-use verification
+ */
+exports.resetPassword = async (req, res, next) => {
+  try {
+    const { token, newPassword } = req.body;
+
+    const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+    const resetRecord = await PasswordResetToken.findOne({
+      where: {
+        tokenHash,
+        usedAt: null,
+        expiresAt: { [Op.gt]: new Date() }
+      }
+    });
+
+    if (!resetRecord) {
+      return res.status(400).json({
+        error: 'The password reset token is invalid or has expired. Please request a new one.',
+        status: 400
+      });
+    }
+
+    const user = await User.findByPk(resetRecord.userId);
+    if (!user) {
+      return res.status(404).json({ error: 'User account no longer exists.' });
+    }
+
+    // Hash new password
+    user.passwordHash = await bcrypt.hash(newPassword, 12);
+    await user.save();
+
+    // Mark token as used
+    resetRecord.usedAt = new Date();
+    await resetRecord.save();
+
+    // Record audit log
+    try {
+      await AuditLog.create({
+        userId: user.id,
+        action: 'PASSWORD_RESET_COMPLETED',
+        ipAddress: req.ip || '',
+        userAgent: req.headers['user-agent'] || '',
+        details: `Password reset completed for ${user.email}`
+      });
+    } catch (e) {}
+
+    return res.json({
+      message: 'Your password has been reset successfully! You can now log in with your new password.',
+      status: 200
+    });
   } catch (error) {
     next(error);
   }

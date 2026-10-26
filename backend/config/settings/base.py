@@ -43,6 +43,9 @@ INSTALLED_APPS = [
     'apps.public_api.apps.PublicApiConfig',
     'apps.analytics.apps.AnalyticsConfig',
     'apps.admin_portal.apps.AdminPortalConfig',
+    'apps.books.apps.BooksConfig',
+    'apps.exchange.apps.ExchangeConfig',
+    'apps.donations.apps.DonationsConfig',
 ]
 
 MIDDLEWARE = [

@@ -1,37 +1,26 @@
 services:
   - type: web
-    name: book-bridge-2
-    env: python
-
-    # Build: install deps, then collect static files
-    buildCommand: "pip install -r requirements.txt && python manage.py collectstatic --noinput"
-
-    # Start: verify DB connectivity, migrate, seed initial users & GTU books, then start Daphne ASGI
-    startCommand: "python manage.py check_db && python manage.py migrate --fake-initial --noinput && python manage.py seed_db && python -m daphne -b 0.0.0.0 -p $PORT asgi:application"
+    name: bookbridge
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: node server.js
+    healthCheckPath: /api/health
+    autoDeploy: true
 
     envVars:
-      - key: PYTHON_VERSION
-        value: 3.11.0
+      - key: NODE_ENV
+        value: production
 
-      # PYTHONPATH is NOT needed when we cd into backend/ before running daphne
-      # Keeping it as a safety net for the buildCommand step (collectstatic)
-      - key: PYTHONPATH
-        value: backend
-
-      - key: SECRET_KEY
+      - key: JWT_SECRET
         generateValue: true
 
-      - key: DEBUG
-        value: "False"
-
-      - key: DEMO_MODE
-        value: "false"
-
-      # Optional unified connection string (e.g. mysql://user:pass@host:3306/dbname)
+      # MySQL Database Configuration (Render MySQL / TiDB / Railway / Aiven)
+      # You can provide DATABASE_URL (e.g. mysql://user:password@host:3306/database)
+      # OR separate MYSQL_* variables below:
       - key: DATABASE_URL
         sync: false
 
-      # MySQL database — set in Render dashboard (sync: false means value is set manually)
       - key: MYSQL_HOST
         sync: false
       - key: MYSQL_PORT
@@ -42,41 +31,7 @@ services:
         sync: false
       - key: MYSQL_PASSWORD
         sync: false
-      - key: MYSQL_SSL
-        value: "true"
 
-      # Redis — set in Render dashboard (required for Django Channels WebSockets)
-      - key: REDIS_URL
-        sync: false
-
-      # Optional: AI assistant keys
-      - key: GEMINI_API_KEY
-        sync: false
-      - key: OPENAI_API_KEY
-        sync: false
-
-      # Optional: S3-compatible media storage
-      - key: AWS_STORAGE_BUCKET_NAME
-        sync: false
-      - key: AWS_ACCESS_KEY_ID
-        sync: false
-      - key: AWS_SECRET_ACCESS_KEY
-        sync: false
-      - key: AWS_S3_ENDPOINT_URL
-        sync: false
-      - key: AWS_S3_CUSTOM_DOMAIN
-        sync: false
-
-      # Optional: CORS / CSRF origins for separate frontend deployment
+      # Allowed CORS origins for external frontends or custom domains
       - key: CORS_ALLOWED_ORIGINS
-        sync: false
-      - key: CSRF_TRUSTED_ORIGINS
-        sync: false
-
-      # Optional: Razorpay payment gateway
-      - key: RAZORPAY_KEY_ID
-        sync: false
-      - key: RAZORPAY_KEY_SECRET
-        sync: false
-      - key: RAZORPAY_WEBHOOK_SECRET
         sync: false

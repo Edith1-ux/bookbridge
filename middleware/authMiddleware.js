@@ -4,45 +4,68 @@
  * ==========================================================================
  */
 
-let jwt = null;
-try { jwt = require('jsonwebtoken'); } catch (e) { jwt = null; }
+const jwt = require('jsonwebtoken');
 
-const JWT_SECRET = process.env.JWT_SECRET;
+const getSecret = () => process.env.JWT_SECRET || 'bookbridge_jwt_secret_production_enterprise_2026';
 
-if (!JWT_SECRET) {
-  console.warn('[Security Warning] JWT_SECRET is not set in environment variables. Using insecure fallback for development only.');
-}
-
-const _secret = JWT_SECRET || 'super_secret_enterprise_bookbridge_key_2026_DEV_ONLY';
-
+/**
+ * Strict authentication: rejects request if token is missing or invalid
+ */
 exports.authenticateToken = (req, res, next) => {
   const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1];
+  const token = (authHeader && authHeader.split(' ')[1]) || req.query.token;
 
-  // FIX: No longer silently allows unauthenticated requests through
   if (!token) {
-    return res.status(401).json({ error: 'Access denied. Authentication token required.' });
+    return res.status(401).json({
+      error: 'Access denied. Authentication token required.',
+      status: 401
+    });
   }
 
-  // FIX: No longer skips verification if JWT module is unavailable
-  if (!jwt) {
-    console.error('[Auth] jsonwebtoken module not installed. Cannot verify tokens.');
-    return res.status(500).json({ error: 'Server authentication module not available.' });
-  }
-
-  jwt.verify(token, _secret, (err, decoded) => {
+  jwt.verify(token, getSecret(), (err, decoded) => {
     if (err) {
-      return res.status(403).json({ error: 'Invalid or expired access token. Please login again.' });
+      return res.status(403).json({
+        error: 'Invalid or expired access token. Please login again.',
+        status: 403
+      });
     }
     req.user = decoded;
     next();
   });
 };
 
+/**
+ * Optional authentication: if token is present, populates req.user; otherwise proceeds
+ */
+exports.optionalAuth = (req, res, next) => {
+  const authHeader = req.headers['authorization'];
+  const token = (authHeader && authHeader.split(' ')[1]) || req.query.token;
+
+  if (!token) {
+    req.user = null;
+    return next();
+  }
+
+  jwt.verify(token, getSecret(), (err, decoded) => {
+    if (!err) {
+      req.user = decoded;
+    } else {
+      req.user = null;
+    }
+    next();
+  });
+};
+
+/**
+ * Role-based authorization guard
+ */
 exports.authorizeRoles = (...allowedRoles) => {
   return (req, res, next) => {
     if (!req.user || !allowedRoles.includes(req.user.role)) {
-      return res.status(403).json({ error: 'Permission denied. Insufficient role access.' });
+      return res.status(403).json({
+        error: 'Permission denied. Insufficient role access.',
+        status: 403
+      });
     }
     next();
   };

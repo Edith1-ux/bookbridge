@@ -1,12 +1,10 @@
 /**
  * ==========================================================================
  * BOOKBRIDGE UNIFIED API LAYER
- * FIX: Points to the Express backend at /api (same origin), not Django port 8000
+ * Connects to the Express production backend with real-time token auth & fallback
  * ==========================================================================
  */
 
-// FIX: Use relative /api path so it works on any host (local, Render, Vercel, etc.)
-// Previously this was 'http://localhost:8000/api/v1' which would always fail in production
 const API_BASE = '/api';
 
 // ── Token helpers ──────────────────────────────────────────────────────────
@@ -24,6 +22,7 @@ function _clearTokens() {
   localStorage.removeItem('bb_access_token');
   localStorage.removeItem('bb_refresh_token');
   localStorage.removeItem('rcti_gtu_current_user');
+  localStorage.removeItem('admin_mode');
 }
 
 function _authHeaders(extra = {}) {
@@ -35,13 +34,17 @@ function _authHeaders(extra = {}) {
   };
 }
 
-// ── Generic fetch helpers with server-offline fallback ─────────────────────
+// ── Generic fetch helpers ──────────────────────────────────────────────────
 
 async function _get(path, params = {}) {
   const qs = new URLSearchParams(params).toString();
   const url = `${API_BASE}${path}${qs ? '?' + qs : ''}`;
   const res = await fetch(url, { headers: _authHeaders() });
-  if (!res.ok) throw new Error(`GET ${url} → ${res.status}`);
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    const message = err.error || `GET ${url} returned ${res.status}`;
+    throw Object.assign(new Error(message), { data: err, status: res.status });
+  }
   return res.json();
 }
 
@@ -60,21 +63,36 @@ async function _post(path, body = {}) {
   return res.json();
 }
 
+async function _put(path, body = {}) {
+  const url = `${API_BASE}${path}`;
+  const res = await fetch(url, {
+    method: 'PUT',
+    headers: _authHeaders(),
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    const message = err.error || `PUT ${url} returned ${res.status}`;
+    throw Object.assign(new Error(message), { data: err, status: res.status });
+  }
+  return res.json();
+}
+
 async function _delete(path) {
   const url = `${API_BASE}${path}`;
   const res = await fetch(url, { method: 'DELETE', headers: _authHeaders() });
-  if (!res.ok) throw new Error(`DELETE ${url} → ${res.status}`);
+  if (!res.ok) throw new Error(`DELETE ${url} returned ${res.status}`);
   return res.json().catch(() => null);
 }
 
-// ── Normalise a backend Book object to match frontend field names ────────────
+// ── Normalise helper ───────────────────────────────────────────────────────
 
 function _normaliseBook(b) {
   if (!b) return b;
   return {
     ...b,
-    cover: b.cover || b.cover_url || b.image || null,
-    image: b.image || b.cover || b.cover_url || null,
+    cover: b.cover || b.cover_url || b.coverUrl || b.image || null,
+    image: b.image || b.coverUrl || b.cover || null,
     original: b.original !== undefined ? b.original : b.original_price,
     gtuCode: b.gtu_code || b.gtuCode || '',
     seller: b.seller ? { ...b.seller, name: b.seller.name || b.seller.full_name } : null,
@@ -101,20 +119,22 @@ window.BookAPI = {
       const list = Array.isArray(data) ? data : (data.results || []);
       return list.map(_normaliseBook);
     } catch (e) {
-      console.warn('[BookAPI] Backend offline → localStorage fallback', e.message);
+      console.warn('[BookAPI] Backend offline → local demo fallback', e.message);
       return window.BookDB ? window.BookDB.getBooks(filters) : [];
     }
   },
 
   async getBookById(id) {
     try {
-      // Try local first (faster, avoids extra API round trip)
+      const book = await _get(`/books/${id}`);
+      return _normaliseBook(book);
+    } catch (e) {
       if (window.BookDB) {
         const local = await window.BookDB.getBookById(id);
         if (local) return _normaliseBook(local);
       }
-    } catch (e) {}
-    return null;
+      return null;
+    }
   },
 
   async addBook(bookData) {
@@ -122,9 +142,14 @@ window.BookAPI = {
       const saved = await _post('/books', bookData);
       return _normaliseBook(saved);
     } catch (e) {
-      console.warn('[BookAPI] addBook fallback', e.message);
+      if (e.status) throw e; // Server rejected validation
+      console.warn('[BookAPI] Network error → local demo mode', e.message);
       return window.BookDB ? window.BookDB.addBook(bookData) : null;
     }
+  },
+
+  async updateBook(id, bookData) {
+    return await _put(`/books/${id}`, bookData);
   },
 
   async deleteBook(id) {
@@ -138,9 +163,6 @@ window.BookAPI = {
   // ── AUTH ───────────────────────────────────────────────────────────────
 
   async register(userData) {
-    let serverUser = null;
-    let serverError = null;
-
     try {
       const data = await _post('/register', {
         name: userData.name || userData.full_name,
@@ -149,62 +171,91 @@ window.BookAPI = {
         enrollment: userData.enrollment || '',
         branch: userData.branch || 'CE',
         semester: userData.semester || 1,
+        division: userData.division || 'Div A',
+        academicYear: userData.academicYear || '2025-2026',
         whatsapp: userData.whatsapp || '',
+        role: userData.role || 'student'
       });
 
       if (data.token) _setTokens(data.token, null);
-      serverUser = _normaliseUser(data.user);
+      const serverUser = _normaliseUser(data.user);
       if (serverUser) localStorage.setItem('rcti_gtu_current_user', JSON.stringify(serverUser));
+      return serverUser;
     } catch (e) {
-      serverError = e.data?.error || e.message;
-      console.warn('[BookAPI] register server error → checking localStorage fallback', serverError);
-    }
+      // If server returned a business error (409 duplicate, 400 validation), throw it directly
+      if (e.status) throw e;
 
-    let localUser = null;
-    if (window.BookDB) {
-      try {
-        localUser = await window.BookDB.registerUser(userData);
-      } catch (e) {
-        if (!serverUser) throw (serverError ? new Error(serverError) : e);
+      // Only if network failed entirely, allow offline demo
+      console.warn('[BookAPI] Network unreachable → local demo fallback', e.message);
+      if (window.BookDB) {
+        return await window.BookDB.registerUser(userData);
       }
+      throw e;
     }
-
-    const finalUser = serverUser || localUser;
-    if (finalUser) return finalUser;
-    throw new Error(serverError || 'Registration failed. Please try again.');
   },
 
   async login(email, password) {
-    // 1. Try server login
     try {
       const data = await _post('/login', { email, password });
       if (data && data.user) {
         if (data.token) _setTokens(data.token, null);
         const user = _normaliseUser(data.user);
-        if (user) localStorage.setItem('rcti_gtu_current_user', JSON.stringify(user));
+        if (user) {
+          localStorage.setItem('rcti_gtu_current_user', JSON.stringify(user));
+          if (user.role === 'admin') {
+            localStorage.setItem('admin_mode', 'true');
+          }
+        }
         return user;
       }
     } catch (e) {
-      console.warn('[BookAPI] Server login notice:', e.message, 'Checking local database fallback...');
-    }
+      // If server is reachable and rejected credentials (401, 403, 400), NEVER bypass
+      if (e.status) throw e;
 
-    // 2. Try local database (offline/demo/local registration)
-    if (window.BookDB) {
-      const localUser = await window.BookDB.loginUser(email, password);
-      if (localUser) {
-        return _normaliseUser(localUser);
+      // Only if server is unreachable, check local offline demo credentials
+      console.warn('[BookAPI] Server unreachable → checking local demo credentials');
+      if (window.BookDB) {
+        const localUser = await window.BookDB.loginUser(email, password);
+        if (localUser) return _normaliseUser(localUser);
       }
+      throw new Error('Could not connect to authentication server. Please check your network.');
     }
-
-    throw new Error('Invalid email or password. Please check your credentials.');
   },
 
   async getCurrentUser() {
-    const stored = localStorage.getItem('rcti_gtu_current_user');
-    if (stored) {
-      try { return JSON.parse(stored); } catch (e) {}
+    try {
+      const user = await _get('/auth/me');
+      if (user) {
+        localStorage.setItem('rcti_gtu_current_user', JSON.stringify(_normaliseUser(user)));
+        return _normaliseUser(user);
+      }
+    } catch (e) {
+      const stored = localStorage.getItem('rcti_gtu_current_user');
+      if (stored) {
+        try { return JSON.parse(stored); } catch (err) {}
+      }
     }
     return window.BookDB ? window.BookDB.getCurrentUser() : null;
+  },
+
+  async updateProfile(profileData) {
+    const res = await _put('/users/profile', profileData);
+    if (res && res.user) {
+      localStorage.setItem('rcti_gtu_current_user', JSON.stringify(_normaliseUser(res.user)));
+    }
+    return res;
+  },
+
+  async forgotPassword(email) {
+    return await _post('/auth/forgot-password', { email });
+  },
+
+  async verifyResetToken(token) {
+    return await _get(`/auth/verify-reset-token/${encodeURIComponent(token)}`);
+  },
+
+  async resetPassword(token, newPassword, confirmPassword) {
+    return await _post('/auth/reset-password', { token, newPassword, confirmPassword });
   },
 
   async logout() {
@@ -216,27 +267,25 @@ window.BookAPI = {
 
   async getPublicStats() {
     try {
-      // FIX: Calls the now-existing /api/statistics endpoint
       const data = await _get('/statistics');
       return {
-        students: data.active_students || 0,
-        books: data.books_listed || 0,
-        exchanges: data.successful_exchanges || 0,
-        donated: data.books_donated || 0,
+        students: data.active_students || data.students || 0,
+        books: data.books_listed || data.books || 0,
+        exchanges: data.successful_exchanges || data.exchanges || 0,
+        donated: data.books_donated || data.donated || 0,
       };
     } catch (e) {
       return null;
     }
   },
 
-  // ── ADMIN STATS ────────────────────────────────────────────────────────
+  // ── ADMIN CONTROLS ─────────────────────────────────────────────────────
 
   async getAdminStats() {
     try {
       return await _get('/admin/stats');
     } catch (e) {
-      return window.BookDB ? window.BookDB.getAdminStats()
-        : { totalUsers: 0, totalListings: 0, activeSwaps: 0, freeDonations: 0 };
+      return window.BookDB ? window.BookDB.getAdminStats() : null;
     }
   },
 
@@ -250,12 +299,37 @@ window.BookAPI = {
     }
   },
 
-  async deleteUser(id) {
-    return window.BookDB ? window.BookDB.deleteUser(id) : null;
+  async updateUserRole(userId, role) {
+    return await _put(`/admin/users/${userId}/role`, { role });
   },
 
-  // ── MESSAGES ───────────────────────────────────────────────────────────
+  async toggleUserStatus(userId, isActive) {
+    return await _put(`/admin/users/${userId}/status`, { isActive });
+  },
 
+  // ── REAL-TIME CHAT & MESSAGES ──────────────────────────────────────────
+
+  async getConversations() {
+    try {
+      return await _get('/conversations');
+    } catch (e) {
+      return window.BookDB ? window.BookDB.getUserConversations() : [];
+    }
+  },
+
+  async getOrCreateConversation(recipientId, recipientEmail, bookId) {
+    return await _post('/conversations', { recipientId, recipientEmail, bookId });
+  },
+
+  async getConversationMessages(conversationId) {
+    return await _get(`/conversations/${conversationId}/messages`);
+  },
+
+  async sendConversationMessage(conversationId, text) {
+    return await _post(`/conversations/${conversationId}/messages`, { text });
+  },
+
+  // Legacy messaging helpers
   async sendMessage(receiverEmail, text, bookTitle, extra = {}) {
     try {
       return await _post('/messages', { receiverEmail, text, bookTitle, ...extra });
@@ -266,26 +340,14 @@ window.BookAPI = {
 
   async getMessages(targetEmail) {
     try {
-      const msgs = await _get('/messages');
-      if (Array.isArray(msgs)) {
-        if (!targetEmail) return msgs;
-        return msgs.filter(m => m.senderEmail === targetEmail || m.receiverEmail === targetEmail);
-      }
-      return msgs;
+      const msgs = await _get('/messages', targetEmail ? { with: targetEmail } : {});
+      return Array.isArray(msgs) ? msgs : [];
     } catch (e) {
       return window.BookDB ? window.BookDB.getMessages(targetEmail) : [];
     }
   },
 
-  async getUserConversations() {
-    return window.BookDB ? window.BookDB.getUserConversations() : [];
-  },
-
-  async markMessagesAsRead(otherUserEmail) {
-    return window.BookDB ? window.BookDB.markMessagesAsRead(otherUserEmail) : null;
-  },
-
-  // ── WISHLIST (localStorage only for now) ───────────────────────────────
+  // ── WISHLIST ───────────────────────────────────────────────────────────
 
   async toggleWishlist(bookId) {
     return window.BookDB ? window.BookDB.toggleWishlist(bookId) : false;
@@ -297,33 +359,5 @@ window.BookAPI = {
 
   async getWishlistBooks() {
     return window.BookDB ? window.BookDB.getWishlistBooks() : [];
-  },
-
-  // ── EXCHANGE ────────────────────────────────────────────────────────────
-
-  async proposeExchange(swapData) {
-    return window.BookDB ? window.BookDB.proposeExchange(swapData) : null;
-  },
-
-  // ── DONATIONS ───────────────────────────────────────────────────────────
-
-  async claimDonation(bookId, userDetails) {
-    return window.BookDB ? window.BookDB.claimDonation(bookId, userDetails) : null;
-  },
-
-  // ── REVIEWS ────────────────────────────────────────────────────────────
-
-  async addReview(sellerEmail, rating, comment) {
-    return window.BookDB ? window.BookDB.addReview(sellerEmail, rating, comment) : null;
-  },
-
-  async buyBook(bookId, buyerDetails) {
-    return window.BookDB ? window.BookDB.buyBook(bookId, buyerDetails) : null;
-  },
-
-  // ── AI RECOMMENDATIONS ─────────────────────────────────────────────────
-
-  async getAIRecommendations(branch, semester) {
-    return window.BookDB ? window.BookDB.getAIRecommendations(branch, semester) : [];
-  },
+  }
 };
