@@ -1,9 +1,9 @@
 /**
- * BookBridgee Service Worker
+ * BookBridge Service Worker
  * Enables offline capability and fast caching for PWA
  */
 
-const CACHE_NAME = 'bookbridge-v2.2';
+const CACHE_NAME = 'bookbridge-v2.0';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
@@ -45,34 +45,19 @@ self.addEventListener('activate', (e) => {
 });
 
 self.addEventListener('fetch', (e) => {
-  // Only handle GET requests
   if (e.request.method !== 'GET') return;
-
-  const url = new URL(e.request.url);
-
-  // Bypass service worker cache for dynamic API endpoints, admin, and media uploads
-  if (
-    url.pathname.startsWith('/api') ||
-    url.pathname.startsWith('/django-admin') ||
-    url.pathname.startsWith('/media') ||
-    url.protocol.startsWith('ws')
-  ) {
-    return; // Pass through directly to network
-  }
-
-  // Network-first: always try the newest page/script/style, and only use the
-  // cached copy when offline. (Cache-first kept old app.js on phones after a
-  // deploy, which is why fixed bugs such as "messages.map is not a function"
-  // kept showing up.)
   e.respondWith(
-    fetch(e.request)
-      .then((response) => {
-        if (response.status === 200) {
-          const cacheCopy = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(e.request, cacheCopy));
-        }
-        return response;
-      })
-      .catch(() => caches.match(e.request))
+    caches.match(e.request).then((cached) => {
+      const networked = fetch(e.request)
+        .then((response) => {
+          if (response.status === 200) {
+            const cacheCopy = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(e.request, cacheCopy));
+          }
+          return response;
+        })
+        .catch(() => cached);
+      return cached || networked;
+    })
   );
 });

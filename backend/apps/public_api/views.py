@@ -7,7 +7,7 @@ class PublicDocsView(APIView):
 
     def get(self, request):
         return Response({
-            'name': 'BookBridgee 2.0 Developer API',
+            'name': 'BookBridge 2.0 Developer API',
             'version': 'v1',
             'documentation_url': '/api/v1/public/docs/',
             'supported_authentication': ['X-API-Key', 'Bearer JWT'],

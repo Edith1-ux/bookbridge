@@ -1,8 +1,5 @@
 /browse             /browse.html            200
 /browse-books       /browse.html            200
-/browse-1           /browse.html            301
-/browse-1.html      /browse.html            301
-/sell               /sell.html              200
 /exchange           /exchange.html          200
 /donate             /donate.html            200
 /about              /about.html             200
@@ -15,7 +12,4 @@
 /privacy            /privacy.html           200
 /terms              /terms.html             200
 /forgot-password    /forgot-password.html   200
-/api/*                https://book-bridge-2-5dbv.onrender.com/api/:splat 200
-/media/*              https://book-bridge-2-5dbv.onrender.com/media/:splat 200
 /*                  /index.html             200
-

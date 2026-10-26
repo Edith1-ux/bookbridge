@@ -3,20 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>My Dashboard – BookBridgee</title>
+  <title>My Dashboard – BookBridge</title>
   <link rel="icon" href="logo.png.jpeg" type="image/jpeg">
   <link rel="apple-touch-icon" href="logo.png.jpeg">
-  <meta name="description" content="Manage your books, wishlist, messages, and account settings on BookBridgee.">
-  <meta property="og:type" content="website">
-  <meta property="og:site_name" content="BookBridgee">
-  <meta property="og:title" content="My Dashboard – BookBridgee">
-  <meta property="og:description" content="Manage your books, wishlist, messages, and account settings on BookBridgee.">
-  <meta property="og:url" content="https://bookbridge.in/dashboard.html">
-  <meta property="og:image" content="https://bookbridge.in/logo.png.jpeg">
-  <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="My Dashboard – BookBridgee">
-  <meta name="twitter:description" content="Manage your books, wishlist, and profile on BookBridgee.">
-  <meta name="twitter:image" content="https://bookbridge.in/logo.png.jpeg">
+  <meta name="description" content="Manage your books, wishlist, messages, and account settings on BookBridge.">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
   <link rel="stylesheet" href="style.css">
 </head>
@@ -25,25 +15,16 @@
 
   <header class="navbar" id="navbar">
     <div class="navbar-inner">
-      <a href="index.html" class="brand"><div class="brand-icon"><img src="logo.png.jpeg" alt="BookBridgee Logo"></div><div><div class="brand-name">BookBridgee</div><div class="brand-tagline">Bridge Books. Build Minds.</div></div></a>
+      <a href="index.html" class="brand"><div class="brand-icon"><img src="logo.png.jpeg" alt="BookBridge Logo"></div><div><div class="brand-name">BookBridge</div><div class="brand-tagline">Bridge Books. Build Minds.</div></div></a>
       <nav class="nav-links">
-        <a href="index.html" class="nav-link">Home</a>
-        <a href="browse.html" class="nav-link">Buy Books</a>
-        <a href="sell.html" class="nav-link">Sell Books</a>
-        <a href="exchange.html" class="nav-link">Exchange</a>
-        <a href="donate.html" class="nav-link">Donate</a>
-        <a href="about.html" class="nav-link">About</a>
-        <a href="contact.html" class="nav-link">Contact</a>
+        <a href="index.html" class="nav-link">Home</a><a href="browse.html" class="nav-link">Browse</a><a href="exchange.html" class="nav-link">Exchange</a><a href="donate.html" class="nav-link">Donate</a><a href="about.html" class="nav-link">About</a><a href="contact.html" class="nav-link">Contact</a>
       </nav>
-      <div class="nav-actions">
-        <a href="login.html" class="btn btn-ghost" id="navLoginBtn">Login</a>
-        <a href="register.html" class="btn btn-primary" id="navRegisterBtn">Get Started</a>
-      </div>
+      <div class="nav-actions" id="navLoginBtn"><a href="login.html" class="btn btn-ghost">Login</a><a href="register.html" class="btn btn-primary">Get Started</a></div>
       <button class="mobile-toggle" id="mobileMenuToggle"><i class="fa-solid fa-bars"></i></button>
     </div>
   </header>
   <div class="mobile-drawer" id="mobileNavDrawer">
-    <div class="drawer-links"><a href="index.html" class="drawer-link">Home <i class="fa-solid fa-chevron-right"></i></a><a href="browse.html" class="drawer-link">Buy Books <i class="fa-solid fa-chevron-right"></i></a><a href="sell.html" class="drawer-link">Sell Books <i class="fa-solid fa-chevron-right"></i></a><a href="exchange.html" class="drawer-link">Exchange <i class="fa-solid fa-chevron-right"></i></a><a href="donate.html" class="drawer-link">Donate <i class="fa-solid fa-chevron-right"></i></a><a href="about.html" class="drawer-link">About <i class="fa-solid fa-chevron-right"></i></a><a href="contact.html" class="drawer-link">Contact <i class="fa-solid fa-chevron-right"></i></a></div>
+    <div class="drawer-links"><a href="index.html" class="drawer-link">Home <i class="fa-solid fa-chevron-right"></i></a><a href="browse.html" class="drawer-link">Browse <i class="fa-solid fa-chevron-right"></i></a><a href="exchange.html" class="drawer-link">Exchange <i class="fa-solid fa-chevron-right"></i></a><a href="donate.html" class="drawer-link">Donate <i class="fa-solid fa-chevron-right"></i></a><a href="about.html" class="drawer-link">About <i class="fa-solid fa-chevron-right"></i></a><a href="contact.html" class="drawer-link">Contact <i class="fa-solid fa-chevron-right"></i></a></div>
     <div class="drawer-actions" id="mobileDrawerActions"><a href="login.html" class="btn btn-secondary btn-block">Login</a></div>
   </div>
 
@@ -53,8 +34,6 @@
         <div class="sidebar-section-title">My Account</div>
         <nav class="sidebar-nav">
           <a href="#" class="sidebar-link active" data-tab="overview"><i class="fa-solid fa-chart-pie"></i> Overview</a>
-          <a href="#" class="sidebar-link" data-tab="my-orders"><i class="fa-solid fa-cart-shopping"></i> My Orders</a>
-          <a href="#" class="sidebar-link" data-tab="my-sales"><i class="fa-solid fa-receipt"></i> My Sales & Payouts</a>
           <a href="#" class="sidebar-link" data-tab="my-books"><i class="fa-solid fa-book"></i> My Books</a>
           <a href="#" class="sidebar-link" data-tab="wishlist"><i class="fa-solid fa-heart"></i> Wishlist</a>
           <a href="#" class="sidebar-link" data-tab="messages" style="display:flex;align-items:center;gap:6px;"><i class="fa-solid fa-envelope"></i> Messages<span id="msgsBadge" class="badge-dot" style="display:none;">0</span></a>
@@ -107,79 +86,10 @@
           </div>
         </div>
 
-        <!-- MY ORDERS TAB -->
-        <div id="tab-my-orders" class="tab-content">
-          <h2>My Orders & Purchases</h2>
-          <p class="text-small" style="margin-bottom: 24px;">Track your campus handovers and verified online payments.</p>
-          <div id="dashOrdersContainer">
-            <div class="empty-state">
-              <div class="empty-state-icon">🛒</div>
-              <h3>No Orders Found</h3>
-              <p>When you purchase or reserve books on BookBridgee, your orders will appear here.</p>
-              <a href="browse.html" class="btn btn-primary btn-sm"><i class="fa-solid fa-search"></i> Browse Textbooks</a>
-            </div>
-          </div>
-        </div>
-
-        <!-- MY SALES & PAYOUTS TAB -->
-        <div id="tab-my-sales" class="tab-content">
-          <h2>My Sales & Payouts</h2>
-          <p class="text-small" style="margin-bottom: 20px;">Review your textbook sales, buyer details, and payout settlement status.</p>
-          
-          <div class="grid-3" style="margin-bottom: 24px;">
-            <div class="stat-card">
-              <div class="stat-icon" style="background:var(--color-success-light);color:var(--color-success);"><i class="fa-solid fa-indian-rupee-sign"></i></div>
-              <div class="stat-value" id="dashTotalEarnings">&#8377;0.00</div>
-              <div class="stat-label">Total Verified Earnings</div>
-            </div>
-            <div class="stat-card">
-              <div class="stat-icon" style="background:var(--color-warning-light);color:var(--color-warning);"><i class="fa-solid fa-clock-rotate-left"></i></div>
-              <div class="stat-value" id="dashPendingSettlement">&#8377;0.00</div>
-              <div class="stat-label">Pending Settlements</div>
-            </div>
-            <div class="stat-card">
-              <div class="stat-icon" style="background:var(--color-info-light);color:var(--color-info);"><i class="fa-solid fa-store"></i></div>
-              <div class="stat-value" id="dashRouteBadge" style="font-size: 15px; font-weight: 700; color: #475569;">Checking...</div>
-              <div class="stat-label">Marketplace Route Status</div>
-            </div>
-          </div>
-
-          <div id="dashSalesContainer" style="margin-bottom: 32px;">
-            <div class="empty-state">
-              <div class="empty-state-icon">📦</div>
-              <h3>No Sales Recorded Yet</h3>
-              <p>When students buy or request your listed books, their orders will appear here.</p>
-            </div>
-          </div>
-
-          <!-- Payout Preferences Card -->
-          <div class="card" style="padding: 24px; max-width: 600px;">
-            <h3 style="margin-bottom: 8px;"><i class="fa-solid fa-building-columns" style="color:var(--color-primary);"></i> Seller Payout Preferences</h3>
-            <p class="text-small" style="margin-bottom: 18px;">Configure your UPI or bank details for receiving student payouts.</p>
-            <form id="sellerPayoutPrefsForm">
-              <div class="form-group" style="margin-bottom: 14px;">
-                <input type="text" id="sellerPayoutUpi" class="form-input" placeholder=" ">
-                <label class="form-label">UPI ID (e.g. name@okhdfcbank / number@paytm)</label>
-              </div>
-              <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
-                <div class="form-group">
-                  <input type="text" id="sellerBankLast4" class="form-input" maxlength="4" placeholder=" ">
-                  <label class="form-label">Bank A/C Last 4 Digits</label>
-                </div>
-                <div class="form-group">
-                  <input type="text" id="sellerBankIfsc" class="form-input" placeholder=" ">
-                  <label class="form-label">IFSC Code (e.g. SBIN0001234)</label>
-                </div>
-              </div>
-              <button type="submit" class="btn btn-primary btn-sm"><i class="fa-solid fa-save"></i> Save Payout Preferences</button>
-            </form>
-          </div>
-        </div>
-
         <!-- MY BOOKS TAB -->
         <div id="tab-my-books" class="tab-content">
           <h2>My Books</h2>
-          <p class="text-small" style="margin-bottom: 24px;">Books you've listed on BookBridgee.</p>
+          <p class="text-small" style="margin-bottom: 24px;">Books you've listed on BookBridge.</p>
           <div class="grid-auto" id="dashMyBooksGrid">
             <div class="empty-state">
               <div class="empty-state-icon">📖</div>
@@ -245,18 +155,18 @@
       <div class="footer-grid">
         <div class="footer-brand">
           <div class="brand" style="margin-bottom: 4px;">
-            <div class="brand-icon"><img src="logo.png.jpeg" alt="BookBridgee Logo"></div>
+            <div class="brand-icon"><img src="logo.png.jpeg" alt="BookBridge Logo"></div>
             <div>
-              <div class="brand-name">BookBridgee</div>
+              <div class="brand-name">BookBridge</div>
               <div class="brand-tagline">Bridge Books. Build Minds.</div>
             </div>
           </div>
           <p>India's premier student platform for buying, selling, exchanging, and donating academic books across colleges.</p>
           <div class="footer-social">
-            <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" aria-label="Twitter"><i class="fa-brands fa-x-twitter"></i></a>
-            <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" aria-label="Instagram"><i class="fa-brands fa-instagram"></i></a>
-            <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn"><i class="fa-brands fa-linkedin-in"></i></a>
-            <a href="https://github.com" target="_blank" rel="noopener noreferrer" aria-label="GitHub"><i class="fa-brands fa-github"></i></a>
+            <a href="#" aria-label="Twitter"><i class="fa-brands fa-x-twitter"></i></a>
+            <a href="#" aria-label="Instagram"><i class="fa-brands fa-instagram"></i></a>
+            <a href="#" aria-label="LinkedIn"><i class="fa-brands fa-linkedin-in"></i></a>
+            <a href="#" aria-label="GitHub"><i class="fa-brands fa-github"></i></a>
           </div>
         </div>
 
@@ -285,7 +195,7 @@
       </div>
 
       <div class="footer-bottom">
-        <span>© 2026 BookBridgee — India's Student Book Sharing Platform. All rights reserved.</span>
+        <span>© 2026 BookBridge — India's Student Book Sharing Platform. All rights reserved.</span>
         <span>Built with ❤️ by RCTI Students</span>
       </div>
     </div>

@@ -1,7 +1,6 @@
 from django.urls import path
-from .views import StudentEngagementDashboardView, ActivityLogListView
+from .views import StudentEngagementDashboardView
 
 urlpatterns = [
-    path('dashboard/', StudentEngagementDashboardView.as_view(), name='engagement-dashboard'),
-    path('logs/', ActivityLogListView.as_view(), name='activity-logs'),
+    path('dashboard/', StudentEngagementDashboardView.as_view(), name='analytics-dashboard'),
 ]

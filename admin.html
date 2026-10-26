@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin Dashboard – BookBridgee</title>
+  <title>Admin Dashboard – BookBridge</title>
   <link rel="icon" href="logo.png.jpeg" type="image/jpeg">
   <link rel="apple-touch-icon" href="logo.png.jpeg">
-  <meta name="description" content="BookBridgee administration panel for managing books, users, academic structures, transactions, and platform analytics.">
+  <meta name="description" content="BookBridge administration panel for managing books, users, and platform analytics.">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
   <link rel="stylesheet" href="style.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -131,6 +131,20 @@
     .btn-toggle-password:hover {
       color: #ffffff;
     }
+    .admin-hint-badge {
+      background: rgba(99, 102, 241, 0.15);
+      border: 1px solid rgba(99, 102, 241, 0.3);
+      color: #a5b4fc;
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+    .admin-hint-badge code {
+      font-family: monospace;
+      font-weight: 700;
+      color: #ffffff;
+    }
     .admin-auth-alert {
       background: rgba(239, 68, 68, 0.15);
       border: 1px solid rgba(239, 68, 68, 0.3);
@@ -143,205 +157,6 @@
       align-items: center;
       gap: 10px;
     }
-
-    /* Admin specific badge enhancements */
-    .role-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      padding: 3px 8px;
-      border-radius: 6px;
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 0.02em;
-      text-transform: uppercase;
-    }
-    .role-super-admin { background: #4f46e5; color: #ffffff; }
-    .role-college-admin { background: #0284c7; color: #ffffff; }
-    .role-dept-admin { background: #0d9488; color: #ffffff; }
-    .role-admin { background: #6366f1; color: #ffffff; }
-    .role-faculty { background: #d97706; color: #ffffff; }
-    .role-student { background: #64748b; color: #ffffff; }
-
-    .status-pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 3px 8px;
-      border-radius: 12px;
-      font-size: 12px;
-      font-weight: 600;
-    }
-    .status-pill.active { background: #dcfce7; color: #166534; }
-    .status-pill.inactive { background: #fee2e2; color: #991b1b; }
-    .status-pill.pending { background: #fef3c7; color: #92400e; }
-    .status-pill.completed { background: #e0e7ff; color: #3730a3; }
-    .status-pill.approved { background: #dcfce7; color: #166534; }
-    .status-pill.rejected { background: #fee2e2; color: #991b1b; }
-    .status-pill.cancelled { background: #f1f5f9; color: #475569; }
-
-    /* Modern Table search & filter toolbar */
-    .admin-toolbar {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 12px;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 16px;
-      padding: 12px 16px;
-      background: var(--color-bg);
-      border-radius: 10px;
-      border: 1px solid var(--color-border);
-    }
-    .admin-toolbar-group {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      align-items: center;
-    }
-    .admin-search-box {
-      position: relative;
-      min-width: 240px;
-    }
-    .admin-search-box input {
-      width: 100%;
-      height: 38px;
-      padding: 0 12px 0 34px;
-      font-size: 13.5px;
-      border-radius: 8px;
-      border: 1px solid var(--color-border);
-      background: #ffffff;
-      outline: none;
-    }
-    .admin-search-box i {
-      position: absolute;
-      left: 11px;
-      top: 50%;
-      transform: translateY(-50%);
-      color: var(--color-gray);
-      font-size: 13px;
-    }
-    .admin-filter-select {
-      height: 38px;
-      padding: 0 12px;
-      font-size: 13px;
-      border-radius: 8px;
-      border: 1px solid var(--color-border);
-      background: #ffffff;
-      color: var(--color-text);
-      cursor: pointer;
-    }
-
-    /* Sub tabs for Academic section */
-    .sub-tabs {
-      display: flex;
-      gap: 8px;
-      border-bottom: 2px solid var(--color-border);
-      margin-bottom: 20px;
-      padding-bottom: 2px;
-    }
-    .sub-tab-btn {
-      background: none;
-      border: none;
-      padding: 8px 16px;
-      font-size: 14px;
-      font-weight: 600;
-      color: var(--color-gray);
-      cursor: pointer;
-      border-radius: 6px 6px 0 0;
-      transition: all 0.2s ease;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-    .sub-tab-btn:hover { color: var(--color-primary); background: var(--color-primary-light); }
-    .sub-tab-btn.active {
-      color: var(--color-primary);
-      border-bottom: 2px solid var(--color-primary);
-      margin-bottom: -4px;
-      background: var(--color-primary-light);
-    }
-    .sub-content-tab { display: none; }
-    .sub-content-tab.active { display: block; }
-
-    /* Admin Action Button Group */
-    .action-btn-group {
-      display: flex;
-      gap: 6px;
-      align-items: center;
-      justify-content: flex-end;
-    }
-    .action-btn {
-      width: 32px;
-      height: 32px;
-      border-radius: 6px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      border: 1px solid var(--color-border);
-      background: #ffffff;
-      color: var(--color-text);
-      cursor: pointer;
-      font-size: 13px;
-      transition: all 0.15s ease;
-    }
-    .action-btn:hover { background: var(--color-primary-light); color: var(--color-primary); border-color: var(--color-primary); }
-    .action-btn.danger:hover { background: #fee2e2; color: #dc2626; border-color: #f87171; }
-    .action-btn.success:hover { background: #dcfce7; color: #16a34a; border-color: #86efac; }
-
-    /* Refresh indicator and Last Updated */
-    .last-updated-tag {
-      font-size: 12px;
-      color: var(--color-gray);
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    /* System Health Metric Card */
-    .health-card {
-      background: #ffffff;
-      border: 1px solid var(--color-border);
-      border-radius: 12px;
-      padding: 20px;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-    .health-status-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 4px 10px;
-      border-radius: 20px;
-      font-size: 12px;
-      font-weight: 700;
-    }
-    .health-status-badge.healthy { background: #dcfce7; color: #15803d; }
-    .health-status-badge.degraded { background: #fee2e2; color: #b91c1c; }
-
-    /* Export Cards Grid */
-    .export-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-      gap: 16px;
-      margin-top: 16px;
-    }
-    .export-card {
-      background: #ffffff;
-      border: 1px solid var(--color-border);
-      border-radius: 12px;
-      padding: 20px;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      gap: 16px;
-      transition: transform 0.2s, box-shadow 0.2s;
-    }
-    .export-card:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 10px 25px -5px rgba(0,0,0,0.08);
-    }
   </style>
 </head>
 <body>
@@ -353,12 +168,12 @@
           <i class="fa-solid fa-user-shield"></i>
         </div>
         <h2>Admin Authentication</h2>
-        <p>BookBridgee Management Console Access Gate</p>
+        <p>BookBridge Management Console Access Gate</p>
       </div>
 
       <div id="adminAuthAlert" class="admin-auth-alert" style="display: none;">
         <i class="fa-solid fa-circle-exclamation"></i>
-        <span id="adminAuthAlertText">Incorrect credentials. Access denied.</span>
+        <span id="adminAuthAlertText">Incorrect password. Access denied.</span>
       </div>
 
       <form id="adminLoginForm">
@@ -366,7 +181,7 @@
           <label class="form-label" for="adminEmailInput" style="color: #cbd5e1;">Admin Email / Identifier</label>
           <div class="input-with-icon">
             <i class="fa-solid fa-envelope input-icon"></i>
-            <input type="text" id="adminEmailInput" class="form-input" placeholder="admin@bookbridge.edu or admin@rcti.ac.in" required>
+            <input type="email" id="adminEmailInput" class="form-input" value="admin@rcti.ac.in" placeholder="admin@rcti.ac.in" required>
           </div>
         </div>
 
@@ -386,6 +201,7 @@
             <input type="checkbox" id="adminRememberCheck" checked style="accent-color: #6366f1;">
             Keep Session Unlocked
           </label>
+          <span class="admin-hint-badge" title="Default passcode for testing"><i class="fa-solid fa-key"></i> Passcode: <code>admin123</code></span>
         </div>
 
         <button type="submit" id="btnAdminUnlock" class="btn btn-primary btn-block btn-lg" style="height: 48px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 10px; background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); border: none; border-radius: 10px; width: 100%; color: white; cursor: pointer;">
@@ -396,7 +212,7 @@
 
       <div style="margin-top: 24px; text-align: center; font-size: 13px;">
         <a href="index.html" style="color: #94a3b8; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
-          <i class="fa-solid fa-arrow-left"></i> Return to Main BookBridgee Site
+          <i class="fa-solid fa-arrow-left"></i> Return to Main BookBridge Site
         </a>
       </div>
     </div>
@@ -406,26 +222,23 @@
 
   <header class="navbar" id="navbar">
     <div class="navbar-inner">
-      <a href="index.html" class="brand"><div class="brand-icon"><img src="logo.png.jpeg" alt="BookBridgee Logo"></div><div><div class="brand-name">BookBridgee Admin</div><div class="brand-tagline">Management Console</div></div></a>
+      <a href="index.html" class="brand"><div class="brand-icon"><img src="logo.png.jpeg" alt="BookBridge Logo"></div><div><div class="brand-name">BookBridge Admin</div><div class="brand-tagline">Management Console</div></div></a>
       <nav class="nav-links">
         <a href="index.html" class="nav-link">View Site</a>
         <a href="browse.html" class="nav-link">Catalog</a>
-        <a href="admin.html" class="nav-link active">Admin Console</a>
+        <a href="admin.html" class="nav-link active">Dashboard</a>
       </nav>
       <div class="nav-actions" id="adminNavActions">
-        <span id="adminUserPill">
-          <i class="fa-solid fa-user-shield"></i> <span id="adminNavName">Admin</span>
-        </span>
-        <button id="btnGlobalRefresh" class="btn btn-secondary btn-sm" title="Refresh All Data"><i class="fa-solid fa-rotate"></i> Refresh</button>
-        <button id="btnAdminLock" class="btn btn-secondary btn-sm" title="Lock Admin Dashboard"><i class="fa-solid fa-lock"></i> Lock</button>
+        <span style="font-size: 13px; font-weight: 600; color: var(--color-primary);">Admin Panel</span>
+        <button id="btnAdminLock" class="btn btn-secondary btn-sm" style="margin-left:8px;" title="Lock Admin Dashboard"><i class="fa-solid fa-lock"></i> Lock</button>
         <button id="btnAdminLogout" class="btn btn-ghost btn-sm">Logout</button>
       </div>
       <button class="mobile-toggle" id="mobileMenuToggle"><i class="fa-solid fa-bars"></i></button>
     </div>
   </header>
   <div class="mobile-drawer" id="mobileNavDrawer">
-    <div class="drawer-links"><a href="index.html" class="drawer-link">View Site <i class="fa-solid fa-chevron-right"></i></a><a href="browse.html" class="drawer-link">Catalog <i class="fa-solid fa-chevron-right"></i></a><a href="admin.html" class="drawer-link active">Admin Console <i class="fa-solid fa-chevron-right"></i></a></div>
-    <div class="drawer-actions" id="mobileDrawerActions"><button id="btnMobileAdminLogout" class="btn btn-secondary btn-block">Logout Admin</button></div>
+    <div class="drawer-links"><a href="index.html" class="drawer-link">View Site <i class="fa-solid fa-chevron-right"></i></a><a href="browse.html" class="drawer-link">Catalog <i class="fa-solid fa-chevron-right"></i></a><a href="admin.html" class="drawer-link active">Dashboard <i class="fa-solid fa-chevron-right"></i></a></div>
+    <div class="drawer-actions" id="mobileDrawerActions"><a href="index.html" class="btn btn-secondary btn-block">Logout Admin</a></div>
   </div>
 
   <main id="main-content">
@@ -434,891 +247,192 @@
       <aside class="sidebar">
         <div class="sidebar-section-title">Overview</div>
         <nav class="sidebar-nav">
-          <a href="#" class="sidebar-link active" data-admin-tab="dashboard"><i class="fa-solid fa-gauge"></i> Dashboard</a>
-          <a href="#" class="sidebar-link" data-admin-tab="analytics"><i class="fa-solid fa-chart-line"></i> Analytics</a>
+          <a href="#" class="sidebar-link active" data-admin-section="analytics"><i class="fa-solid fa-chart-line"></i> Analytics</a>
+          <a href="#" class="sidebar-link" data-admin-section="books"><i class="fa-solid fa-book"></i> Books</a>
+          <a href="#" class="sidebar-link" data-admin-section="users"><i class="fa-solid fa-users"></i> Users</a>
         </nav>
-
-        <div class="sidebar-section-title">Users & Catalog</div>
+        <div class="sidebar-section-title">Management</div>
         <nav class="sidebar-nav">
-          <a href="#" class="sidebar-link" data-admin-tab="users"><i class="fa-solid fa-users"></i> Users</a>
-          <a href="#" class="sidebar-link" data-admin-tab="books"><i class="fa-solid fa-book"></i> Books & Listings</a>
-          <a href="#" class="sidebar-link" data-admin-tab="marketplace"><i class="fa-solid fa-store"></i> Marketplace</a>
+          <a href="browse.html" class="sidebar-link"><i class="fa-solid fa-magnifying-glass"></i> Browse Catalog</a>
+          <a href="exchange.html" class="sidebar-link"><i class="fa-solid fa-arrows-rotate"></i> Exchange</a>
         </nav>
-
-        <div class="sidebar-section-title">Transactions</div>
+        <div class="sidebar-section-title">Quick</div>
         <nav class="sidebar-nav">
-          <a href="#" class="sidebar-link" data-admin-tab="payments"><i class="fa-solid fa-credit-card"></i> Payments & Orders</a>
-          <a href="#" class="sidebar-link" data-admin-tab="exchanges"><i class="fa-solid fa-arrows-rotate"></i> Exchanges</a>
-          <a href="#" class="sidebar-link" data-admin-tab="donations"><i class="fa-solid fa-gift"></i> Donations</a>
-        </nav>
-
-        <div class="sidebar-section-title">Academic Structure</div>
-        <nav class="sidebar-nav">
-          <a href="#" class="sidebar-link" data-admin-tab="academic"><i class="fa-solid fa-building-columns"></i> Colleges & Depts</a>
-        </nav>
-
-        <div class="sidebar-section-title">Governance & Tools</div>
-        <nav class="sidebar-nav">
-          <a href="#" class="sidebar-link" data-admin-tab="audit-logs"><i class="fa-solid fa-clock-rotate-left"></i> Audit Logs</a>
-          <a href="#" class="sidebar-link" data-admin-tab="notifications"><i class="fa-solid fa-bullhorn"></i> Notifications</a>
-          <a href="#" class="sidebar-link" data-admin-tab="reports"><i class="fa-solid fa-file-csv"></i> Reports & Export</a>
-          <a href="#" class="sidebar-link" data-admin-tab="system-health"><i class="fa-solid fa-server"></i> System Health</a>
-          <a href="#" class="sidebar-link" data-admin-tab="admin-profile"><i class="fa-solid fa-id-badge"></i> Admin Profile</a>
-        </nav>
-
-        <div class="sidebar-section-title">Quick Actions</div>
-        <nav class="sidebar-nav">
-          <a href="index.html" class="sidebar-link"><i class="fa-solid fa-house"></i> View Main Site</a>
-          <a href="#" class="sidebar-link" id="adminSidebarLogout"><i class="fa-solid fa-right-from-bracket"></i> Lock & Exit</a>
+          <a href="index.html" class="sidebar-link"><i class="fa-solid fa-house"></i> View Site</a>
+          <a href="login.html" class="sidebar-link" id="adminSidebarLogout"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
         </nav>
       </aside>
 
       <!-- DASHBOARD CONTENT -->
       <div class="dashboard-content">
+        <div style="margin-bottom: 32px;">
+          <h2>Dashboard Overview</h2>
+          <p class="text-small">Manage GTU textbooks, student accounts, and platform resources.</p>
+        </div>
 
-        <!-- ══════════════════════════════════════════════════════════════════
-             1. TAB: DASHBOARD / OVERVIEW
-             ══════════════════════════════════════════════════════════════════ -->
-        <div id="adminTab-dashboard" class="admin-content-tab active">
-          <div class="flex-between" style="margin-bottom: 24px; flex-wrap: wrap; gap: 12px;">
-            <div>
-              <h2>Platform Overview</h2>
-              <p class="text-small">Live statistics, database activity, and GTU textbook metrics.</p>
-            </div>
-            <div style="display:flex; align-items:center; gap: 12px;">
-              <span class="last-updated-tag"><i class="fa-solid fa-clock"></i> <span id="dashLastUpdated">Updating...</span></span>
-              <button class="btn btn-secondary btn-sm" id="btnRefreshDashboard"><i class="fa-solid fa-rotate"></i> Refresh</button>
-            </div>
+        <!-- STATS GRID -->
+        <div class="grid-4" style="margin-bottom: 32px;">
+          <div class="stat-card">
+            <div class="stat-icon" style="background:var(--color-primary-light);color:var(--color-primary);"><i class="fa-solid fa-users"></i></div>
+            <div class="stat-value" id="adminStatUsers" data-count="0">0</div>
+            <div class="stat-label">Enrolled Students</div>
           </div>
-
-          <!-- PRIMARY KPI STATS GRID (8 Cards) -->
-          <div class="grid-4" style="margin-bottom: 24px;">
-            <div class="stat-card">
-              <div class="stat-icon" style="background:var(--color-primary-light);color:var(--color-primary);"><i class="fa-solid fa-users"></i></div>
-              <div class="stat-value" id="dashStatUsers" data-count="0">0</div>
-              <div class="stat-label">Total Users (<span id="dashStatActiveUsers">0</span> Active)</div>
-            </div>
-            <div class="stat-card">
-              <div class="stat-icon" style="background:var(--color-secondary-light);color:var(--color-secondary);"><i class="fa-solid fa-book"></i></div>
-              <div class="stat-value" id="dashStatBooks" data-count="0">0</div>
-              <div class="stat-label">Total Books (<span id="dashStatAvailBooks">0</span> Available)</div>
-            </div>
-            <div class="stat-card">
-              <div class="stat-icon" style="background:var(--color-info-light);color:var(--color-info);"><i class="fa-solid fa-arrows-rotate"></i></div>
-              <div class="stat-value" id="dashStatSwaps" data-count="0">0</div>
-              <div class="stat-label">Pending Swaps (<span id="dashStatCompSwaps">0</span> Done)</div>
-            </div>
-            <div class="stat-card">
-              <div class="stat-icon" style="background:var(--color-success-light);color:var(--color-success);"><i class="fa-solid fa-gift"></i></div>
-              <div class="stat-value" id="dashStatDonations" data-count="0">0</div>
-              <div class="stat-label">Donation Claims (<span id="dashStatApprDonations">0</span> Given)</div>
-            </div>
+          <div class="stat-card">
+            <div class="stat-icon" style="background:var(--color-secondary-light);color:var(--color-secondary);"><i class="fa-solid fa-book"></i></div>
+            <div class="stat-value" id="adminStatBooks" data-count="0">0</div>
+            <div class="stat-label">Total Listings</div>
           </div>
-
-          <!-- SECONDARY KPI ROW -->
-          <div class="grid-3" style="margin-bottom: 32px;">
-            <div class="stat-card" style="padding: 16px 20px;">
-              <div style="display:flex;align-items:center;gap:12px;">
-                <div class="stat-icon" style="background:#e0f2fe;color:#0284c7;width:42px;height:42px;font-size:18px;"><i class="fa-solid fa-building-columns"></i></div>
-                <div>
-                  <div style="font-size:20px;font-weight:700;" id="dashStatColleges">0</div>
-                  <div style="font-size:12px;color:var(--color-gray);">Affiliated Colleges</div>
-                </div>
-              </div>
-            </div>
-            <div class="stat-card" style="padding: 16px 20px;">
-              <div style="display:flex;align-items:center;gap:12px;">
-                <div class="stat-icon" style="background:#fef3c7;color:#d97706;width:42px;height:42px;font-size:18px;"><i class="fa-solid fa-graduation-cap"></i></div>
-                <div>
-                  <div style="font-size:20px;font-weight:700;" id="dashStatDepartments">0</div>
-                  <div style="font-size:12px;color:var(--color-gray);">Academic Departments</div>
-                </div>
-              </div>
-            </div>
-            <div class="stat-card" style="padding: 16px 20px;">
-              <div style="display:flex;align-items:center;gap:12px;">
-                <div class="stat-icon" style="background:#f3e8ff;color:#9333ea;width:42px;height:42px;font-size:18px;"><i class="fa-solid fa-layer-group"></i></div>
-                <div>
-                  <div style="font-size:20px;font-weight:700;" id="dashStatCourses">0</div>
-                  <div style="font-size:12px;color:var(--color-gray);">Curriculum Courses</div>
-                </div>
-              </div>
-            </div>
+          <div class="stat-card">
+            <div class="stat-icon" style="background:var(--color-info-light);color:var(--color-info);"><i class="fa-solid fa-arrows-rotate"></i></div>
+            <div class="stat-value" id="adminStatSwaps" data-count="0">0</div>
+            <div class="stat-label">Active Swaps</div>
           </div>
-
-          <!-- CHARTS GRID -->
-          <div class="charts-grid" style="margin-bottom: 32px;">
-            <div class="chart-card">
-              <h4><i class="fa-solid fa-chart-pie" style="color:var(--color-primary);"></i> Department Catalog Distribution</h4>
-              <div style="position:relative; height:240px;"><canvas id="dashBranchChartCanvas"></canvas></div>
-            </div>
-            <div class="chart-card">
-              <h4><i class="fa-solid fa-chart-column" style="color:var(--color-info);"></i> Listing Mode Breakdown</h4>
-              <div style="position:relative; height:240px;"><canvas id="dashTypeChartCanvas"></canvas></div>
-            </div>
-          </div>
-
-          <!-- RECENT TABLES GRID -->
-          <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 24px;">
-            <!-- Recent Activity -->
-            <div class="card" style="padding: 20px;">
-              <div class="flex-between" style="margin-bottom: 14px;">
-                <h3 style="font-size: 16px;"><i class="fa-solid fa-bolt" style="color:var(--color-warning);"></i> Recent Platform Activity</h3>
-                <button class="btn btn-ghost btn-sm" onclick="switchAdminTab('audit-logs')">View All</button>
-              </div>
-              <div class="data-table-wrap">
-                <table class="data-table" style="font-size: 12.5px;">
-                  <thead>
-                    <tr><th>Action</th><th>Details</th><th>Time</th></tr>
-                  </thead>
-                  <tbody id="dashRecentActivityBody">
-                    <tr><td colspan="3" style="text-align:center;padding:16px;color:var(--color-gray);">Loading activity...</td></tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            <!-- Recent Registrations -->
-            <div class="card" style="padding: 20px;">
-              <div class="flex-between" style="margin-bottom: 14px;">
-                <h3 style="font-size: 16px;"><i class="fa-solid fa-user-plus" style="color:var(--color-primary);"></i> Recent Student Registrations</h3>
-                <button class="btn btn-ghost btn-sm" onclick="switchAdminTab('users')">Manage Users</button>
-              </div>
-              <div class="data-table-wrap">
-                <table class="data-table" style="font-size: 12.5px;">
-                  <thead>
-                    <tr><th>Student</th><th>Role</th><th>Status</th><th>Joined</th></tr>
-                  </thead>
-                  <tbody id="dashRecentUsersBody">
-                    <tr><td colspan="4" style="text-align:center;padding:16px;color:var(--color-gray);">Loading users...</td></tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
+          <div class="stat-card">
+            <div class="stat-icon" style="background:var(--color-success-light);color:var(--color-success);"><i class="fa-solid fa-gift"></i></div>
+            <div class="stat-value" id="adminStatDonations" data-count="0">0</div>
+            <div class="stat-label">Free Donations</div>
           </div>
         </div>
 
-        <!-- ══════════════════════════════════════════════════════════════════
-             2. TAB: USERS MANAGEMENT
-             ══════════════════════════════════════════════════════════════════ -->
-        <div id="adminTab-users" class="admin-content-tab">
+        <!-- CHARTS GRID -->
+        <div class="charts-grid">
+          <div class="chart-card">
+            <h4><i class="fa-solid fa-chart-pie" style="color:var(--color-primary);"></i> Department Distribution</h4>
+            <canvas id="branchChartCanvas" height="180"></canvas>
+          </div>
+          <div class="chart-card">
+            <h4><i class="fa-solid fa-chart-column" style="color:var(--color-info);"></i> Listing Type Breakdown</h4>
+            <canvas id="typeChartCanvas" height="180"></canvas>
+          </div>
+        </div>
+
+        <!-- ADMIN TABS -->
+        <div class="admin-tabs">
+          <button class="admin-tab-btn active" data-admin-tab="books"><i class="fa-solid fa-book"></i> Books</button>
+          <button class="admin-tab-btn" data-admin-tab="users"><i class="fa-solid fa-users"></i> Users</button>
+        </div>
+
+        <!-- BOOKS TAB -->
+        <div id="adminTab-books" class="admin-content-tab active">
           <div class="card" style="padding: 24px;">
-            <div class="flex-between" style="margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
-              <div>
-                <h2>User & Student Management</h2>
-                <p class="text-small">Inspect profiles, manage verification, toggle account status, and assign administrative roles.</p>
-              </div>
+            <div class="flex-between" style="margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
+              <h3>Resource Catalog</h3>
               <div style="display:flex;gap:8px;">
-                <button class="btn btn-secondary btn-sm" onclick="exportCsv('users')"><i class="fa-solid fa-file-csv"></i> Export Users</button>
-                <button class="btn btn-primary btn-sm" id="btnRefreshUsers"><i class="fa-solid fa-rotate"></i> Refresh</button>
+                <button id="btnExportCsv" class="btn btn-secondary btn-sm"><i class="fa-solid fa-file-csv"></i> Export CSV</button>
+                <button id="btnAdminAddBook" class="btn btn-primary btn-sm"><i class="fa-solid fa-plus"></i> Add Book</button>
               </div>
             </div>
-
-            <!-- User Filter Toolbar -->
-            <div class="admin-toolbar">
-              <div class="admin-toolbar-group">
-                <div class="admin-search-box">
-                  <i class="fa-solid fa-magnifying-glass"></i>
-                  <input type="text" id="userSearchInput" placeholder="Search by name, email, enrollment...">
-                </div>
-                <select id="userRoleFilter" class="admin-filter-select">
-                  <option value="">All Roles</option>
-                  <option value="STUDENT">Student</option>
-                  <option value="FACULTY">Faculty</option>
-                  <option value="DEPT_ADMIN">Department Admin</option>
-                  <option value="COLLEGE_ADMIN">College Admin</option>
-                  <option value="SUPER_ADMIN">Super Admin</option>
-                </select>
-                <select id="userStatusFilter" class="admin-filter-select">
-                  <option value="">All Statuses</option>
-                  <option value="active">Active Only</option>
-                  <option value="inactive">Inactive Only</option>
-                </select>
-              </div>
-              <span class="badge badge-primary" id="usersResultCount">0 Users</span>
+            <div class="table-search-bar">
+              <input type="text" id="adminBookSearch" placeholder="Search books by title, author, code...">
             </div>
-
             <div class="data-table-wrap">
               <table class="data-table">
                 <thead>
                   <tr>
-                    <th>User</th>
-                    <th>Email</th>
-                    <th>College / Department</th>
-                    <th>Role</th>
-                    <th>Status</th>
-                    <th>Joined</th>
-                    <th style="text-align: right;">Actions</th>
-                  </tr>
-                </thead>
-                <tbody id="adminUsersTableBody">
-                  <tr><td colspan="7" style="text-align:center;padding:24px;color:var(--color-gray);">Loading registered users...</td></tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-
-        <!-- ══════════════════════════════════════════════════════════════════
-             3. TAB: BOOKS & LISTINGS MANAGEMENT
-             ══════════════════════════════════════════════════════════════════ -->
-        <div id="adminTab-books" class="admin-content-tab">
-          <div class="card" style="padding: 24px;">
-            <div class="flex-between" style="margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
-              <div>
-                <h2>Resource Catalog & Book Management</h2>
-                <p class="text-small">Review, approve, update, or remove academic textbooks and study materials.</p>
-              </div>
-              <div style="display:flex;gap:8px;">
-                <button class="btn btn-secondary btn-sm" onclick="exportCsv('books')"><i class="fa-solid fa-file-csv"></i> Export Books</button>
-                <button class="btn btn-primary btn-sm" id="btnAdminAddBook"><i class="fa-solid fa-plus"></i> Add Book</button>
-              </div>
-            </div>
-
-            <!-- Book Filter Toolbar -->
-            <div class="admin-toolbar">
-              <div class="admin-toolbar-group">
-                <div class="admin-search-box">
-                  <i class="fa-solid fa-magnifying-glass"></i>
-                  <input type="text" id="bookSearchInput" placeholder="Search by title, author, GTU code...">
-                </div>
-                <select id="bookBranchFilter" class="admin-filter-select">
-                  <option value="">All Departments</option>
-                  <option value="CE">CE — Computer</option>
-                  <option value="IT">IT — Information Tech</option>
-                  <option value="EE">EE — Electrical</option>
-                  <option value="ME">ME — Mechanical</option>
-                  <option value="Civil">Civil</option>
-                  <option value="IC">IC</option>
-                </select>
-                <select id="bookModeFilter" class="admin-filter-select">
-                  <option value="">All Modes</option>
-                  <option value="sell">Sell</option>
-                  <option value="exchange">Exchange</option>
-                  <option value="donate">Donate</option>
-                </select>
-                <select id="bookStatusFilter" class="admin-filter-select">
-                  <option value="">All Statuses</option>
-                  <option value="Available">Available</option>
-                  <option value="Sold">Sold</option>
-                  <option value="Exchanged">Exchanged</option>
-                  <option value="Donated">Donated</option>
-                </select>
-              </div>
-              <span class="badge badge-primary" id="booksResultCount">0 Books</span>
-            </div>
-
-            <div class="data-table-wrap">
-              <table class="data-table">
-                <thead>
-                  <tr>
-                    <th>GTU / Code</th>
-                    <th>Book Title & Author</th>
-                    <th>Branch / Sem</th>
-                    <th>Mode</th>
+                    <th>GTU Code</th>
+                    <th>Book Title</th>
+                    <th>Department</th>
                     <th>Price</th>
                     <th>Status</th>
                     <th style="text-align: right;">Actions</th>
                   </tr>
                 </thead>
                 <tbody id="adminBooksTableBody">
-                  <tr><td colspan="7" style="text-align:center;padding:24px;color:var(--color-gray);">Loading catalog...</td></tr>
+                  <!-- Dynamically populated -->
                 </tbody>
               </table>
             </div>
           </div>
         </div>
 
-        <!-- ══════════════════════════════════════════════════════════════════
-             4. TAB: MARKETPLACE MANAGEMENT
-             ══════════════════════════════════════════════════════════════════ -->
-        <div id="adminTab-marketplace" class="admin-content-tab">
+        <!-- USERS TAB -->
+        <div id="adminTab-users" class="admin-content-tab">
           <div class="card" style="padding: 24px;">
-            <div class="flex-between" style="margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
-              <div>
-                <h2>Marketplace Listings & Escrow</h2>
-                <p class="text-small">Live marketplace inventory, seller listings, and condition oversight.</p>
-              </div>
-              <button class="btn btn-primary btn-sm" id="btnRefreshMarketplace"><i class="fa-solid fa-rotate"></i> Refresh</button>
+            <div class="flex-between" style="margin-bottom: 16px;">
+              <h3>Registered Students</h3>
+              <span class="badge badge-primary" id="adminUserCount">Loading...</span>
             </div>
-
-            <div class="data-table-wrap">
+            <div class="admin-user-table-wrap">
               <table class="data-table">
                 <thead>
                   <tr>
-                    <th>Listing ID</th>
-                    <th>Resource Title</th>
-                    <th>Seller</th>
-                    <th>Type</th>
-                    <th>Condition</th>
-                    <th>Price</th>
-                    <th>Status</th>
-                    <th style="text-align: right;">Actions</th>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Dept</th>
+                    <th>Role</th>
+                    <th>Enrollment</th>
+                    <th style="text-align:right;">Actions</th>
                   </tr>
                 </thead>
-                <tbody id="adminMarketplaceTableBody">
-                  <tr><td colspan="8" style="text-align:center;padding:24px;color:var(--color-gray);">Loading marketplace listings...</td></tr>
+                <tbody id="adminUsersTableBody">
+                  <tr><td colspan="6" style="text-align:center;color:var(--color-gray);padding:24px;">Click Users tab to load...</td></tr>
                 </tbody>
               </table>
             </div>
           </div>
         </div>
-
-        <!-- ══════════════════════════════════════════════════════════════════
-             5. TAB: EXCHANGES MANAGEMENT
-             ══════════════════════════════════════════════════════════════════ -->
-        <div id="adminTab-exchanges" class="admin-content-tab">
-          <div class="card" style="padding: 24px;">
-            <div class="flex-between" style="margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
-              <div>
-                <h2>Exchange & Swap Administration</h2>
-                <p class="text-small">Manage student book swap proposals, trade status, and fulfillment.</p>
-              </div>
-              <div style="display:flex;gap:8px;">
-                <button class="btn btn-secondary btn-sm" onclick="exportCsv('exchanges')"><i class="fa-solid fa-file-csv"></i> Export Swaps</button>
-                <button class="btn btn-primary btn-sm" id="btnRefreshExchanges"><i class="fa-solid fa-rotate"></i> Refresh</button>
-              </div>
-            </div>
-
-            <div class="data-table-wrap">
-              <table class="data-table">
-                <thead>
-                  <tr>
-                    <th>Proposal ID</th>
-                    <th>Target Book</th>
-                    <th>Proposer</th>
-                    <th>Book Owner</th>
-                    <th>Offered Book</th>
-                    <th>Status</th>
-                    <th>Created</th>
-                    <th style="text-align: right;">Actions</th>
-                  </tr>
-                </thead>
-                <tbody id="adminExchangesTableBody">
-                  <tr><td colspan="8" style="text-align:center;padding:24px;color:var(--color-gray);">Loading exchanges...</td></tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-
-        <!-- ══════════════════════════════════════════════════════════════════
-             PAYMENTS & ORDERS AUDIT TAB
-             ══════════════════════════════════════════════════════════════════ -->
-        <div id="adminTab-payments" class="admin-content-tab">
-          <div class="flex-between" style="margin-bottom: 24px; flex-wrap: wrap; gap: 12px;">
-            <div>
-              <h2>Platform Payments & Order Settlement</h2>
-              <p class="text-small">Live marketplace transactions, verified gateway charges, platform fees, and seller settlement status.</p>
-            </div>
-            <button class="btn btn-secondary btn-sm" id="btnRefreshPayments"><i class="fa-solid fa-rotate"></i> Refresh</button>
-          </div>
-
-          <!-- Financial KPIs -->
-          <div class="grid-4" style="margin-bottom: 24px;">
-            <div class="stat-card">
-              <div class="stat-icon" style="background:var(--color-primary-light);color:var(--color-primary);"><i class="fa-solid fa-indian-rupee-sign"></i></div>
-              <div class="stat-value" id="adminTotalVolume">&#8377;0.00</div>
-              <div class="stat-label">Total Verified Volume</div>
-            </div>
-            <div class="stat-card">
-              <div class="stat-icon" style="background:var(--color-success-light);color:var(--color-success);"><i class="fa-solid fa-building-columns"></i></div>
-              <div class="stat-value" id="adminPlatformRevenue">&#8377;0.00</div>
-              <div class="stat-label">Platform Service Revenue</div>
-            </div>
-            <div class="stat-card">
-              <div class="stat-icon" style="background:var(--color-info-light);color:var(--color-info);"><i class="fa-solid fa-wallet"></i></div>
-              <div class="stat-value" id="adminSellerPayouts">&#8377;0.00</div>
-              <div class="stat-label">Student Seller Payouts</div>
-            </div>
-            <div class="stat-card">
-              <div class="stat-icon" style="background:var(--color-warning-light);color:var(--color-warning);"><i class="fa-solid fa-store"></i></div>
-              <div class="stat-value" id="adminRouteStatus" style="font-size:15px; font-weight:700;">Disabled</div>
-              <div class="stat-label">Razorpay Route Status</div>
-            </div>
-          </div>
-
-          <!-- Orders Table Card -->
-          <div class="card" style="padding: 24px;">
-            <div class="flex-between" style="margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
-              <h3 style="margin: 0;"><i class="fa-solid fa-list-check" style="color:var(--color-primary);"></i> Transaction Ledger</h3>
-              <div style="display:flex; gap: 10px;">
-                <select id="adminPayStatusFilter" class="form-select" style="padding: 6px 12px; font-size: 13px; height: 36px;">
-                  <option value="">All Payment Statuses</option>
-                  <option value="PAID">PAID</option>
-                  <option value="PENDING">PENDING</option>
-                  <option value="FAILED">FAILED</option>
-                  <option value="CANCELLED">CANCELLED</option>
-                </select>
-                <select id="adminPayMethodFilter" class="form-select" style="padding: 6px 12px; font-size: 13px; height: 36px;">
-                  <option value="">All Gateways</option>
-                  <option value="ONLINE_RAZORPAY">Razorpay Online</option>
-                  <option value="CAMPUS_DEAL">Campus Direct Handover</option>
-                </select>
-              </div>
-            </div>
-
-            <div class="data-table-wrap">
-              <table class="data-table" id="adminPaymentsTable">
-                <thead>
-                  <tr>
-                    <th>Order #</th>
-                    <th>Book</th>
-                    <th>Buyer</th>
-                    <th>Seller</th>
-                    <th>Total</th>
-                    <th>Fee</th>
-                    <th>Seller Net</th>
-                    <th>Method</th>
-                    <th>Payment</th>
-                    <th>Settlement Status</th>
-                    <th>Gateway ID</th>
-                    <th>Date</th>
-                  </tr>
-                </thead>
-                <tbody id="adminPaymentsTableBody">
-                  <tr><td colspan="12" style="text-align:center;padding:24px;color:var(--color-gray);">Loading orders...</td></tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-
-        <!-- ══════════════════════════════════════════════════════════════════
-             6. TAB: DONATIONS MANAGEMENT
-             ══════════════════════════════════════════════════════════════════ -->
-        <div id="adminTab-donations" class="admin-content-tab">
-          <div class="card" style="padding: 24px;">
-            <div class="flex-between" style="margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
-              <div>
-                <h2>Donation Claims & Handover Administration</h2>
-                <p class="text-small">Oversee free student-to-student donations and community handouts.</p>
-              </div>
-              <div style="display:flex;gap:8px;">
-                <button class="btn btn-secondary btn-sm" onclick="exportCsv('donations')"><i class="fa-solid fa-file-csv"></i> Export Donations</button>
-                <button class="btn btn-primary btn-sm" id="btnRefreshDonations"><i class="fa-solid fa-rotate"></i> Refresh</button>
-              </div>
-            </div>
-
-            <div class="data-table-wrap">
-              <table class="data-table">
-                <thead>
-                  <tr>
-                    <th>Claim ID</th>
-                    <th>Donated Book</th>
-                    <th>Donor</th>
-                    <th>Claimer</th>
-                    <th>Message Snippet</th>
-                    <th>Status</th>
-                    <th>Date</th>
-                    <th style="text-align: right;">Actions</th>
-                  </tr>
-                </thead>
-                <tbody id="adminDonationsTableBody">
-                  <tr><td colspan="8" style="text-align:center;padding:24px;color:var(--color-gray);">Loading donation claims...</td></tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-
-        <!-- ══════════════════════════════════════════════════════════════════
-             7. TAB: ACADEMIC STRUCTURE (Colleges / Depts / Courses)
-             ══════════════════════════════════════════════════════════════════ -->
-        <div id="adminTab-academic" class="admin-content-tab">
-          <div class="card" style="padding: 24px;">
-            <div class="flex-between" style="margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
-              <div>
-                <h2>Academic Architecture</h2>
-                <p class="text-small">Manage affiliated colleges, academic departments, and GTU curriculum courses.</p>
-              </div>
-              <div style="display:flex;gap:8px;">
-                <button class="btn btn-secondary btn-sm" onclick="exportCsv('colleges')"><i class="fa-solid fa-file-csv"></i> Export Structure</button>
-              </div>
-            </div>
-
-            <!-- Sub Tabs -->
-            <div class="sub-tabs">
-              <button class="sub-tab-btn active" data-sub-tab="colleges"><i class="fa-solid fa-building-columns"></i> Colleges</button>
-              <button class="sub-tab-btn" data-sub-tab="departments"><i class="fa-solid fa-graduation-cap"></i> Departments</button>
-              <button class="sub-tab-btn" data-sub-tab="courses"><i class="fa-solid fa-layer-group"></i> Courses & Subjects</button>
-            </div>
-
-            <!-- Colleges Sub-View -->
-            <div id="subTab-colleges" class="sub-content-tab active">
-              <div class="flex-between" style="margin-bottom: 14px;">
-                <h3>Affiliated Colleges</h3>
-                <button class="btn btn-primary btn-sm" id="btnAddCollege"><i class="fa-solid fa-plus"></i> Add College</button>
-              </div>
-              <div class="data-table-wrap">
-                <table class="data-table">
-                  <thead>
-                    <tr><th>Code</th><th>College Name</th><th>City</th><th>State</th><th>Status</th><th style="text-align:right;">Actions</th></tr>
-                  </thead>
-                  <tbody id="academicCollegesBody">
-                    <tr><td colspan="6" style="text-align:center;padding:20px;color:var(--color-gray);">Loading colleges...</td></tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            <!-- Departments Sub-View -->
-            <div id="subTab-departments" class="sub-content-tab">
-              <div class="flex-between" style="margin-bottom: 14px;">
-                <h3>Academic Departments</h3>
-                <button class="btn btn-primary btn-sm" id="btnAddDepartment"><i class="fa-solid fa-plus"></i> Add Department</button>
-              </div>
-              <div class="data-table-wrap">
-                <table class="data-table">
-                  <thead>
-                    <tr><th>Code</th><th>Department Name</th><th>College</th><th style="text-align:right;">Actions</th></tr>
-                  </thead>
-                  <tbody id="academicDepartmentsBody">
-                    <tr><td colspan="4" style="text-align:center;padding:20px;color:var(--color-gray);">Loading departments...</td></tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            <!-- Courses Sub-View -->
-            <div id="subTab-courses" class="sub-content-tab">
-              <div class="flex-between" style="margin-bottom: 14px;">
-                <h3>Curriculum Courses</h3>
-                <button class="btn btn-primary btn-sm" id="btnAddCourse"><i class="fa-solid fa-plus"></i> Add Course</button>
-              </div>
-              <div class="data-table-wrap">
-                <table class="data-table">
-                  <thead>
-                    <tr><th>Course Code</th><th>Course Title</th><th>Department</th><th>Semester</th><th style="text-align:right;">Actions</th></tr>
-                  </thead>
-                  <tbody id="academicCoursesBody">
-                    <tr><td colspan="5" style="text-align:center;padding:20px;color:var(--color-gray);">Loading courses...</td></tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-          </div>
-        </div>
-
-        <!-- ══════════════════════════════════════════════════════════════════
-             8. TAB: ANALYTICS & BUSINESS INTELLIGENCE
-             ══════════════════════════════════════════════════════════════════ -->
-        <div id="adminTab-analytics" class="admin-content-tab">
-          <div class="card" style="padding: 24px;">
-            <div class="flex-between" style="margin-bottom: 24px;">
-              <div>
-                <h2>Platform Analytics & Intelligence</h2>
-                <p class="text-small">Real-time telemetry, student growth curves, and transaction metrics.</p>
-              </div>
-              <button class="btn btn-primary btn-sm" id="btnRefreshAnalytics"><i class="fa-solid fa-rotate"></i> Refresh Telemetry</button>
-            </div>
-
-            <!-- Analytics Charts Grid -->
-            <div class="charts-grid" style="margin-bottom: 24px;">
-              <div class="chart-card">
-                <h4><i class="fa-solid fa-arrow-trend-up" style="color:var(--color-primary);"></i> Monthly Growth Trends (Past 6 Months)</h4>
-                <div style="position:relative; height:260px;"><canvas id="analyticsGrowthChartCanvas"></canvas></div>
-              </div>
-              <div class="chart-card">
-                <h4><i class="fa-solid fa-building-columns" style="color:var(--color-info);"></i> Top Enrolled Colleges</h4>
-                <div style="position:relative; height:260px;"><canvas id="analyticsCollegesChartCanvas"></canvas></div>
-              </div>
-            </div>
-
-            <div class="charts-grid">
-              <div class="chart-card">
-                <h4><i class="fa-solid fa-tag" style="color:var(--color-success);"></i> Book Condition Breakdown</h4>
-                <div style="position:relative; height:240px;"><canvas id="analyticsConditionChartCanvas"></canvas></div>
-              </div>
-              <div class="chart-card">
-                <h4><i class="fa-solid fa-handshake-simple" style="color:var(--color-warning);"></i> Exchange Fulfillment Velocity</h4>
-                <div style="padding: 24px; text-align: center;">
-                  <div style="font-size: 42px; font-weight: 800; color: var(--color-primary);" id="analyticsSwapRate">0%</div>
-                  <div style="font-size: 14px; font-weight: 600; margin-top: 6px;">Swap Completion Rate</div>
-                  <p class="text-small" style="margin-top: 8px;">Ratio of successful peer-to-peer textbook handovers to total initiated exchange proposals.</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- ══════════════════════════════════════════════════════════════════
-             9. TAB: AUDIT LOGS
-             ══════════════════════════════════════════════════════════════════ -->
-        <div id="adminTab-audit-logs" class="admin-content-tab">
-          <div class="card" style="padding: 24px;">
-            <div class="flex-between" style="margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
-              <div>
-                <h2>Security & Activity Audit Logs</h2>
-                <p class="text-small">Immutable administrative audit trails of logins, role updates, and system operations.</p>
-              </div>
-              <div style="display:flex;gap:8px;">
-                <button class="btn btn-secondary btn-sm" onclick="exportCsv('logs')"><i class="fa-solid fa-file-csv"></i> Export Logs</button>
-                <button class="btn btn-primary btn-sm" id="btnRefreshAuditLogs"><i class="fa-solid fa-rotate"></i> Refresh</button>
-              </div>
-            </div>
-
-            <!-- Audit Filter Toolbar -->
-            <div class="admin-toolbar">
-              <div class="admin-toolbar-group">
-                <div class="admin-search-box">
-                  <i class="fa-solid fa-magnifying-glass"></i>
-                  <input type="text" id="auditSearchInput" placeholder="Search by title, email, user...">
-                </div>
-                <select id="auditActionFilter" class="admin-filter-select">
-                  <option value="">All Actions</option>
-                  <option value="LOGIN">User Login</option>
-                  <option value="LOGOUT">User Logout</option>
-                  <option value="REGISTER">User Registration</option>
-                  <option value="BOOK_SELL">Book Listed</option>
-                  <option value="EXCHANGE_PROPOSAL">Exchange Proposal</option>
-                  <option value="EXCHANGE_STATUS">Exchange Status</option>
-                  <option value="DONATION_CLAIM">Donation Claim</option>
-                </select>
-              </div>
-              <span class="badge badge-primary" id="auditLogsResultCount">0 Logs</span>
-            </div>
-
-            <div class="data-table-wrap">
-              <table class="data-table" style="font-size: 13px;">
-                <thead>
-                  <tr>
-                    <th>Action</th>
-                    <th>Description</th>
-                    <th>User / Actor</th>
-                    <th>IP Address</th>
-                    <th>Timestamp</th>
-                    <th style="text-align: right;">Inspect</th>
-                  </tr>
-                </thead>
-                <tbody id="adminAuditLogsTableBody">
-                  <tr><td colspan="6" style="text-align:center;padding:24px;color:var(--color-gray);">Loading audit logs...</td></tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-
-        <!-- ══════════════════════════════════════════════════════════════════
-             10. TAB: NOTIFICATIONS & BROADCAST
-             ══════════════════════════════════════════════════════════════════ -->
-        <div id="adminTab-notifications" class="admin-content-tab">
-          <div class="card" style="padding: 24px;">
-            <div class="flex-between" style="margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
-              <div>
-                <h2>Notifications & Platform Announcements</h2>
-                <p class="text-small">Send university-wide alerts, campus notifications, or exam alerts to students.</p>
-              </div>
-              <button class="btn btn-primary btn-sm" id="btnOpenBroadcastModal"><i class="fa-solid fa-bullhorn"></i> New Broadcast Alert</button>
-            </div>
-
-            <div class="data-table-wrap">
-              <table class="data-table">
-                <thead>
-                  <tr>
-                    <th>Notification Title</th>
-                    <th>Recipient</th>
-                    <th>Type</th>
-                    <th>Status</th>
-                    <th>Date Sent</th>
-                  </tr>
-                </thead>
-                <tbody id="adminNotificationsTableBody">
-                  <tr><td colspan="5" style="text-align:center;padding:24px;color:var(--color-gray);">Loading notification history...</td></tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-
-        <!-- ══════════════════════════════════════════════════════════════════
-             11. TAB: REPORTS & EXPORT
-             ══════════════════════════════════════════════════════════════════ -->
-        <div id="adminTab-reports" class="admin-content-tab">
-          <div class="card" style="padding: 24px;">
-            <div style="margin-bottom: 24px;">
-              <h2>Reports & Data Export</h2>
-              <p class="text-small">Download real database tables in CSV format for compliance, backup, and reporting.</p>
-            </div>
-
-            <div class="export-grid">
-              <div class="export-card">
-                <div>
-                  <div style="font-size: 24px; color: var(--color-primary); margin-bottom: 8px;"><i class="fa-solid fa-users"></i></div>
-                  <h3 style="font-size: 16px;">Student & User Report</h3>
-                  <p class="text-small" style="margin-top: 6px;">All registered accounts, verification status, department, and registration timestamps.</p>
-                </div>
-                <button class="btn btn-primary btn-block btn-sm" onclick="exportCsv('users')"><i class="fa-solid fa-download"></i> Export Users CSV</button>
-              </div>
-
-              <div class="export-card">
-                <div>
-                  <div style="font-size: 24px; color: var(--color-secondary); margin-bottom: 8px;"><i class="fa-solid fa-book"></i></div>
-                  <h3 style="font-size: 16px;">Book Catalog Report</h3>
-                  <p class="text-small" style="margin-top: 6px;">Complete listing inventory with GTU codes, price, condition, seller info, and status.</p>
-                </div>
-                <button class="btn btn-primary btn-block btn-sm" onclick="exportCsv('books')"><i class="fa-solid fa-download"></i> Export Books CSV</button>
-              </div>
-
-              <div class="export-card">
-                <div>
-                  <div style="font-size: 24px; color: var(--color-info); margin-bottom: 8px;"><i class="fa-solid fa-arrows-rotate"></i></div>
-                  <h3 style="font-size: 16px;">Exchange Transactions</h3>
-                  <p class="text-small" style="margin-top: 6px;">Peer-to-peer swap logs, proposer details, offered books, and status history.</p>
-                </div>
-                <button class="btn btn-primary btn-block btn-sm" onclick="exportCsv('exchanges')"><i class="fa-solid fa-download"></i> Export Exchanges CSV</button>
-              </div>
-
-              <div class="export-card">
-                <div>
-                  <div style="font-size: 24px; color: var(--color-success); margin-bottom: 8px;"><i class="fa-solid fa-gift"></i></div>
-                  <h3 style="font-size: 16px;">Donation Claims</h3>
-                  <p class="text-small" style="margin-top: 6px;">Free textbook giveaway claims, student requests, and claim fulfillment logs.</p>
-                </div>
-                <button class="btn btn-primary btn-block btn-sm" onclick="exportCsv('donations')"><i class="fa-solid fa-download"></i> Export Donations CSV</button>
-              </div>
-
-              <div class="export-card">
-                <div>
-                  <div style="font-size: 24px; color: #d97706; margin-bottom: 8px;"><i class="fa-solid fa-building-columns"></i></div>
-                  <h3 style="font-size: 16px;">Colleges & Structure</h3>
-                  <p class="text-small" style="margin-top: 6px;">Affiliated institutions, department hierarchies, and GTU course mappings.</p>
-                </div>
-                <button class="btn btn-primary btn-block btn-sm" onclick="exportCsv('colleges')"><i class="fa-solid fa-download"></i> Export Colleges CSV</button>
-              </div>
-
-              <div class="export-card">
-                <div>
-                  <div style="font-size: 24px; color: #dc2626; margin-bottom: 8px;"><i class="fa-solid fa-shield-halved"></i></div>
-                  <h3 style="font-size: 16px;">Security Audit Logs</h3>
-                  <p class="text-small" style="margin-top: 6px;">Administrative actions, IP addresses, logins, and state alteration audit trails.</p>
-                </div>
-                <button class="btn btn-primary btn-block btn-sm" onclick="exportCsv('logs')"><i class="fa-solid fa-download"></i> Export Audit Logs CSV</button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- ══════════════════════════════════════════════════════════════════
-             12. TAB: SYSTEM HEALTH & PLATFORM MONITORING
-             ══════════════════════════════════════════════════════════════════ -->
-        <div id="adminTab-system-health" class="admin-content-tab">
-          <div class="card" style="padding: 24px;">
-            <div class="flex-between" style="margin-bottom: 24px;">
-              <div>
-                <h2>System Health & Diagnostic Telemetry</h2>
-                <p class="text-small">Live server status, database connection metrics, and runtime health.</p>
-              </div>
-              <button class="btn btn-primary btn-sm" id="btnRefreshHealth"><i class="fa-solid fa-rotate"></i> Ping Health Check</button>
-            </div>
-
-            <div class="grid-3" style="margin-bottom: 24px;">
-              <div class="health-card">
-                <div class="flex-between">
-                  <span style="font-size: 13px; font-weight: 700; color: var(--color-gray);">DATABASE SERVICE</span>
-                  <span class="health-status-badge healthy" id="healthDbBadge"><i class="fa-solid fa-circle-check"></i> Connected</span>
-                </div>
-                <div>
-                  <div style="font-size: 22px; font-weight: 800;" id="healthDbVendor">MySQL Engine</div>
-                  <div style="font-size: 12.5px; color: var(--color-gray); margin-top: 4px;">Latency: <span id="healthDbLatency">0.0 ms</span></div>
-                </div>
-              </div>
-
-              <div class="health-card">
-                <div class="flex-between">
-                  <span style="font-size: 13px; font-weight: 700; color: var(--color-gray);">CORE API ENGINE</span>
-                  <span class="health-status-badge healthy" id="healthApiBadge"><i class="fa-solid fa-circle-check"></i> v2.0.0 Active</span>
-                </div>
-                <div>
-                  <div style="font-size: 22px; font-weight: 800;">Django + DRF</div>
-                  <div style="font-size: 12.5px; color: var(--color-gray); margin-top: 4px;">Environment: <span id="healthEnv">Production Ready</span></div>
-                </div>
-              </div>
-
-              <div class="health-card">
-                <div class="flex-between">
-                  <span style="font-size: 13px; font-weight: 700; color: var(--color-gray);">SECURITY / JWT</span>
-                  <span class="health-status-badge healthy"><i class="fa-solid fa-shield"></i> Hardened</span>
-                </div>
-                <div>
-                  <div style="font-size: 22px; font-weight: 800;">SimpleJWT + RBAC</div>
-                  <div style="font-size: 12.5px; color: var(--color-gray); margin-top: 4px;">Blacklist Token Rotation: Active</div>
-                </div>
-              </div>
-            </div>
-
-            <div class="card" style="padding: 20px; background: var(--color-bg); border: 1px solid var(--color-border);">
-              <h4 style="margin-bottom: 12px;"><i class="fa-solid fa-database"></i> Database Object Telemetry</h4>
-              <div style="display:flex; flex-wrap:wrap; gap: 24px; font-size: 14px;">
-                <div><strong>Users:</strong> <span id="healthCountUsers">0</span></div>
-                <div><strong>Books Listed:</strong> <span id="healthCountBooks">0</span></div>
-                <div><strong>Colleges:</strong> <span id="healthCountColleges">0</span></div>
-                <div><strong>Audit Records:</strong> <span id="healthCountLogs">0</span></div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- ══════════════════════════════════════════════════════════════════
-             13. TAB: ADMIN PROFILE
-             ══════════════════════════════════════════════════════════════════ -->
-        <div id="adminTab-admin-profile" class="admin-content-tab">
-          <div class="card" style="padding: 32px; max-width: 700px; margin: 0 auto;">
-            <div style="display:flex; align-items:center; gap: 20px; margin-bottom: 24px; border-bottom: 1px solid var(--color-border); padding-bottom: 20px;">
-              <div class="admin-shield-icon" style="margin: 0; width: 64px; height: 64px; font-size: 26px;">
-                <i class="fa-solid fa-user-shield"></i>
-              </div>
-              <div>
-                <h2 id="profAdminName" style="margin-bottom: 4px;">Administrator</h2>
-                <div style="display:flex; align-items:center; gap: 8px;">
-                  <span id="profAdminRoleBadge" class="role-badge role-super-admin">SUPER_ADMIN</span>
-                  <span id="profAdminEmail" style="font-size: 13.5px; color: var(--color-gray);">admin@rcti.ac.in</span>
-                </div>
-              </div>
-            </div>
-
-            <form id="adminProfileForm">
-              <div class="form-group" style="margin-bottom: 16px;">
-                <label class="form-label">Full Name</label>
-                <input type="text" id="profInputName" class="form-input" required>
-              </div>
-
-              <div class="form-group" style="margin-bottom: 16px;">
-                <label class="form-label">Email Address (Managed by Identity Provider)</label>
-                <input type="email" id="profInputEmail" class="form-input" disabled style="background:#f1f5f9; cursor:not-allowed;">
-              </div>
-
-              <div class="form-group" style="margin-bottom: 16px;">
-                <label class="form-label">Phone / WhatsApp Number</label>
-                <input type="text" id="profInputPhone" class="form-input" placeholder="+91 9876543210">
-              </div>
-
-              <div class="form-group" style="margin-bottom: 24px;">
-                <label class="form-label">Account Joined Date</label>
-                <input type="text" id="profInputJoined" class="form-input" disabled style="background:#f1f5f9;">
-              </div>
-
-              <button type="submit" class="btn btn-primary" id="btnSaveAdminProfile">
-                <i class="fa-solid fa-floppy-disk"></i> Save Profile Changes
-              </button>
-            </form>
-          </div>
-        </div>
-
       </div>
     </div>
   </main>
 
-  <!-- ════════════════════════════════════════════════════════════════════════
-       MODALS
-       ════════════════════════════════════════════════════════════════════════ -->
+  <footer class="footer">
+    <div class="footer-inner">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <div class="brand" style="margin-bottom: 4px;">
+            <div class="brand-icon"><img src="logo.png.jpeg" alt="BookBridge Logo"></div>
+            <div>
+              <div class="brand-name">BookBridge</div>
+              <div class="brand-tagline">Bridge Books. Build Minds.</div>
+            </div>
+          </div>
+          <p>India's premier student platform for buying, selling, exchanging, and donating academic books across colleges.</p>
+          <div class="footer-social">
+            <a href="#" aria-label="Twitter"><i class="fa-brands fa-x-twitter"></i></a>
+            <a href="#" aria-label="Instagram"><i class="fa-brands fa-instagram"></i></a>
+            <a href="#" aria-label="LinkedIn"><i class="fa-brands fa-linkedin-in"></i></a>
+            <a href="#" aria-label="GitHub"><i class="fa-brands fa-github"></i></a>
+          </div>
+        </div>
 
-  <!-- 1. ADMIN ADD BOOK MODAL -->
+        <div class="footer-col">
+          <h4>Platform</h4>
+          <a href="browse.html">Browse Books</a>
+          <a href="exchange.html">Exchange</a>
+          <a href="donate.html">Donate</a>
+          <a href="dashboard.html">Dashboard</a>
+        </div>
+
+        <div class="footer-col">
+          <h4>Company</h4>
+          <a href="about.html">About Us</a>
+          <a href="contact.html">Contact</a>
+          <a href="privacy.html">Privacy Policy</a>
+          <a href="terms.html">Terms of Service</a>
+        </div>
+
+        <div class="footer-col">
+          <h4>Support</h4>
+          <a href="contact.html">Help Center</a>
+          <a href="contact.html#faq">FAQs</a>
+          <a href="contact.html">Report Issue</a>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <span>© 2026 BookBridge — India's Student Book Sharing Platform. All rights reserved.</span>
+        <span>Built with ❤️ by RCTI Students</span>
+      </div>
+    </div>
+  </footer>
+
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- ADMIN ADD BOOK MODAL -->
   <div class="modal-overlay" id="adminAddBookModal">
     <div class="modal-card" style="max-width: 620px;">
       <div class="modal-header">
-        <h3><i class="fa-solid fa-plus" style="color: var(--color-primary);"></i> Add Book Listing</h3>
+        <h3><i class="fa-solid fa-plus" style="color: var(--color-primary);"></i> Add New Book</h3>
         <button class="modal-close" id="closeAdminAddBookModal"><i class="fa-solid fa-xmark"></i></button>
       </div>
       <form id="adminAddBookForm" style="padding: 0;">
@@ -1388,275 +502,13 @@
           <textarea id="adminBookDesc" class="form-input" rows="3" placeholder="Brief description of the book..."></textarea>
         </div>
         <button type="submit" class="btn btn-primary btn-block">
-          <i class="fa-solid fa-plus"></i> Save to Catalog
+          <i class="fa-solid fa-plus"></i> Add to Catalog
         </button>
       </form>
     </div>
   </div>
 
-  <!-- 2. ADMIN EDIT BOOK MODAL -->
-  <div class="modal-overlay" id="adminEditBookModal">
-    <div class="modal-card" style="max-width: 620px;">
-      <div class="modal-header">
-        <h3><i class="fa-solid fa-pen-to-square" style="color: var(--color-primary);"></i> Edit Book Listing</h3>
-        <button class="modal-close" id="closeAdminEditBookModal"><i class="fa-solid fa-xmark"></i></button>
-      </div>
-      <form id="adminEditBookForm" style="padding: 0;">
-        <input type="hidden" id="editBookId">
-        <div class="form-row-2" style="margin-bottom: 14px;">
-          <div class="form-group">
-            <label class="form-label">Book Title *</label>
-            <input type="text" id="editBookTitle" class="form-input" required>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Author *</label>
-            <input type="text" id="editBookAuthor" class="form-input" required>
-          </div>
-        </div>
-        <div class="form-row-2" style="margin-bottom: 14px;">
-          <div class="form-group">
-            <label class="form-label">Department</label>
-            <select id="editBookBranch" class="form-input">
-              <option value="CE">CE — Computer Engineering</option>
-              <option value="IT">IT — Information Technology</option>
-              <option value="EE">EE — Electrical Engineering</option>
-              <option value="ME">ME — Mechanical Engineering</option>
-              <option value="Civil">Civil Engineering</option>
-              <option value="IC">IC — Instrumentation</option>
-              <option value="All">All Departments</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Price (₹)</label>
-            <input type="number" id="editBookPrice" class="form-input" min="0">
-          </div>
-        </div>
-        <div class="form-row-2" style="margin-bottom: 14px;">
-          <div class="form-group">
-            <label class="form-label">Status</label>
-            <select id="editBookStatus" class="form-input">
-              <option value="Available">Available</option>
-              <option value="Sold">Sold</option>
-              <option value="Exchanged">Exchanged</option>
-              <option value="Donated">Donated</option>
-              <option value="Inactive">Inactive</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Condition</label>
-            <select id="editBookCondition" class="form-input">
-              <option value="Like New">Like New</option>
-              <option value="Good">Good</option>
-              <option value="Fair">Fair</option>
-              <option value="Worn">Worn</option>
-            </select>
-          </div>
-        </div>
-        <button type="submit" class="btn btn-primary btn-block">
-          <i class="fa-solid fa-floppy-disk"></i> Update Book Listing
-        </button>
-      </form>
-    </div>
-  </div>
-
-  <!-- 3. USER 360 DETAILS MODAL -->
-  <div class="modal-overlay" id="adminUserDetailsModal">
-    <div class="modal-card" style="max-width: 680px;">
-      <div class="modal-header">
-        <h3><i class="fa-solid fa-user-circle" style="color: var(--color-primary);"></i> User Details</h3>
-        <button class="modal-close" id="closeAdminUserDetailsModal"><i class="fa-solid fa-xmark"></i></button>
-      </div>
-      <div id="adminUserModalBody" style="max-height: 70vh; overflow-y: auto; padding-right: 4px;">
-        <!-- Dynamically loaded -->
-      </div>
-    </div>
-  </div>
-
-  <!-- 4. ROLE MANAGEMENT MODAL -->
-  <div class="modal-overlay" id="adminUserRoleModal">
-    <div class="modal-card" style="max-width: 480px;">
-      <div class="modal-header">
-        <h3><i class="fa-solid fa-user-gear" style="color: var(--color-primary);"></i> Assign User Role</h3>
-        <button class="modal-close" id="closeAdminUserRoleModal"><i class="fa-solid fa-xmark"></i></button>
-      </div>
-      <form id="adminUserRoleForm" style="padding: 0;">
-        <input type="hidden" id="roleModalUserId">
-        <div style="margin-bottom: 16px;">
-          <strong id="roleModalUserName">Student Name</strong>
-          <div id="roleModalUserEmail" style="font-size:13px;color:var(--color-gray);">email@college.ac.in</div>
-        </div>
-        <div class="form-group" style="margin-bottom: 20px;">
-          <label class="form-label">Select Role</label>
-          <select id="roleModalSelect" class="form-input">
-            <option value="STUDENT">Student</option>
-            <option value="FACULTY">Faculty</option>
-            <option value="DEPT_ADMIN">Department Administrator</option>
-            <option value="COLLEGE_ADMIN">College Administrator</option>
-            <option value="SUPER_ADMIN">Super Administrator (Super Admin Only)</option>
-          </select>
-          <span style="font-size: 12px; color: var(--color-gray); margin-top: 4px; display: block;">
-            <i class="fa-solid fa-shield"></i> Changes are recorded in immutable audit logs.
-          </span>
-        </div>
-        <button type="submit" class="btn btn-primary btn-block">
-          <i class="fa-solid fa-check"></i> Apply Role
-        </button>
-      </form>
-    </div>
-  </div>
-
-  <!-- 5. ADD COLLEGE MODAL -->
-  <div class="modal-overlay" id="adminAddCollegeModal">
-    <div class="modal-card" style="max-width: 520px;">
-      <div class="modal-header">
-        <h3><i class="fa-solid fa-building-columns" style="color: var(--color-primary);"></i> Add New College</h3>
-        <button class="modal-close" id="closeAddCollegeModal"><i class="fa-solid fa-xmark"></i></button>
-      </div>
-      <form id="adminAddCollegeForm" style="padding: 0;">
-        <div class="form-group" style="margin-bottom: 14px;">
-          <label class="form-label">College Name *</label>
-          <input type="text" id="newCollegeName" class="form-input" placeholder="e.g. R.C. Technical Institute" required>
-        </div>
-        <div class="form-row-2" style="margin-bottom: 14px;">
-          <div class="form-group">
-            <label class="form-label">College Code *</label>
-            <input type="text" id="newCollegeCode" class="form-input" placeholder="e.g. RCTI" required>
-          </div>
-          <div class="form-group">
-            <label class="form-label">City *</label>
-            <input type="text" id="newCollegeCity" class="form-input" placeholder="e.g. Ahmedabad" required>
-          </div>
-        </div>
-        <div class="form-group" style="margin-bottom: 20px;">
-          <label class="form-label">State</label>
-          <input type="text" id="newCollegeState" class="form-input" value="Gujarat" required>
-        </div>
-        <button type="submit" class="btn btn-primary btn-block">
-          <i class="fa-solid fa-plus"></i> Save College
-        </button>
-      </form>
-    </div>
-  </div>
-
-  <!-- 6. ADD DEPARTMENT MODAL -->
-  <div class="modal-overlay" id="adminAddDeptModal">
-    <div class="modal-card" style="max-width: 520px;">
-      <div class="modal-header">
-        <h3><i class="fa-solid fa-graduation-cap" style="color: var(--color-primary);"></i> Add Department</h3>
-        <button class="modal-close" id="closeAddDeptModal"><i class="fa-solid fa-xmark"></i></button>
-      </div>
-      <form id="adminAddDeptForm" style="padding: 0;">
-        <div class="form-group" style="margin-bottom: 14px;">
-          <label class="form-label">College *</label>
-          <select id="newDeptCollegeSelect" class="form-input" required></select>
-        </div>
-        <div class="form-row-2" style="margin-bottom: 14px;">
-          <div class="form-group">
-            <label class="form-label">Department Name *</label>
-            <input type="text" id="newDeptName" class="form-input" placeholder="e.g. Computer Engineering" required>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Department Code *</label>
-            <input type="text" id="newDeptCode" class="form-input" placeholder="e.g. CE" required>
-          </div>
-        </div>
-        <button type="submit" class="btn btn-primary btn-block">
-          <i class="fa-solid fa-plus"></i> Save Department
-        </button>
-      </form>
-    </div>
-  </div>
-
-  <!-- 7. ADD COURSE MODAL -->
-  <div class="modal-overlay" id="adminAddCourseModal">
-    <div class="modal-card" style="max-width: 520px;">
-      <div class="modal-header">
-        <h3><i class="fa-solid fa-layer-group" style="color: var(--color-primary);"></i> Add Curriculum Course</h3>
-        <button class="modal-close" id="closeAddCourseModal"><i class="fa-solid fa-xmark"></i></button>
-      </div>
-      <form id="adminAddCourseForm" style="padding: 0;">
-        <div class="form-group" style="margin-bottom: 14px;">
-          <label class="form-label">Department *</label>
-          <select id="newCourseDeptSelect" class="form-input" required></select>
-        </div>
-        <div class="form-row-2" style="margin-bottom: 14px;">
-          <div class="form-group">
-            <label class="form-label">Course Title *</label>
-            <input type="text" id="newCourseName" class="form-input" placeholder="e.g. Database Management" required>
-          </div>
-          <div class="form-group">
-            <label class="form-label">GTU Code *</label>
-            <input type="text" id="newCourseCode" class="form-input" placeholder="e.g. 3350702" required>
-          </div>
-        </div>
-        <div class="form-group" style="margin-bottom: 20px;">
-          <label class="form-label">Semester</label>
-          <select id="newCourseSemester" class="form-input">
-            <option value="1">Semester 1</option><option value="2">Semester 2</option>
-            <option value="3">Semester 3</option><option value="4">Semester 4</option>
-            <option value="5" selected>Semester 5</option><option value="6">Semester 6</option>
-          </select>
-        </div>
-        <button type="submit" class="btn btn-primary btn-block">
-          <i class="fa-solid fa-plus"></i> Save Course
-        </button>
-      </form>
-    </div>
-  </div>
-
-  <!-- 8. BROADCAST ANNOUNCEMENT MODAL -->
-  <div class="modal-overlay" id="adminBroadcastModal">
-    <div class="modal-card" style="max-width: 560px;">
-      <div class="modal-header">
-        <h3><i class="fa-solid fa-bullhorn" style="color: var(--color-primary);"></i> Broadcast Platform Announcement</h3>
-        <button class="modal-close" id="closeBroadcastModal"><i class="fa-solid fa-xmark"></i></button>
-      </div>
-      <form id="adminBroadcastForm" style="padding: 0;">
-        <div class="form-group" style="margin-bottom: 14px;">
-          <label class="form-label">Announcement Title *</label>
-          <input type="text" id="broadcastTitle" class="form-input" placeholder="e.g. GTU Winter 2026 Book Exchange Drive" required>
-        </div>
-        <div class="form-group" style="margin-bottom: 14px;">
-          <label class="form-label">Target Audience</label>
-          <select id="broadcastTarget" class="form-input">
-            <option value="all">All Enrolled Students & Faculty</option>
-            <option value="role">Target Specific Role</option>
-          </select>
-        </div>
-        <div class="form-group" style="margin-bottom: 20px;">
-          <label class="form-label">Announcement Body *</label>
-          <textarea id="broadcastMessage" class="form-input" rows="4" placeholder="Write announcement details..." required></textarea>
-        </div>
-        <button type="submit" class="btn btn-primary btn-block">
-          <i class="fa-solid fa-paper-plane"></i> Send Platform Broadcast
-        </button>
-      </form>
-    </div>
-  </div>
-
-  <!-- 9. AUDIT DETAIL MODAL -->
-  <div class="modal-overlay" id="adminAuditMetaModal">
-    <div class="modal-card" style="max-width: 560px;">
-      <div class="modal-header">
-        <h3><i class="fa-solid fa-code" style="color: var(--color-primary);"></i> Audit Event Telemetry</h3>
-        <button class="modal-close" id="closeAuditMetaModal"><i class="fa-solid fa-xmark"></i></button>
-      </div>
-      <div id="auditMetaBody" style="max-height:60vh;overflow:auto;background:#0f172a;color:#38bdf8;padding:16px;border-radius:8px;font-family:monospace;font-size:13px;"></div>
-    </div>
-  </div>
-
-  <!-- 10. BOOK DETAILS MODAL -->
-  <div class="modal-overlay" id="bookDetailsModal">
-    <div class="modal-card" style="max-width:560px;">
-      <div class="modal-header">
-        <h3 id="modalBookTitle">Book Details</h3>
-        <button class="modal-close" id="closeBookDetailsModal"><i class="fa-solid fa-xmark"></i></button>
-      </div>
-      <div id="modalBookBody"></div>
-    </div>
-  </div>
-
-  <!-- 11. PDF VIEWER MODAL -->
+  <!-- PDF MODAL -->
   <div class="pdf-modal-overlay" id="pdfModalOverlay">
     <div class="pdf-modal-card">
       <div class="pdf-modal-header">
@@ -1667,56 +519,26 @@
     </div>
   </div>
 
-  <footer class="footer">
-    <div class="footer-inner">
-      <div class="footer-grid">
-        <div class="footer-brand">
-          <div class="brand" style="margin-bottom: 4px;">
-            <div class="brand-icon"><img src="logo.png.jpeg" alt="BookBridgee Logo"></div>
-            <div>
-              <div class="brand-name">BookBridgee</div>
-              <div class="brand-tagline">Bridge Books. Build Minds.</div>
-            </div>
-          </div>
-          <p>India's premier student platform for buying, selling, exchanging, and donating academic books across colleges.</p>
-        </div>
-        <div class="footer-col">
-          <h4>Platform</h4>
-          <a href="browse.html">Browse Books</a>
-          <a href="exchange.html">Exchange</a>
-          <a href="donate.html">Donate</a>
-          <a href="dashboard.html">Dashboard</a>
-        </div>
-        <div class="footer-col">
-          <h4>Company</h4>
-          <a href="about.html">About Us</a>
-          <a href="contact.html">Contact</a>
-          <a href="privacy.html">Privacy Policy</a>
-          <a href="terms.html">Terms of Service</a>
-        </div>
-        <div class="footer-col">
-          <h4>Support</h4>
-          <a href="contact.html">Help Center</a>
-          <a href="contact.html#faq">FAQs</a>
-          <a href="contact.html">Report Issue</a>
-        </div>
+  <!-- BOOK DETAILS MODAL -->
+  <div class="modal-overlay" id="bookDetailsModal">
+    <div class="modal-card" style="max-width:560px;">
+      <div class="modal-header">
+        <h3 id="modalBookTitle">Book Details</h3>
+        <button class="modal-close" id="closeBookDetailsModal"><i class="fa-solid fa-xmark"></i></button>
       </div>
-      <div class="footer-bottom">
-        <span>© 2026 BookBridgee — India's Student Book Sharing Platform. All rights reserved.</span>
-        <span>Built with ❤️ by RCTI Students</span>
+      <div id="modalBookBody"></div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:20px;">
+        <a id="btnModalWhatsapp" target="_blank" class="btn btn-primary" style="flex:1;text-decoration:none;background:#25D366;border-color:#25D366;"><i class="fa-brands fa-whatsapp"></i> WhatsApp</a>
+        <button id="btnModalActionConfirm" class="btn btn-brown" style="flex:1;">Confirm</button>
       </div>
     </div>
-  </footer>
+  </div>
 
-  <div class="toast-container" id="toastContainer"></div>
-
-  <!-- Scripts -->
   <script src="js/database.js"></script>
   <script src="js/api.js"></script>
   <script src="js/live-stats.js"></script>
   <script src="js/app.js"></script>
   <script>
-    // Admin Security Gate Logic
     document.addEventListener('DOMContentLoaded', () => {
       const overlay = document.getElementById('adminAuthOverlay');
       const mainContent = document.getElementById('main-content');
@@ -1731,24 +553,16 @@
       const btnLock = document.getElementById('btnAdminLock');
       const card = overlay?.querySelector('.admin-auth-card');
 
-      function isBookBridgeeAdmin(user) {
-        if (!user) return false;
-        const role = (user.role || '').toUpperCase();
-        return ['SUPER_ADMIN', 'COLLEGE_ADMIN', 'DEPT_ADMIN', 'ADMIN'].includes(role) || Boolean(user.is_staff || user.is_superuser);
-      }
-
-      async function checkAdminSession() {
+      function checkAdminSession() {
         try {
-          if (window.BookAPI && typeof window.BookAPI.getCurrentUser === 'function') {
-            const user = await window.BookAPI.getCurrentUser();
-            if (user && isBookBridgeeAdmin(user)) {
-              unlockDashboard(user, false);
-              return true;
-            }
+          const user = JSON.parse(localStorage.getItem('rcti_gtu_current_user') || 'null');
+          const token = localStorage.getItem('bb_access_token');
+          const adminMode = localStorage.getItem('admin_mode');
+          if (user && user.role === 'admin' && token && adminMode === 'true') {
+            unlockDashboard(user, false);
+            return true;
           }
-        } catch (e) {
-          console.warn('[Admin Gate] Session check error:', e.message);
-        }
+        } catch (e) {}
         lockDashboard();
         return false;
       }
@@ -1759,28 +573,28 @@
           overlay.style.display = 'flex';
         }
         if (mainContent) mainContent.style.display = 'none';
+        localStorage.setItem('admin_mode', 'false');
       }
 
       function unlockDashboard(userObj, isNewLogin = true) {
-        localStorage.setItem('admin_mode', 'true');
         if (overlay) {
           overlay.classList.add('hidden');
           setTimeout(() => { overlay.style.display = 'none'; }, 300);
         }
         if (mainContent) mainContent.style.display = 'block';
-
-        const navName = document.getElementById('adminNavName');
-        if (navName) navName.textContent = `${userObj.full_name || userObj.name || userObj.email} (${userObj.role || 'Admin'})`;
-
+        localStorage.setItem('admin_mode', 'true');
+        
+        // Trigger admin data load if function exists
         if (typeof initAdminPage === 'function') {
           initAdminPage();
         }
 
         if (isNewLogin && typeof showToast === 'function') {
-          showToast(`🔓 Welcome Admin (${userObj.full_name || userObj.name || userObj.email})!`, 'success');
+          showToast(`🔓 Welcome Admin (${userObj.name || userObj.email || 'Admin'})!`, 'success');
         }
       }
 
+      // Toggle Password Visibility
       btnTogglePass?.addEventListener('click', () => {
         if (passwordInput.type === 'password') {
           passwordInput.type = 'text';
@@ -1791,11 +605,13 @@
         }
       });
 
+      // Lock Button
       btnLock?.addEventListener('click', () => {
         lockDashboard();
         if (typeof showToast === 'function') showToast('🔒 Admin Panel Locked', 'info');
       });
 
+      // Login Form Submit (Password Check)
       loginForm?.addEventListener('submit', async (e) => {
         e.preventDefault();
         const email = emailInput.value.trim();
@@ -1804,59 +620,67 @@
         alertBox.style.display = 'none';
         unlockBtn.disabled = true;
         const btnSpan = unlockBtn.querySelector('span');
-        if (btnSpan) btnSpan.textContent = 'Verifying Credentials...';
+        if (btnSpan) btnSpan.textContent = 'Verifying Password...';
 
         try {
-          if (!window.BookAPI || typeof window.BookAPI.login !== 'function') {
-            throw new Error('API service unavailable.');
+          let authenticatedUser = null;
+
+          // Master passcode verification (admin123, admin, bookbridge2026) or API login
+          if (password === 'admin123' || password === 'admin' || password === 'bookbridge2026') {
+            authenticatedUser = {
+              id: 'usr-admin-master',
+              name: 'GTU System Admin',
+              email: email || 'admin@rcti.ac.in',
+              role: 'admin'
+            };
+            localStorage.setItem('bb_access_token', 'admin-token-' + Date.now());
+          } else if (window.BookAPI && typeof window.BookAPI.login === 'function') {
+            try {
+              const resUser = await window.BookAPI.login(email, password);
+              if (resUser && resUser.role === 'admin') {
+                authenticatedUser = resUser;
+              }
+            } catch(err) {
+              console.warn('[Admin Gate] Login API error:', err.message);
+            }
           }
 
-          const resUser = await window.BookAPI.login(email, password);
-          if (resUser && isBookBridgeeAdmin(resUser)) {
-            unlockDashboard(resUser, true);
+          if (authenticatedUser) {
+            localStorage.setItem('rcti_gtu_current_user', JSON.stringify(authenticatedUser));
+            localStorage.setItem('admin_mode', 'true');
+            unlockDashboard(authenticatedUser, true);
           } else {
-            alertText.textContent = 'Access Denied: Your account does not possess administrator privileges.';
+            // Password Error
+            alertText.textContent = 'Invalid admin password. (Default passcode: admin123)';
             alertBox.style.display = 'flex';
             card?.classList.add('shake');
             setTimeout(() => card?.classList.remove('shake'), 500);
           }
         } catch (err) {
-          alertText.textContent = err.message || 'Invalid administrator email or password.';
+          alertText.textContent = 'Authentication error: ' + err.message;
           alertBox.style.display = 'flex';
-          card?.classList.add('shake');
-          setTimeout(() => card?.classList.remove('shake'), 500);
         } finally {
           unlockBtn.disabled = false;
           if (btnSpan) btnSpan.textContent = 'Unlock Admin Panel';
         }
       });
 
+      // Initial session check
       checkAdminSession();
     });
 
-    // Logout actions
-    async function handleAdminLogout() {
+    document.getElementById('btnAdminLogout')?.addEventListener('click', async () => {
       localStorage.removeItem('admin_mode');
       if (window.BookAPI && window.BookAPI.logout) await window.BookAPI.logout();
       window.location.href = 'index.html';
-    }
-    document.getElementById('btnAdminLogout')?.addEventListener('click', handleAdminLogout);
-    document.getElementById('btnMobileAdminLogout')?.addEventListener('click', handleAdminLogout);
-    document.getElementById('adminSidebarLogout')?.addEventListener('click', (e) => {
-      e.preventDefault();
-      handleAdminLogout();
     });
-
-    // Helper to export CSV
-    window.exportCsv = async function(type) {
-      try {
-        if (typeof showToast === 'function') showToast(`Exporting ${type} CSV...`, 'info');
-        await window.BookAPI.exportReportCsv(type);
-        if (typeof showToast === 'function') showToast(`Export ${type} CSV downloaded successfully`, 'success');
-      } catch (err) {
-        if (typeof showToast === 'function') showToast(err.message || 'Export failed', 'danger');
-      }
-    };
+    document.getElementById('adminSidebarLogout')?.addEventListener('click', async (e) => {
+      e.preventDefault();
+      localStorage.removeItem('admin_mode');
+      if (window.BookAPI && window.BookAPI.logout) await window.BookAPI.logout();
+      window.location.href = 'index.html';
+    });
   </script>
 </body>
 </html>
+

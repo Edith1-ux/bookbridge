@@ -31,7 +31,7 @@ class User(AbstractUser):
     )
 
     username = None
-    id = models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     email = models.EmailField(unique=True, db_index=True)
     full_name = models.CharField(max_length=255)
     phone_number = models.CharField(max_length=20, blank=True, null=True)
@@ -40,8 +40,6 @@ class User(AbstractUser):
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='STUDENT', db_index=True)
     
     avatar_url = models.URLField(blank=True, null=True)
-    enrollment_number = models.CharField(max_length=50, blank=True, null=True, db_index=True)
-    semester = models.PositiveIntegerField(default=1, blank=True, null=True)
     is_college_verified = models.BooleanField(default=False, db_index=True)
     is_2fa_enabled = models.BooleanField(default=False)
 
@@ -53,11 +51,6 @@ class User(AbstractUser):
     class Meta:
         db_table = 'users'
         ordering = ['-date_joined']
-        indexes = [
-            models.Index(fields=['role', 'is_active'], name='user_role_active_idx'),
-            models.Index(fields=['college', 'is_active'], name='user_college_active_idx'),
-            models.Index(fields=['date_joined'], name='user_date_joined_idx'),
-        ]
 
     def __str__(self):
         return f"{self.full_name} ({self.email}) - {self.role}"

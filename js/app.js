@@ -1,24 +1,12 @@
 /**
  * ==========================================================================
- * BOOKBRIDGE APPLICATION CONTROLLER
+ * BOOKBRIDGE PREMIUM APPLICATION CONTROLLER
  * Handles all page logic, components, animations, and UI interactions
- * Connected to Django REST API as single source of truth
+ * Version 2.0 — Aug 2026
  * ==========================================================================
  */
 
-// ── Universal Safe HTML Escaper (Anti-XSS Protection) ───────────────────────
-function escapeHtml(str) {
-  if (str === null || str === undefined) return '';
-  return String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
-}
-if (typeof window !== 'undefined') {
-  window.escapeHtml = escapeHtml;
-}
+window.DEFAULT_BOOK_COVER = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 420' width='300' height='420'%3E%3Cdefs%3E%3ClinearGradient id='bg' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%231e3a8a'/%3E%3Cstop offset='100%25' stop-color='%233b82f6'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='300' height='420' rx='12' fill='url(%23bg)'/%3E%3Crect x='15' y='15' width='270' height='390' rx='8' fill='none' stroke='rgba(255,255,255,0.2)' stroke-width='2'/%3E%3Ctext x='150' y='180' font-size='56' text-anchor='middle'%3E📚%3C/text%3E%3Ctext x='150' y='235' font-size='20' font-weight='bold' fill='%23ffffff' font-family='system-ui,sans-serif' text-anchor='middle'%3EBookBridge%3C/text%3E%3Ctext x='150' y='265' font-size='13' fill='rgba(255,255,255,0.8)' font-family='system-ui,sans-serif' text-anchor='middle'%3EAcademic Book%3C/text%3E%3C/svg%3E";
 
 document.addEventListener('DOMContentLoaded', async () => {
   initGlobalComponents();
@@ -26,16 +14,14 @@ document.addEventListener('DOMContentLoaded', async () => {
   initLanguageSwitcher();
   registerPWA();
 
-  const path = window.location.pathname.toLowerCase();
+  const path = window.location.pathname;
   if (path.includes('admin')) initAdminPage();
-  else if (path.includes('sell')) initSellPage();
   else if (path.includes('browse')) initBrowsePage();
   else if (path.includes('exchange')) initExchangePage();
   else if (path.includes('donate')) initDonatePage();
   else if (path.includes('contact')) initContactPage();
-  else if (path.includes('login') || document.getElementById('dedicatedLoginForm')) initLoginPage();
-  else if (path.includes('register') || document.getElementById('dedicatedRegisterForm')) initRegisterPage();
-  else if (path.includes('forgot-password')) initForgotPasswordPage();
+  else if (path.includes('login')) initLoginPage();
+  else if (path.includes('register')) initRegisterPage();
   else if (path.includes('dashboard')) initDashboardPage();
   else initHomePage();
 });
@@ -54,17 +40,17 @@ function registerPWA() {
 /* 🌐 i18n MULTI-LANGUAGE SWITCHER (EN / GU / HI) */
 const I18N_DICTIONARY = {
   en: {
-    home: 'Home', buy: 'Buy Books', sell: 'Sell Books', browse: 'Browse', exchange: 'Exchange', donate: 'Donate', about: 'About', contact: 'Contact',
+    home: 'Home', browse: 'Browse', exchange: 'Exchange', donate: 'Donate', about: 'About', contact: 'Contact',
     welcome: 'Bridge Books. Build Minds.', upload: 'Upload Book', login: 'Login', register: 'Get Started',
     verified: 'Verified Student'
   },
   gu: {
-    home: 'હોમ', buy: 'પુસ્તકો ખરીદો', sell: 'પુસ્તકો વેચો', browse: 'બ્રાઉઝ કરો', exchange: 'એક્સચેન્જ', donate: 'દાન કરો', about: 'અમારા વિશે', contact: 'સંપર્ક',
+    home: 'હોમ', browse: 'બ્રાઉઝ કરો', exchange: 'એક્સચેન્જ', donate: 'દાન કરો', about: 'અમારા વિશે', contact: 'સંપર્ક',
     welcome: 'પુસ્તકો જોડો. મન બનાવો.', upload: 'અપલોડ કરો', login: 'લોગિન', register: 'શરૂ કરો',
     verified: 'પ્રમાણિત વિદ્યાર્થી'
   },
   hi: {
-    home: 'होम', buy: 'किताबें खरीदें', sell: 'किताबें बेचें', browse: 'ब्राउज़ करें', exchange: 'एक्सचेंज', donate: 'दान करें', about: 'हमारे बारे में', contact: 'संपर्क',
+    home: 'होम', browse: 'ब्राउज़ करें', exchange: 'एक्सचेंज', donate: 'दान करें', about: 'हमारे बारे में', contact: 'संपर्क',
     welcome: 'किताबें जोड़ें। विचार बनाएं।', upload: 'अपलोड करें', login: 'लॉगिन', register: 'शुरू करें',
     verified: 'सत्यापित छात्र'
   }
@@ -184,9 +170,9 @@ function setupCounterAnimations() {
 }
 
 function animateCounter(el) {
-  const target = parseInt(el.dataset.count, 10);
-  if (!target || isNaN(target)) return;
-  const duration = 1200;
+  const target = parseInt(el.dataset.count);
+  if (!target) return;
+  const duration = 1500;
   const start = performance.now();
 
   function update(now) {
@@ -289,7 +275,6 @@ function showToast(message, type = 'success') {
     setTimeout(() => toast.remove(), 400);
   }, 4000);
 }
-window.showToast = showToast;
 
 /* 🔐 PASSWORD VISIBILITY TOGGLE */
 window.togglePasswordVisibility = function(inputId, btn) {
@@ -306,103 +291,42 @@ async function updateNavUserUI() {
   const currentUser = await window.BookAPI.getCurrentUser();
   const navActions = document.querySelector('.nav-actions');
   const mobileActions = document.querySelector('.drawer-actions');
-  const navLinks = document.querySelector('.nav-links');
-  const drawerLinks = document.querySelector('.drawer-links');
   const adminNavActions = document.getElementById('adminNavActions');
 
   if (!currentUser) return;
 
-  const isAdmin = ['SUPER_ADMIN', 'COLLEGE_ADMIN', 'DEPT_ADMIN', 'ADMIN'].includes((currentUser.role || '').toUpperCase()) || Boolean(currentUser.is_staff || currentUser.is_superuser);
-  const role = (currentUser.role || 'STUDENT').toUpperCase();
-  const safeName = (typeof escapeHtml === 'function' && (currentUser.name || currentUser.full_name)) ? escapeHtml(currentUser.name || currentUser.full_name) : (currentUser.name || currentUser.full_name || 'User');
-
-  // Mobile drawer links
-  if (drawerLinks) {
-    if (!drawerLinks.querySelector('a[href*="dashboard"]')) {
-      const mobileDashLink = document.createElement('a');
-      mobileDashLink.href = 'dashboard.html';
-      mobileDashLink.className = 'drawer-link';
-      mobileDashLink.innerHTML = `Dashboard <i class="fa-solid fa-gauge"></i>`;
-      drawerLinks.appendChild(mobileDashLink);
-    }
-    if (isAdmin && !drawerLinks.querySelector('a[href*="admin"]')) {
-      const mobileAdminLink = document.createElement('a');
-      mobileAdminLink.href = 'admin.html';
-      mobileAdminLink.className = 'drawer-link';
-      mobileAdminLink.innerHTML = `Admin Console <i class="fa-solid fa-shield-halved"></i>`;
-      drawerLinks.appendChild(mobileAdminLink);
-    }
-  }
-
+  const role = (currentUser.role || 'student').toUpperCase();
   const userHTML = `
-    <div class="nav-user-pill" title="${safeName}">
-      <i class="fa-solid fa-user-circle"></i>
-      <span class="nav-user-name">${safeName}</span>
-    </div>
-    <a href="dashboard.html" class="btn btn-ghost btn-sm nav-btn-dash" title="Dashboard"><i class="fa-solid fa-gauge"></i> <span>Dashboard</span></a>
-    ${isAdmin ? '<a href="admin.html" class="btn btn-secondary btn-sm nav-btn-admin" title="Admin Portal"><i class="fa-solid fa-shield-halved"></i> <span>Admin</span></a>' : ''}
-    <button id="btnNavLogout" class="btn btn-ghost btn-sm nav-btn-logout" title="Logout">Logout</button>
+    <span style="font-size: 13px; font-weight: 600; color: var(--color-primary);">
+      <i class="fa-solid fa-user-circle"></i> ${currentUser.name}
+    </span>
+    <a href="dashboard.html" class="btn btn-ghost btn-sm"><i class="fa-solid fa-gauge"></i> Dashboard</a>
+    <button id="btnNavLogout" class="btn btn-ghost btn-sm">Logout</button>
   `;
 
   if (navActions && !adminNavActions) navActions.innerHTML = userHTML;
   if (mobileActions) {
     mobileActions.innerHTML = `
       <div style="font-size: 13px; font-weight: 600; color: var(--color-primary); padding: 8px 0;">
-        <i class="fa-solid fa-user-circle"></i> ${safeName} (${role})
+        <i class="fa-solid fa-user-circle"></i> ${currentUser.name} (${role})
       </div>
       <a href="dashboard.html" class="btn btn-ghost btn-block" style="margin-bottom:8px;text-decoration:none;"><i class="fa-solid fa-gauge"></i> Dashboard</a>
-      ${isAdmin ? '<a href="admin.html" class="btn btn-secondary btn-block" style="margin-bottom:8px;text-decoration:none;"><i class="fa-solid fa-shield-halved"></i> Admin Portal</a>' : ''}
       <button id="btnMobileLogout" class="btn btn-secondary btn-block">Logout</button>
     `;
   }
 
   const logoutHandler = async () => {
-    if (window._activeNotifSocket) {
-      window._activeNotifSocket.close();
-      window._activeNotifSocket = null;
-    }
     await window.BookAPI.logout();
     showToast('Logged out successfully', 'success');
-    setTimeout(() => window.location.href = 'login.html', 600);
+    setTimeout(() => window.location.reload(), 800);
   };
 
   document.getElementById('btnNavLogout')?.addEventListener('click', logoutHandler);
   document.getElementById('btnMobileLogout')?.addEventListener('click', logoutHandler);
-
-  // Initialize Real-Time Push Notification Listener
-  if (window.BookAPI && typeof window.BookAPI.connectNotificationSocket === 'function' && !window._activeNotifSocket) {
-    window._activeNotifSocket = window.BookAPI.connectNotificationSocket((notif) => {
-      if (typeof showToast === 'function') {
-        const safeTitle = escapeHtml(notif.title || 'New Notification');
-        const safeMsg = escapeHtml(notif.message || '');
-        showToast(`<strong>${safeTitle}</strong><br>${safeMsg}`, 'info');
-      }
-      const notifContainer = document.getElementById('dashboardNotificationsContent');
-      if (notifContainer) {
-        const listEl = notifContainer.querySelector('.notification-list');
-        if (listEl) {
-          const item = document.createElement('div');
-          item.className = 'notification-item unread';
-          item.style.cssText = 'padding:14px;background:#fff;border-radius:12px;border:1px solid var(--color-border);display:flex;align-items:flex-start;gap:12px;';
-          item.innerHTML = `
-            <div style="width:36px;height:36px;border-radius:50%;background:rgba(62,107,58,0.1);color:var(--color-primary);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;">
-              <i class="fa-solid fa-bell"></i>
-            </div>
-            <div style="flex:1;">
-              <h4 style="margin:0 0 4px;font-size:14px;color:var(--color-dark);font-weight:700;">${escapeHtml(notif.title)}</h4>
-              <p style="margin:0 0 6px;font-size:13px;color:var(--color-gray);line-height:1.4;">${escapeHtml(notif.message)}</p>
-              <span style="font-size:11px;color:var(--color-gray);">${new Date(notif.created_at || Date.now()).toLocaleDateString()}</span>
-            </div>
-          `;
-          listEl.prepend(item);
-        }
-      }
-    });
-  }
 }
 
 /* ==========================================================================
-   BOOK CARD RENDERER
+   BOOK CARD RENDERER (Enhanced with WhatsApp Share + PDF View + Ratings)
    ========================================================================== */
 
 async function renderBooksGrid(container, books, actionLabel = 'View Details') {
@@ -413,46 +337,30 @@ async function renderBooksGrid(container, books, actionLabel = 'View Details') {
       <div class="empty-state">
         <div class="empty-state-icon">📚</div>
         <h3>No Books Found</h3>
-        <p>No books match your current criteria. Try changing filters or search terms.</p>
+        <p>No books match your current filters. Try adjusting your search criteria.</p>
         <a href="browse.html" class="btn btn-secondary btn-sm">Browse All Books</a>
       </div>
     `;
     return;
   }
 
-  let wishlistIds = [];
-  try {
-    wishlistIds = await window.BookAPI.getWishlistIds();
-  } catch (e) {
-    wishlistIds = [];
-  }
+  const wishlistIds = await window.BookAPI.getWishlistIds();
 
   container.innerHTML = books.map(b => {
     const isWished = wishlistIds.includes(b.id);
-    const ratingVal = b.rating || 4.8;
-    const mode = (b.mode || 'sell').toLowerCase();
-    const typeLabel = mode.toUpperCase();
+    const ratingVal = b.rating || 4.7;
+    const typeLabel = (b.mode || 'sell').toUpperCase();
     const initials = (b.seller?.name || 'BB').split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
-    const isDonation = b.price === 0 || mode === 'donate';
-    const isSold = (b.status || '').toLowerCase() === 'sold' || (b.status || '').toLowerCase() === 'exchanged' || (b.status || '').toLowerCase() === 'donated';
-    const defaultCover = 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=400&q=80';
-    const coverImg = b.cover || defaultCover;
-    const isDigital = Boolean(b.pdf_url);
+    const isDonation = b.price === 0 || b.mode === 'donate';
+    const coverImg = b.cover || b.image || window.DEFAULT_BOOK_COVER;
+    const isDigital = b.category === 'digital' && b.pdfUrl;
+    const waNumber = ((b.seller?.whatsapp || '+919876543210')).replace(/[^0-9]/g, '');
+    const waMsg = encodeURIComponent(`Hi ${b.seller?.name || 'there'}, I found your book "${b.title}" on BookBridge! Is it still available?`);
+    const safePdfUrl = (b.pdfUrl || '').replace(/'/g, '');
     const safeTitle = (b.title || '').replace(/'/g, '');
 
-    let actionBtnHTML = '';
-    if (isSold) {
-      actionBtnHTML = `<span class="badge" style="background: var(--color-gray); color: #fff; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 600;">${(b.status || 'SOLD').toUpperCase()}</span>`;
-    } else if (mode === 'sell') {
-      actionBtnHTML = `<button class="btn btn-primary btn-sm" onclick="openBuyBookModal('${b.id}')"><i class="fa-solid fa-cart-shopping"></i> Buy Now</button>`;
-    } else if (mode === 'exchange') {
-      actionBtnHTML = `<button class="btn btn-primary btn-sm" onclick="handleBookAction('${b.id}', 'Propose Swap')"><i class="fa-solid fa-arrows-rotate"></i> Swap</button>`;
-    } else {
-      actionBtnHTML = `<button class="btn btn-primary btn-sm" onclick="handleBookAction('${b.id}', 'Claim Free')"><i class="fa-solid fa-gift"></i> Claim</button>`;
-    }
-
     return `
-      <div class="book-card ${isSold ? 'opacity-75' : ''}">
+      <div class="book-card">
         <div class="book-card-actions">
           <button class="card-action-btn ${isWished ? 'active' : ''}" onclick="handleToggleWishlist(event, '${b.id}')" title="Wishlist" aria-label="Toggle wishlist">
             <i class="${isWished ? 'fa-solid' : 'fa-regular'} fa-heart"></i>
@@ -463,34 +371,33 @@ async function renderBooksGrid(container, books, actionLabel = 'View Details') {
         </div>
 
         <div class="book-cover">
-          ${isSold ? `<span class="sold-badge" style="position: absolute; top: 10px; left: 10px; background: #dc2626; color: #fff; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 4px; z-index: 2;"><i class="fa-solid fa-circle-check"></i> ${escapeHtml(b.status)}</span>` : (isDonation ? '<span class="donation-badge"><i class="fa-solid fa-gift"></i> FREE</span>' : '')}
-          <img src="${coverImg}" alt="${escapeHtml(b.title)}" loading="lazy" onerror="if(this.src!=='${defaultCover}'){this.onerror=null;this.src='${defaultCover}';}">
+          ${isDonation ? '<span class="donation-badge"><i class="fa-solid fa-gift"></i> FREE</span>' : ''}
+          <img src="${coverImg}" alt="${b.title}" loading="lazy" onerror="this.onerror=null; this.src=window.DEFAULT_BOOK_COVER;">
         </div>
 
         <div class="book-body">
           <div class="book-meta-row">
-            <span class="book-category">${escapeHtml(b.branch || b.genre || 'Academic')}</span>
-            <span class="book-type">${escapeHtml(typeLabel)}</span>
+            <span class="book-category">${b.branch || b.genre || 'Academic'}</span>
+            <span class="book-type">${typeLabel}</span>
           </div>
 
-          <div class="book-title" onclick="handleBookAction('${b.id}', 'View Details')" style="cursor: pointer;">${escapeHtml(b.title)}</div>
-          <div class="book-author">by ${escapeHtml(b.author || 'Unknown')} · ${escapeHtml(b.edition || 'Latest')}</div>
+          <div class="book-title">${b.title}</div>
+          <div class="book-author">by ${b.author || 'Unknown'} · ${b.edition || 'Latest'}</div>
 
           <div class="book-details">
-            <span class="book-detail-tag"><i class="fa-solid fa-language"></i> ${escapeHtml(b.language || 'English')}</span>
-            <span class="book-detail-tag"><i class="fa-solid fa-tag"></i> ${escapeHtml(b.condition || 'Good')}</span>
-            <span class="book-detail-tag"><i class="fa-solid fa-location-dot"></i> ${escapeHtml((b.location || 'Campus').substring(0, 15))}</span>
+            <span class="book-detail-tag"><i class="fa-solid fa-language"></i> ${b.language || 'English'}</span>
+            <span class="book-detail-tag"><i class="fa-solid fa-tag"></i> ${b.condition || 'Good'}</span>
+            <span class="book-detail-tag"><i class="fa-solid fa-location-dot"></i> ${(b.location || 'Campus').substring(0, 15)}</span>
           </div>
 
           <div class="book-rating">
             <i class="fa-solid fa-star"></i> ${ratingVal}
-            <span style="color: var(--color-gray-light); margin-left: 4px;">· ${escapeHtml(b.status || 'Available')}</span>
+            <span style="color: var(--color-gray-light); margin-left: 4px;">· ${b.status || 'Available'}</span>
           </div>
 
           <div class="book-seller">
-            <span class="book-seller-avatar">${escapeHtml(initials)}</span>
-            <span>${escapeHtml(b.seller?.name || 'Student')}</span>
-            ${b.seller?.is_verified ? '<i class="fa-solid fa-circle-check" style="color:var(--color-primary);font-size:12px;" title="Verified Student"></i>' : ''}
+            <span class="book-seller-avatar">${initials}</span>
+            <span>${b.seller?.name || 'Student'}</span>
           </div>
 
           <div class="book-footer">
@@ -498,319 +405,46 @@ async function renderBooksGrid(container, books, actionLabel = 'View Details') {
               ${isDonation ? 'FREE' : '&#8377;' + b.price}
               ${b.original && b.price > 0 ? '<span class="original-price">&#8377;' + b.original + '</span>' : ''}
             </div>
-            <div style="display: flex; gap: 6px; align-items: center;">
-              ${actionBtnHTML}
-              <button class="btn btn-ghost btn-sm" onclick="handleBookAction('${b.id}', 'View Details')" title="View details"><i class="fa-solid fa-info-circle"></i></button>
-            </div>
+            <button class="btn btn-primary btn-sm" onclick="handleBookAction('${b.id}', '${actionLabel}')">${actionLabel}</button>
           </div>
 
-          ${isDigital ? `
-            <div style="margin-top:8px;">
-              <button class="btn-pdf-view" onclick="openPDFModal('${b.pdf_url}', '${safeTitle}')">
-                <i class="fa-solid fa-file-pdf"></i> View Lab PDF
-              </button>
-            </div>
-          ` : ''}
+          <div style="display:flex; gap:6px; margin-top:8px; flex-wrap:wrap;">
+            <a href="https://wa.me/${waNumber}?text=${waMsg}" target="_blank" rel="noopener" class="btn-whatsapp-share" title="Chat on WhatsApp">
+              <i class="fa-brands fa-whatsapp"></i> WhatsApp
+            </a>
+            ${isDigital ? `<button class="btn-pdf-view" onclick="openPDFModal('${safePdfUrl}', '${safeTitle}')">
+              <i class="fa-solid fa-file-pdf"></i> View PDF
+            </button>` : ''}
+          </div>
         </div>
       </div>
     `;
   }).join('');
 }
 
-/* 🛒 BUY BOOK CHECKOUT / CAMPUS HANDOVER MODAL */
-// Helper to dynamically load the official Razorpay Checkout SDK
-function loadRazorpayScript() {
-  return new Promise((resolve) => {
-    if (typeof window.Razorpay === 'function') {
-      resolve(true);
-      return;
-    }
-    const script = document.createElement('script');
-    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-    script.onload = () => resolve(true);
-    script.onerror = () => {
-      console.warn('[Razorpay] Script failed to load from CDN.');
-      resolve(false);
-    };
-    document.body.appendChild(script);
-  });
-}
-
-window.openBuyBookModal = async function(bookId) {
-  let book;
-  try {
-    book = await window.BookAPI.getBookById(bookId);
-  } catch (e) {
-    showToast('Failed to load book details', 'danger');
-    return;
-  }
-
-  if (!book) {
-    showToast('Book not found', 'warning');
-    return;
-  }
-
-  const currentUser = await window.BookAPI.getCurrentUser();
-  if (!currentUser) {
-    showToast('Please login to purchase or reserve books', 'warning');
-    setTimeout(() => window.location.href = `login.html?redirect=browse.html`, 1000);
-    return;
-  }
-
-  if (book.seller && (book.seller.id === currentUser.id || book.seller.email === currentUser.email)) {
-    showToast('You cannot purchase your own listed textbook.', 'warning');
-    return;
-  }
-
-  let walletInfo = { payment_modes_available: ['CAMPUS_DEAL'] };
-  try {
-    walletInfo = await window.BookAPI.getWalletBalance();
-  } catch (e) {}
-
-  const hasOnlineGateway = Array.isArray(walletInfo.payment_modes_available) && walletInfo.payment_modes_available.includes('ONLINE_RAZORPAY');
-
-  let modal = document.getElementById('buyBookModal');
-  if (!modal) {
-    modal = document.createElement('div');
-    modal.className = 'modal-overlay';
-    modal.id = 'buyBookModal';
-    modal.innerHTML = `
-      <div class="modal-card" style="max-width: 540px;">
-        <div class="modal-header">
-          <h3><i class="fa-solid fa-cart-shopping" style="color: var(--color-primary);"></i> Textbook Purchase</h3>
-          <button class="modal-close" onclick="document.getElementById('buyBookModal').classList.remove('active')" aria-label="Close modal">
-            <i class="fa-solid fa-xmark"></i>
-          </button>
-        </div>
-        <div id="buyBookModalBody"></div>
-      </div>
-    `;
-    document.body.appendChild(modal);
-  }
-
-  const bodyEl = document.getElementById('buyBookModalBody');
-  const seller = book.seller || { name: 'Student Seller' };
-  const coverImg = book.cover || 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=400&q=80';
-
-  bodyEl.innerHTML = `
-    <div style="display: flex; gap: 14px; background: rgba(62,107,58,0.06); padding: 14px; border-radius: 12px; margin-bottom: 18px; border: 1px solid var(--color-border);">
-      <img src="${coverImg}" style="width: 70px; height: 95px; object-fit: cover; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.15);">
-      <div style="flex: 1;">
-        <h4 style="margin: 0 0 4px; font-size: 15px; font-weight: 700; color: var(--color-dark);">${book.title}</h4>
-        <p style="margin: 0 0 6px; font-size: 13px; color: var(--color-gray);">by ${book.author || 'Unknown'} · ${book.branch || 'CE'} (Sem ${book.semester || 1})</p>
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-          <span style="font-size: 18px; font-weight: 800; color: var(--color-primary);">&#8377;${book.price}</span>
-          <span style="font-size: 12px; color: var(--color-gray-dark); background: #fff; padding: 2px 8px; border-radius: 12px; border: 1px solid #e2e8f0;">Seller: ${seller.name}</span>
-        </div>
-      </div>
-    </div>
-
-    <form id="buyBookCheckoutForm">
-      <div class="form-group" style="margin-bottom: 14px;">
-        <label style="display:block; font-size:13px; font-weight:700; color:var(--color-dark); margin-bottom:6px;">Choose Transaction Method:</label>
-        <div style="display:grid; grid-template-columns: ${hasOnlineGateway ? '1fr 1fr' : '1fr'}; gap: 10px;">
-          <label style="display:flex; align-items:flex-start; gap:8px; padding:10px 12px; border:2px solid var(--color-primary); border-radius:10px; cursor:pointer; background:rgba(62,107,58,0.04);">
-            <input type="radio" name="checkoutMethod" value="CAMPUS_DEAL" checked style="margin-top:3px;">
-            <div>
-              <strong style="font-size:13px; display:block; color:var(--color-dark);">🤝 Campus Deal</strong>
-              <span style="font-size:11.5px; color:var(--color-gray); line-height:1.3; display:block;">Meet seller on campus, inspect book in person, and pay directly.</span>
-            </div>
-          </label>
-          ${hasOnlineGateway ? `
-          <label style="display:flex; align-items:flex-start; gap:8px; padding:10px 12px; border:1px solid var(--color-border); border-radius:10px; cursor:pointer;" id="labelOnlinePay">
-            <input type="radio" name="checkoutMethod" value="ONLINE_RAZORPAY" style="margin-top:3px;">
-            <div>
-              <strong style="font-size:13px; display:block; color:var(--color-dark);">💳 Buy Online</strong>
-              <span style="font-size:11.5px; color:var(--color-gray); line-height:1.3; display:block;">Pay securely via Razorpay (UPI, Card, NetBanking).</span>
-            </div>
-          </label>
-          ` : ''}
-        </div>
-      </div>
-
-      <div class="form-group" style="margin-bottom: 12px;">
-        <input type="text" id="buyerFullName" class="form-input" value="${currentUser.name || ''}" required>
-        <label class="form-label">Buyer Full Name *</label>
-      </div>
-
-      <div class="form-group" style="margin-bottom: 12px;">
-        <select id="buyerPickupPref" class="form-select" required>
-          <option value="Campus Central Library">Campus Central Library (Recommended)</option>
-          <option value="Department CE Lab Floor">Department Lab / Classroom</option>
-          <option value="Campus Canteen Area">Campus Canteen / Student Plaza</option>
-          <option value="Main College Gate">Main College Gate</option>
-        </select>
-        <label class="form-label" style="top:-8px; font-size:11px;">Preferred Campus Meeting Point *</label>
-      </div>
-
-      <div class="form-group" style="margin-bottom: 18px;">
-        <textarea id="buyerNotesText" class="form-input" placeholder=" " style="min-height: 55px;"></textarea>
-        <label class="form-label">Message for Seller (Preferred meeting time / lab)</label>
-      </div>
-
-      <div style="display: flex; gap: 10px;">
-        <button type="button" class="btn btn-ghost" style="flex: 1;" onclick="document.getElementById('buyBookModal').classList.remove('active')">Cancel</button>
-        <button type="submit" id="btnSubmitPurchase" class="btn btn-primary" style="flex: 2;"><i class="fa-solid fa-check"></i> Confirm Request (&#8377;${book.price})</button>
-      </div>
-    </form>
-  `;
-
-  modal.classList.add('active');
-
-  // Radio button border toggle
-  const radios = bodyEl.querySelectorAll('input[name="checkoutMethod"]');
-  radios.forEach(r => {
-    r.addEventListener('change', () => {
-      radios.forEach(other => {
-        const parent = other.closest('label');
-        if (parent) {
-          if (other.checked) {
-            parent.style.border = '2px solid var(--color-primary)';
-            parent.style.background = 'rgba(62,107,58,0.04)';
-          } else {
-            parent.style.border = '1px solid var(--color-border)';
-            parent.style.background = 'transparent';
-          }
-        }
-      });
-      const submitBtn = document.getElementById('btnSubmitPurchase');
-      if (r.value === 'ONLINE_RAZORPAY' && r.checked) {
-        submitBtn.innerHTML = `<i class="fa-solid fa-credit-card"></i> Pay Online (&#8377;${book.price})`;
-      } else {
-        submitBtn.innerHTML = `<i class="fa-solid fa-handshake"></i> Initiate Handover (&#8377;${book.price})`;
-      }
-    });
-  });
-
-  const form = document.getElementById('buyBookCheckoutForm');
-  form.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const submitBtn = document.getElementById('btnSubmitPurchase');
-    submitBtn.disabled = true;
-    submitBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Processing...`;
-
-    const selectedMethod = form.querySelector('input[name="checkoutMethod"]:checked')?.value || 'CAMPUS_DEAL';
-    const pickupLoc = document.getElementById('buyerPickupPref').value;
-    const notes = document.getElementById('buyerNotesText').value.trim();
-
-    try {
-      const intent = await window.BookAPI.createPaymentIntent(book.id, selectedMethod, pickupLoc, notes);
-
-      // ── ONLINE RAZORPAY FLOW ──────────────────────────────────────────
-      if (selectedMethod === 'ONLINE_RAZORPAY' && intent.gateway === 'ONLINE_RAZORPAY') {
-        const rzpLoaded = await loadRazorpayScript();
-        if (!rzpLoaded || typeof window.Razorpay !== 'function') {
-          showToast('Razorpay Checkout SDK could not be loaded. Please check your connection.', 'danger');
-          submitBtn.disabled = false;
-          submitBtn.innerHTML = `<i class="fa-solid fa-credit-card"></i> Pay Online (&#8377;${book.price})`;
-          return;
-        }
-
-        const options = {
-          key: intent.key_id,
-          amount: Math.round(intent.amount * 100),
-          currency: intent.currency || 'INR',
-          name: 'BookBridge',
-          description: `Textbook: ${intent.book_title || book.title}`,
-          image: book.cover || 'logo.png.jpeg',
-          order_id: intent.order_id,
-          prefill: {
-            name: currentUser.name || intent.buyer_name,
-            email: currentUser.email || intent.buyer_email,
-            contact: currentUser.phone || intent.buyer_phone,
-          },
-          theme: {
-            color: '#3E6B3A',
-          },
-          handler: async function(response) {
-            submitBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Verifying Payment...`;
-            try {
-              const verifyRes = await window.BookAPI.verifyPayment(
-                response.razorpay_order_id,
-                response.razorpay_payment_id,
-                response.razorpay_signature,
-                intent.bookbridge_order_id
-              );
-              modal.classList.remove('active');
-              showToast(verifyRes.message || 'Payment verified and order confirmed!', 'success');
-              setTimeout(() => window.location.href = 'dashboard.html', 1200);
-            } catch (err) {
-              showToast(err.message || 'Payment verification failed. Please contact support.', 'danger');
-              submitBtn.disabled = false;
-              submitBtn.innerHTML = `<i class="fa-solid fa-credit-card"></i> Retry Payment`;
-            }
-          },
-          modal: {
-            ondismiss: async function() {
-              submitBtn.disabled = false;
-              submitBtn.innerHTML = `<i class="fa-solid fa-credit-card"></i> Pay Online (&#8377;${book.price})`;
-              // Release reservation if buyer cancelled checkout
-              await window.BookAPI.cancelPayment(intent.bookbridge_order_id, book.id).catch(() => {});
-              showToast('Payment cancelled. The book remains available.', 'info');
-            }
-          }
-        };
-
-        const rzp = new window.Razorpay(options);
-        rzp.on('payment.failed', function(resp) {
-          showToast(`Payment failed: ${resp.error.description || 'Transaction declined'}`, 'danger');
-          submitBtn.disabled = false;
-          submitBtn.innerHTML = `<i class="fa-solid fa-credit-card"></i> Pay Online (&#8377;${book.price})`;
-        });
-        rzp.open();
-        return;
-      }
-
-      // ── CAMPUS DIRECT HANDOVER FLOW ────────────────────────────────────
-      const messageText = `Hi! I want to purchase your book "${book.title}" (₹${book.price}). Proposed campus pickup location: ${pickupLoc}. ${notes}`;
-      await window.BookAPI.sendMessage(seller.email || 'seller@bookbridge.local', messageText, book.title).catch(() => {});
-
-      modal.classList.remove('active');
-      showToast(intent.message || `Handover initiated with ${seller.name}! Check your messages to coordinate meetup.`, 'success');
-      setTimeout(() => window.location.href = 'dashboard.html', 1200);
-
-    } catch (err) {
-      showToast(err.message || 'Failed to initiate request. Please try again.', 'danger');
-      submitBtn.disabled = false;
-      submitBtn.innerHTML = `<i class="fa-solid fa-check"></i> Try Again`;
-    }
-  });
-};
-
 /* ❤️ WISHLIST TOGGLE */
 window.handleToggleWishlist = async function(e, bookId) {
   e.stopPropagation();
-  const currentUser = await window.BookAPI.getCurrentUser();
-  if (!currentUser) {
-    showToast('Please login to manage your wishlist', 'warning');
-    setTimeout(() => window.location.href = 'login.html', 800);
-    return;
-  }
+  const added = await window.BookAPI.toggleWishlist(bookId);
+  const btn = e.currentTarget;
+  const icon = btn.querySelector('i');
 
-  try {
-    const added = await window.BookAPI.toggleWishlist(bookId);
-    const btn = e.currentTarget;
-    const icon = btn.querySelector('i');
-
-    if (added) {
-      btn.classList.add('active');
-      if (icon) icon.className = 'fa-solid fa-heart';
-      showToast('Added to wishlist', 'success');
-    } else {
-      btn.classList.remove('active');
-      if (icon) icon.className = 'fa-regular fa-heart';
-      showToast('Removed from wishlist', 'info');
-    }
-  } catch (err) {
-    showToast(err.message || 'Could not update wishlist', 'danger');
+  if (added) {
+    btn.classList.add('active');
+    icon.className = 'fa-solid fa-heart';
+    showToast('Added to wishlist', 'success');
+  } else {
+    btn.classList.remove('active');
+    icon.className = 'fa-regular fa-heart';
+    showToast('Removed from wishlist', 'info');
   }
 };
 
 /* 📤 SHARE */
 window.handleShare = function(title, id) {
-  const url = `${window.location.origin}/browse.html?book=${id}`;
+  const url = window.location.origin + '/browse.html';
   if (navigator.share) {
-    navigator.share({ title: `${title} - BookBridgee`, url })
+    navigator.share({ title: `${title} - BookBridge`, url })
       .catch(() => {});
   } else {
     navigator.clipboard.writeText(url)
@@ -819,16 +453,9 @@ window.handleShare = function(title, id) {
   }
 };
 
-/* 📖 BOOK ACTION MODAL */
+/* 📖 BOOK ACTION MODAL — Enhanced with reviews + ratings */
 window.handleBookAction = async function(bookId, actionLabel) {
-  let book;
-  try {
-    book = await window.BookAPI.getBookById(bookId);
-  } catch (e) {
-    showToast('Could not load book details', 'danger');
-    return;
-  }
-
+  const book = await window.BookAPI.getBookById(bookId);
   if (!book) return;
 
   const modal = document.getElementById('bookDetailsModal');
@@ -840,101 +467,97 @@ window.handleBookAction = async function(bookId, actionLabel) {
   if (!modal) return;
 
   titleEl.textContent = book.title;
-  const seller = book.seller || { name: 'Student Seller' };
-  const ratingVal = book.rating || 4.8;
-  const mode = (book.mode || 'sell').toLowerCase();
+  const seller = book.seller || { name: 'Student', whatsapp: '+919876543210', email: 'student@rcti.ac.in' };
+  const waNumber = (seller.whatsapp || '+919876543210').replace(/[^0-9]/g, '');
+  const ratingVal = seller.rating || book.rating || 4.8;
+
+  const stars = Array.from({ length: 5 }, (_, i) =>
+    `<i class="fa-${i < Math.round(ratingVal) ? 'solid' : 'regular'} fa-star" style="color: var(--color-warning); font-size: 13px;"></i>`
+  ).join('');
+
+  const reviews = window.BookDB ? await window.BookDB.getSellerReviews(seller.email) : [];
+  const reviewsHTML = reviews.length > 0
+    ? reviews.slice(0, 2).map(r => `
+        <div class="review-item">
+          <div class="review-item-header">
+            <span class="review-item-name">${r.reviewerName}</span>
+            <div class="star-rating-display">
+              ${Array.from({length:5},(_,i) => `<i class="fa-${i < r.rating ? 'solid':'regular'} fa-star"></i>`).join('')}
+            </div>
+          </div>
+          <div class="review-item-text">${r.comment}</div>
+          <div class="review-item-date">${new Date(r.date).toLocaleDateString()}</div>
+        </div>
+      `).join('')
+    : `<p style="color: var(--color-gray); font-size: 13px; margin: 0;">No reviews yet for this seller.</p>`;
+
+  const safeBookId = bookId;
+  const safeSellerEmail = seller.email;
+  const safeSellerName = seller.name.replace(/"/g, '&quot;');
 
   bodyEl.innerHTML = `
     <div style="display: grid; gap: 10px; font-size: 14px; line-height: 1.8;">
       <div class="flex-between"><span style="color: var(--color-gray);">Author</span><strong>${book.author || 'N/A'}</strong></div>
+      <div class="flex-between"><span style="color: var(--color-gray);">Subject</span><strong>${book.subject || book.genre || 'Academic'}</strong></div>
       <div class="flex-between"><span style="color: var(--color-gray);">Department</span><span class="badge badge-primary">${book.branch || 'CE'}</span></div>
       <div class="flex-between"><span style="color: var(--color-gray);">Condition</span><strong>${book.condition || 'Good'}</strong></div>
       <div class="flex-between"><span style="color: var(--color-gray);">Semester</span><strong>${book.semester ? 'Sem ' + book.semester : 'N/A'}</strong></div>
+      <div class="flex-between"><span style="color: var(--color-gray);">Rating</span><strong style="color: var(--color-warning);">&#11088; ${ratingVal}</strong></div>
       <div class="flex-between"><span style="color: var(--color-gray);">Price</span><strong style="color: var(--color-primary);">${book.price > 0 ? '&#8377;' + book.price : 'FREE'}</strong></div>
-      ${book.exchange_for ? `<div class="flex-between"><span style="color: var(--color-gray);">Looking to Swap For</span><span style="font-size:13px;font-weight:600;">${book.exchange_for}</span></div>` : ''}
+      ${book.exchangeFor ? `<div class="flex-between"><span style="color: var(--color-gray);">Exchange For</span><span style="font-size:13px;">${book.exchangeFor}</span></div>` : ''}
       <div style="padding: 12px; background: rgba(0,0,0,0.02); border-radius: 8px; margin-top: 4px;">
         <span style="color: var(--color-gray); font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">Description</span>
-        <p style="margin-top: 4px; color: var(--color-dark);">${book.description || 'Academic resource listed on BookBridgee.'}</p>
+        <p style="margin-top: 4px; color: var(--color-dark);">${book.description || 'Academic resource listed on BookBridge.'}</p>
       </div>
       <div class="flex-between"><span style="color: var(--color-gray);">Listed by</span><strong>${seller.name}</strong></div>
-      <div class="flex-between"><span style="color: var(--color-gray);">Campus Location</span><strong>${book.location || 'Campus'}</strong></div>
+      <div class="flex-between">
+        <span style="color: var(--color-gray);">Seller Rating</span>
+        <div style="display:inline-flex;align-items:center;gap:3px;">${stars}<span style="font-size:13px;color:var(--color-gray);margin-left:4px;">${ratingVal} (${reviews.length})</span></div>
+      </div>
+    </div>
+    <div style="margin-top: 16px; border-top: 1px solid var(--color-border); padding-top: 16px;">
+      <h4 style="font-size: 14px; margin-bottom: 10px; font-weight: 600;">Seller Reviews</h4>
+      ${reviewsHTML}
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;">
+        <button onclick="handleLeaveReview('${safeSellerEmail}', '${safeSellerName}', '${safeBookId}')" class="btn btn-ghost btn-sm" style="font-size:12px;">
+          <i class="fa-solid fa-star"></i> Leave a Review
+        </button>
+        ${book.pdfUrl ? `<button onclick="openPDFModal('${book.pdfUrl}', '${book.title.substring(0,30)}'); document.getElementById('bookDetailsModal').classList.remove('active');" class="btn btn-ghost btn-sm" style="font-size:12px;">
+          <i class="fa-solid fa-file-pdf"></i> View PDF
+        </button>` : ''}
+      </div>
     </div>
   `;
 
-  if (waBtn) {
-    waBtn.style.display = 'none';
-  }
-
-  if (mode === 'sell' && (book.status || '').toLowerCase() === 'available') {
-    confirmBtn.innerHTML = `<i class="fa-solid fa-cart-shopping"></i> Buy Now (₹${book.price})`;
-    confirmBtn.onclick = () => {
-      modal.classList.remove('active');
-      openBuyBookModal(book.id);
-    };
-  } else if (mode === 'exchange' && (book.status || '').toLowerCase() === 'available') {
-    confirmBtn.innerHTML = `<i class="fa-solid fa-arrows-rotate"></i> Propose Swap`;
-    confirmBtn.onclick = async () => {
-      const user = await window.BookAPI.getCurrentUser();
-      if (!user) {
-        showToast('Please login to propose a book swap', 'warning');
-        setTimeout(() => window.location.href = 'login.html', 800);
-        return;
-      }
-      const offeredTitle = prompt(`Enter the title of the book you want to offer in exchange for "${book.title}":`);
-      if (!offeredTitle) return;
-
-      try {
-        await window.BookAPI.proposeExchange({
-          target_book: book.id,
-          offered_book_title: offeredTitle,
-          note: `Swap proposal by ${user.name}`
-        });
-        showToast('Exchange proposal sent to the seller!', 'success');
-        modal.classList.remove('active');
-      } catch (err) {
-        showToast(err.message || 'Failed to submit exchange proposal', 'danger');
-      }
-    };
-  } else if (mode === 'donate' && (book.status || '').toLowerCase() === 'available') {
-    confirmBtn.innerHTML = `<i class="fa-solid fa-gift"></i> Claim Free Book`;
-    confirmBtn.onclick = async () => {
-      const user = await window.BookAPI.getCurrentUser();
-      if (!user) {
-        showToast('Please login to claim free donations', 'warning');
-        setTimeout(() => window.location.href = 'login.html', 800);
-        return;
-      }
-      const msg = prompt('Enter a short note for the donor explaining why you need this book:') || 'Academic study requirement';
-      try {
-        await window.BookAPI.claimDonation(book.id, msg);
-        showToast('Donation claim submitted to donor!', 'success');
-        modal.classList.remove('active');
-      } catch (err) {
-        showToast(err.message || 'Failed to submit donation claim', 'danger');
-      }
-    };
-  } else {
-    confirmBtn.textContent = 'Contact Seller';
-    confirmBtn.onclick = async () => {
-      const user = await window.BookAPI.getCurrentUser();
-      if (!user) {
-        showToast('Please login to message the seller', 'warning');
-        setTimeout(() => window.location.href = 'login.html', 800);
-        return;
-      }
-      const msg = prompt(`Send a message to ${seller.name} regarding "${book.title}":`);
-      if (!msg) return;
-      try {
-        await window.BookAPI.sendMessage(seller.email || 'seller@bookbridge.local', msg, book.title);
-        showToast(`Message sent to ${seller.name}!`, 'success');
-        modal.classList.remove('active');
-      } catch (err) {
-        showToast(err.message || 'Failed to send message', 'danger');
-      }
-    };
-  }
+  waBtn.href = `https://wa.me/${waNumber}?text=${encodeURIComponent(`Hi ${seller.name}, I'm interested in "${book.title}" on BookBridge!`)}`;
+  confirmBtn.textContent = `${actionLabel}`;
+  confirmBtn.onclick = async () => {
+    const user = await window.BookAPI.getCurrentUser();
+    if (!user) {
+      showToast('Please login to continue', 'warning');
+      setTimeout(() => window.location.href = 'login.html', 1000);
+      return;
+    }
+    await window.BookAPI.sendMessage(seller.email, `Interested in: ${book.title}`, book.title);
+    showToast(`Request sent to ${seller.name}!`, 'success');
+    modal.classList.remove('active');
+  };
 
   modal.classList.add('active');
+};
+
+/* ⭐ LEAVE REVIEW */
+window.handleLeaveReview = async function(sellerEmail, sellerName, bookId) {
+  const user = await window.BookAPI.getCurrentUser();
+  if (!user) { showToast('Please login to leave a review', 'warning'); return; }
+
+  const rating = prompt(`Rate ${sellerName} (1-5 stars):`);
+  if (!rating || isNaN(rating) || rating < 1 || rating > 5) return;
+
+  const comment = prompt('Write a short review (optional):') || 'Good experience!';
+  await window.BookAPI.addReview(sellerEmail, parseInt(rating), comment);
+  showToast('Review submitted! Thank you.', 'success');
+  handleBookAction(bookId, 'View Details');
 };
 
 /* ==========================================================================
@@ -945,56 +568,49 @@ window.handleBookAction = async function(bookId, actionLabel) {
 async function initHomePage() {
   const grid = document.getElementById('popularBooksGrid');
   if (!grid) return;
+  const books = await window.BookAPI.getBooks();
+  await renderBooksGrid(grid, books.slice(0, 8), 'View Details');
 
-  try {
-    const books = await window.BookAPI.getBooks();
-    await renderBooksGrid(grid, books.slice(0, 8), 'View Details');
+  const tabsContainer = document.getElementById('homeBookTabs');
+  if (tabsContainer) {
+    const tabs = tabsContainer.querySelectorAll('.home-tab-pill');
+    tabs.forEach(tab => {
+      tab.addEventListener('click', async () => {
+        tabs.forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
 
-    const tabsContainer = document.getElementById('homeBookTabs');
-    if (tabsContainer) {
-      const tabs = tabsContainer.querySelectorAll('.home-tab-pill');
-      tabs.forEach(tab => {
-        tab.addEventListener('click', async () => {
-          tabs.forEach(t => t.classList.remove('active'));
-          tab.classList.add('active');
+        const filter = tab.dataset.filter;
+        let filtered = [...books];
 
-          const filter = tab.dataset.filter;
-          let filtered = [...books];
-
-          if (filter === 'sell') {
-            filtered = filtered.filter(b => b.mode === 'sell');
-          } else if (filter === 'popular') {
-            filtered = filtered.filter(b => (b.rating || 0) >= 4.7);
-          } else if (filter === 'exchange') {
-            filtered = filtered.filter(b => b.mode === 'exchange');
-          } else if (filter === 'donate') {
-            filtered = filtered.filter(b => b.mode === 'donate' || b.price === 0);
-          } else if (filter !== 'all') {
-            filtered = filtered.filter(b => (b.branch || '').toUpperCase() === filter.toUpperCase() || (b.genre || '').toLowerCase().includes(filter.toLowerCase()));
-          }
-
-          await renderBooksGrid(grid, filtered.slice(0, 8), 'View Details');
-        });
-      });
-    }
-
-    // AI recommendations for authenticated student
-    const aiSection = document.getElementById('aiRecommendationsSection');
-    const aiGrid = document.getElementById('aiRecommendationsGrid');
-    if (aiSection && aiGrid) {
-      const user = await window.BookAPI.getCurrentUser();
-      if (user) {
-        const recs = await window.BookAPI.getAIRecommendations(user.branch || 'CE', user.semester || 1).catch(() => []);
-        if (recs && recs.length > 0) {
-          aiSection.style.display = 'block';
-          const branchInfo = document.getElementById('aiRecBranchInfo');
-          if (branchInfo) branchInfo.textContent = `Personalized for: ${user.branch || 'CE'} · Semester ${user.semester || 1}`;
-          await renderBooksGrid(aiGrid, recs.slice(0, 4), 'View Details');
+        if (filter === 'popular') {
+          filtered = filtered.filter(b => (b.rating || 0) >= 4.7);
+        } else if (filter === 'exchange') {
+          filtered = filtered.filter(b => b.mode === 'exchange');
+        } else if (filter === 'donate') {
+          filtered = filtered.filter(b => b.mode === 'donate' || b.price === 0);
+        } else if (filter !== 'all') {
+          filtered = filtered.filter(b => (b.branch || '').toUpperCase() === filter.toUpperCase() || (b.genre || '').toLowerCase().includes(filter.toLowerCase()));
         }
+
+        await renderBooksGrid(grid, filtered.slice(0, 8), 'View Details');
+      });
+    });
+  }
+
+  // AI Recommendations for logged-in users
+  const aiSection = document.getElementById('aiRecommendationsSection');
+  const aiGrid = document.getElementById('aiRecommendationsGrid');
+  if (aiSection && aiGrid) {
+    const user = await window.BookAPI.getCurrentUser();
+    if (user) {
+      const recs = await window.BookAPI.getAIRecommendations(user.branch || 'CE', user.semester || 5);
+      if (recs && recs.length > 0) {
+        aiSection.style.display = 'block';
+        const branchInfo = document.getElementById('aiRecBranchInfo');
+        if (branchInfo) branchInfo.textContent = `Based on your profile: ${user.branch || 'CE'} · Semester ${user.semester || 5}`;
+        await renderBooksGrid(aiGrid, recs.slice(0, 4), 'View Details');
       }
     }
-  } catch (err) {
-    grid.innerHTML = `<div class="empty-state"><h3>Unable to load catalog</h3><p>${escapeHtml(err.message)}</p></div>`;
   }
 }
 
@@ -1025,30 +641,18 @@ async function initBrowsePage() {
   let debounceTimer;
 
   async function fetchAndRender() {
-    if (!grid) return;
-    grid.innerHTML = '<div style="text-align:center;padding:40px;color:var(--color-gray);"><i class="fa-solid fa-spinner fa-spin fa-2x"></i><p style="margin-top:12px;">Loading books...</p></div>';
-
     const filters = {};
     const query = searchInput?.value.trim();
-    if (query) filters.search = query;
+    if (query) filters.query = query;
     if (currentBranch !== 'ALL') filters.branch = currentBranch;
     if (subjectSelect?.value && subjectSelect.value !== 'All Subjects') filters.subject = subjectSelect.value;
     if (conditionSelect?.value && conditionSelect.value !== 'Any Condition') filters.condition = conditionSelect.value;
-    if (maxPriceInput?.value) filters.max_price = maxPriceInput.value;
-    if (sortSelect?.value) {
-      if (sortSelect.value === 'price-low') filters.ordering = 'price';
-      else if (sortSelect.value === 'price-high') filters.ordering = '-price';
-      else if (sortSelect.value === 'rating') filters.ordering = '-rating';
-      else filters.ordering = '-created_at';
-    }
+    if (maxPriceInput?.value) filters.maxPrice = maxPriceInput.value;
+    if (sortSelect?.value) filters.sort = sortSelect.value;
 
-    try {
-      const books = await window.BookAPI.getBooks(filters);
-      if (resultsCount) resultsCount.textContent = `${books.length} book${books.length !== 1 ? 's' : ''} found`;
-      await renderBooksGrid(grid, books, 'View Details');
-    } catch (err) {
-      grid.innerHTML = `<div class="empty-state"><h3>Search Error</h3><p>${escapeHtml(err.message)}</p></div>`;
-    }
+    const books = await window.BookAPI.getBooks(filters);
+    if (resultsCount) resultsCount.textContent = `${books.length} book${books.length !== 1 ? 's' : ''} found`;
+    await renderBooksGrid(grid, books, 'View Details');
   }
 
   function debouncedSearch() {
@@ -1076,271 +680,92 @@ async function initBrowsePage() {
   fetchAndRender();
 }
 
-/* 🏷️ SELL PAGE */
-async function initSellPage() {
-  const form = document.getElementById('sellPageBookForm');
-  if (!form) return;
-
-  const modeCards = document.querySelectorAll('.sell-mode-card');
-  const priceGroup = document.getElementById('sellPriceGroup');
-  const exchangeGroup = document.getElementById('sellExchangeForGroup');
-  const priceInput = document.getElementById('sellPrice');
-
-  let selectedCoverFile = null;
-
-  // File Upload Elements
-  const fileGalleryInput = document.getElementById('sellCoverFileGallery');
-  const fileCameraInput = document.getElementById('sellCoverFileCamera');
-  const uploadArea = document.getElementById('sellCoverUploadArea');
-  const previewContainer = document.getElementById('sellCoverPreviewContainer');
-  const previewImg = document.getElementById('sellCoverPreviewImg');
-  const fileNameEl = document.getElementById('sellCoverFileName');
-  const fileSizeEl = document.getElementById('sellCoverFileSize');
-  const btnTakePhoto = document.getElementById('btnSellTakePhoto');
-  const btnChooseFile = document.getElementById('btnSellChooseFile');
-  const btnChangePhoto = document.getElementById('btnSellChangePhoto');
-  const btnRemovePhoto = document.getElementById('btnSellRemovePhoto');
-
-  function handleFileSelected(file) {
-    if (!file) return;
-
-    // Validate file type
-    if (!file.type.startsWith('image/')) {
-      showToast('Please select a valid book image (JPG, PNG, or WebP).', 'danger');
-      return;
-    }
-
-    // Validate size (max 10MB)
-    const maxSize = 10 * 1024 * 1024;
-    if (file.size > maxSize) {
-      showToast('Image size is too large. Please choose an image smaller than 10MB.', 'danger');
-      return;
-    }
-
-    selectedCoverFile = file;
-
-    // Display preview
-    const objectUrl = URL.createObjectURL(file);
-    if (previewImg) previewImg.src = objectUrl;
-    if (fileNameEl) fileNameEl.textContent = file.name || 'book_cover.jpg';
-    if (fileSizeEl) {
-      const sizeMb = (file.size / (1024 * 1024)).toFixed(1);
-      fileSizeEl.textContent = sizeMb >= 0.1 ? `${sizeMb} MB` : `${Math.round(file.size / 1024)} KB`;
-    }
-
-    if (uploadArea) uploadArea.style.display = 'none';
-    if (previewContainer) previewContainer.style.display = 'block';
-  }
-
-  function clearSelectedFile() {
-    selectedCoverFile = null;
-    if (fileGalleryInput) fileGalleryInput.value = '';
-    if (fileCameraInput) fileCameraInput.value = '';
-    if (previewImg) previewImg.src = '';
-    if (uploadArea) uploadArea.style.display = 'block';
-    if (previewContainer) previewContainer.style.display = 'none';
-  }
-
-  btnTakePhoto?.addEventListener('click', (e) => {
-    e.stopPropagation();
-    fileCameraInput?.click();
-  });
-
-  btnChooseFile?.addEventListener('click', (e) => {
-    e.stopPropagation();
-    fileGalleryInput?.click();
-  });
-
-  uploadArea?.addEventListener('click', () => {
-    fileGalleryInput?.click();
-  });
-
-  btnChangePhoto?.addEventListener('click', () => {
-    fileGalleryInput?.click();
-  });
-
-  btnRemovePhoto?.addEventListener('click', () => {
-    clearSelectedFile();
-  });
-
-  fileGalleryInput?.addEventListener('change', (e) => {
-    const file = e.target.files?.[0];
-    if (file) handleFileSelected(file);
-  });
-
-  fileCameraInput?.addEventListener('change', (e) => {
-    const file = e.target.files?.[0];
-    if (file) handleFileSelected(file);
-  });
-
-  // Drag and Drop
-  uploadArea?.addEventListener('dragover', (e) => {
-    e.preventDefault();
-    uploadArea.style.borderColor = 'var(--color-primary)';
-    uploadArea.style.background = 'rgba(62,107,58,0.06)';
-  });
-
-  uploadArea?.addEventListener('dragleave', (e) => {
-    e.preventDefault();
-    uploadArea.style.borderColor = '#cbd5e1';
-    uploadArea.style.background = '#f8fafc';
-  });
-
-  uploadArea?.addEventListener('drop', (e) => {
-    e.preventDefault();
-    uploadArea.style.borderColor = '#cbd5e1';
-    uploadArea.style.background = '#f8fafc';
-    const file = e.dataTransfer?.files?.[0];
-    if (file) handleFileSelected(file);
-  });
-
-  modeCards.forEach(card => {
-    card.addEventListener('click', () => {
-      modeCards.forEach(c => {
-        c.classList.remove('active');
-        c.style.borderColor = 'var(--color-border)';
-        c.style.background = '#fff';
-      });
-      card.classList.add('active');
-      card.style.borderColor = 'var(--color-primary)';
-      card.style.background = 'rgba(62,107,58,0.06)';
-
-      const radio = card.querySelector('input[type="radio"]');
-      if (radio) {
-        radio.checked = true;
-        const val = radio.value;
-        if (val === 'sell') {
-          if (priceGroup) priceGroup.style.display = 'block';
-          if (exchangeGroup) exchangeGroup.style.display = 'none';
-          if (priceInput) priceInput.value = '150';
-        } else if (val === 'exchange') {
-          if (priceGroup) priceGroup.style.display = 'none';
-          if (exchangeGroup) exchangeGroup.style.display = 'block';
-          if (priceInput) priceInput.value = '0';
-        } else if (val === 'donate') {
-          if (priceGroup) priceGroup.style.display = 'none';
-          if (exchangeGroup) exchangeGroup.style.display = 'none';
-          if (priceInput) priceInput.value = '0';
-        }
-      }
-    });
-  });
-
-  form.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const currentUser = await window.BookAPI.getCurrentUser();
-    if (!currentUser) {
-      showToast('Please login to publish your book listing.', 'warning');
-      setTimeout(() => window.location.href = 'login.html?redirect=sell.html', 1000);
-      return;
-    }
-
-    const submitBtn = document.getElementById('btnSubmitSellBook');
-    if (submitBtn) submitBtn.classList.add('btn-loading');
-
-    const selectedMode = form.querySelector('input[name="sellMode"]:checked')?.value || 'sell';
-    const bookData = {
-      title: document.getElementById('sellTitle')?.value.trim() || '',
-      author: document.getElementById('sellAuthor')?.value.trim() || '',
-      branch: document.getElementById('sellBranch')?.value || 'CE',
-      semester: parseInt(document.getElementById('sellSemester')?.value, 10) || 1,
-      gtu_code: document.getElementById('sellGtuCode')?.value.trim() || '',
-      condition: document.getElementById('sellCondition')?.value || 'Good',
-      price: selectedMode === 'sell' ? (parseFloat(priceInput?.value) || 0) : 0,
-      mode: selectedMode,
-      exchange_for: document.getElementById('sellExchangeFor')?.value.trim() || '',
-      location: document.getElementById('sellLocation')?.value || 'Campus Central Library',
-      description: document.getElementById('sellDescription')?.value.trim() || '',
-      cover_image: selectedCoverFile || null,
-    };
-
-    try {
-      const saved = await window.BookAPI.addBook(bookData);
-      if (submitBtn) submitBtn.classList.remove('btn-loading');
-      showToast(`Success! "${saved?.title || bookData.title}" is now live on campus.`, 'success');
-      setTimeout(() => window.location.href = 'browse.html', 1200);
-    } catch (err) {
-      if (submitBtn) submitBtn.classList.remove('btn-loading');
-      showToast(err.message || 'Failed to list book. Please check details.', 'danger');
-    }
-  });
-}
-
 /* 🔄 EXCHANGE */
 async function initExchangePage() {
   const grid = document.getElementById('exchangeGrid');
   const triggerBtn = document.getElementById('btnUploadBookTrigger');
   const modal = document.getElementById('uploadModal');
   const form = document.getElementById('uploadBookForm');
-
-  let exchangeCoverFile = null;
   const dropZone = document.getElementById('uploadDropZone');
   const fileInput = document.getElementById('uploadFileInput');
   const fileList = document.getElementById('uploadFileList');
+  let uploadedFileBase64 = null;
 
   if (dropZone && fileInput) {
     dropZone.addEventListener('click', () => fileInput.click());
-    dropZone.addEventListener('dragover', (e) => {
-      e.preventDefault();
-      dropZone.classList.add('drag-over');
-    });
-    ['dragleave', 'dragend'].forEach(evt => {
-      dropZone.addEventListener(evt, () => dropZone.classList.remove('drag-over'));
-    });
+    dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
     dropZone.addEventListener('drop', (e) => {
       e.preventDefault();
-      dropZone.classList.remove('drag-over');
-      const file = e.dataTransfer?.files?.[0];
-      if (file) handleExchangeFile(file);
+      dropZone.classList.remove('dragover');
+      if (e.dataTransfer.files.length) handleFileSelect(e.dataTransfer.files[0]);
     });
-    fileInput.addEventListener('change', (e) => {
-      const file = e.target.files?.[0];
-      if (file) handleExchangeFile(file);
+    fileInput.addEventListener('change', () => {
+      if (fileInput.files.length) handleFileSelect(fileInput.files[0]);
     });
   }
 
-  function handleExchangeFile(file) {
-    const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'];
-    if (!validTypes.includes(file.type.toLowerCase())) {
-      showToast('Please select a valid image (JPG, PNG, or WebP)', 'danger');
+  function handleFileSelect(file) {
+    if (!file.type.startsWith('image/')) {
+      showToast('Please select an image file', 'warning');
       return;
     }
-    if (file.size > 10 * 1024 * 1024) {
-      showToast('Image is too large. Max size is 10MB.', 'danger');
+    if (file.size > 5 * 1024 * 1024) {
+      showToast('File size must be under 5MB', 'warning');
       return;
     }
-    exchangeCoverFile = file;
-    if (fileList) {
-      const sizeMb = (file.size / (1024 * 1024)).toFixed(1);
-      fileList.innerHTML = `
-        <div style="display:flex; align-items:center; justify-content:space-between; background:var(--color-surface); padding:8px 12px; border-radius:8px; margin-top:8px; border:1px solid var(--color-border);">
-          <div style="display:flex; align-items:center; gap:8px;">
-            <i class="fa-solid fa-image" style="color:var(--color-primary);"></i>
-            <span style="font-size:13px; font-weight:600;">${escapeHtml(file.name)}</span>
-            <span style="font-size:11px; color:var(--color-text-muted);">(${sizeMb} MB)</span>
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      uploadedFileBase64 = e.target.result;
+      if (dropZone) {
+        dropZone.classList.add('has-preview');
+        dropZone.querySelector('.upload-preview-img')?.remove();
+        const img = document.createElement('img');
+        img.className = 'upload-preview-img';
+        img.src = uploadedFileBase64;
+        img.alt = 'Preview';
+        dropZone.appendChild(img);
+      }
+      if (fileList) {
+        fileList.innerHTML = `
+          <div class="upload-file-item">
+            <i class="fa-solid fa-image" style="color: var(--color-primary);"></i>
+            <span class="file-name">${file.name}</span>
+            <span class="file-size">${(file.size / 1024).toFixed(1)} KB</span>
+            <button type="button" onclick="clearUploadPreview()" style="color: var(--color-danger); cursor: pointer;"><i class="fa-solid fa-xmark"></i></button>
           </div>
-          <button type="button" class="btn btn-ghost btn-sm" id="btnRemoveExchangeCover" style="color:var(--color-danger); padding:2px 6px;">
-            <i class="fa-solid fa-xmark"></i>
-          </button>
-        </div>
-      `;
-      document.getElementById('btnRemoveExchangeCover')?.addEventListener('click', () => {
-        exchangeCoverFile = null;
-        if (fileInput) fileInput.value = '';
-        fileList.innerHTML = '';
-      });
-    }
+        `;
+      }
+    };
+    reader.readAsDataURL(file);
   }
 
-  triggerBtn?.addEventListener('click', async () => {
-    const user = await window.BookAPI.getCurrentUser();
-    if (!user) {
-      showToast('Please login to list a book for exchange', 'warning');
-      setTimeout(() => window.location.href = 'login.html', 800);
-      return;
+  window.clearUploadPreview = function() {
+    uploadedFileBase64 = null;
+    if (fileList) fileList.innerHTML = '';
+    if (dropZone) {
+      dropZone.classList.remove('has-preview');
+      dropZone.querySelector('.upload-preview-img')?.remove();
     }
-    modal?.classList.add('active');
+  };
+
+  // Mode selector
+  const modeOptions = document.querySelectorAll('.mode-option');
+  const exchangeForGroup = document.getElementById('exchangeForGroup');
+  const priceGroup = document.getElementById('uploadPriceGroup');
+  let selectedMode = 'exchange';
+
+  modeOptions.forEach(opt => {
+    opt.addEventListener('click', () => {
+      modeOptions.forEach(o => o.classList.remove('active'));
+      opt.classList.add('active');
+      selectedMode = opt.dataset.mode;
+      if (exchangeForGroup) exchangeForGroup.style.display = selectedMode === 'exchange' ? 'block' : 'none';
+      if (priceGroup) priceGroup.style.display = selectedMode === 'donate' ? 'none' : 'block';
+    });
   });
+
+  triggerBtn?.addEventListener('click', () => modal?.classList.add('active'));
 
   form?.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -1351,39 +776,34 @@ async function initExchangePage() {
       title: document.getElementById('uploadTitle').value.trim(),
       author: document.getElementById('uploadAuthor').value.trim(),
       branch: document.getElementById('uploadBranch').value,
-      semester: parseInt(document.getElementById('uploadSemester')?.value, 10) || 1,
-      gtu_code: document.getElementById('uploadGtuCode')?.value.trim() || '',
+      semester: parseInt(document.getElementById('uploadSemester')?.value) || 1,
+      gtuCode: document.getElementById('uploadGtuCode')?.value.trim() || '',
       condition: document.getElementById('uploadCondition')?.value || 'Good',
       description: document.getElementById('uploadDescription')?.value.trim() || '',
-      exchange_for: document.getElementById('uploadExchangeFor')?.value.trim() || '',
-      price: parseFloat(document.getElementById('uploadPrice')?.value) || 0,
-      mode: 'exchange',
-      cover_image: exchangeCoverFile || null,
+      exchangeFor: selectedMode === 'exchange' ? (document.getElementById('uploadExchangeFor')?.value.trim() || '') : '',
+      price: selectedMode === 'donate' ? 0 : (parseFloat(document.getElementById('uploadPrice')?.value) || 0),
+      mode: selectedMode,
+      category: 'physical',
+      cover: uploadedFileBase64 || null
     };
 
-    try {
-      const saved = await window.BookAPI.addBook(newBook);
-      submitBtn.classList.remove('btn-loading');
-      showToast(`"${saved?.title || newBook.title}" listed for exchange!`, 'success');
-      modal?.classList.remove('active');
-      form.reset();
-      exchangeCoverFile = null;
-      if (fileList) fileList.innerHTML = '';
-      fetchAndRender();
-    } catch (err) {
-      submitBtn.classList.remove('btn-loading');
-      showToast(err.message || 'Failed to list book', 'danger');
-    }
+    const saved = await window.BookAPI.addBook(newBook);
+    submitBtn.classList.remove('btn-loading');
+    showToast(`"${saved?.title || newBook.title}" listed successfully!`, 'success');
+    modal?.classList.remove('active');
+    form.reset();
+    window.clearUploadPreview();
+    uploadedFileBase64 = null;
+    selectedMode = 'exchange';
+    modeOptions.forEach((o, i) => o.classList.toggle('active', i === 0));
+    if (exchangeForGroup) exchangeForGroup.style.display = 'block';
+    if (priceGroup) priceGroup.style.display = 'block';
+    fetchAndRender();
   });
 
   async function fetchAndRender() {
-    if (!grid) return;
-    try {
-      const books = await window.BookAPI.getBooks({ mode: 'exchange' });
-      await renderBooksGrid(grid, books, 'Swap');
-    } catch (err) {
-      grid.innerHTML = `<div class="empty-state"><h3>Unable to load exchange listings</h3><p>${escapeHtml(err.message)}</p></div>`;
-    }
+    const books = await window.BookAPI.getBooks();
+    await renderBooksGrid(grid, books, 'Exchange');
   }
 
   fetchAndRender();
@@ -1392,14 +812,9 @@ async function initExchangePage() {
 /* 🎁 DONATE */
 async function initDonatePage() {
   const grid = document.getElementById('donateBooksGrid');
-  if (!grid) return;
-
-  try {
-    const books = await window.BookAPI.getBooks({ mode: 'donate' });
-    await renderBooksGrid(grid, books, 'Claim Free');
-  } catch (err) {
-    grid.innerHTML = `<div class="empty-state"><h3>Unable to load donation listings</h3><p>${escapeHtml(err.message)}</p></div>`;
-  }
+  const books = await window.BookAPI.getBooks();
+  const donated = books.filter(b => b.price === 0 || b.mode === 'donate');
+  await renderBooksGrid(grid, donated.length > 0 ? donated : books, 'Claim Free');
 }
 
 /* 📬 CONTACT */
@@ -1407,51 +822,61 @@ function initContactPage() {
   const form = document.getElementById('contactPageForm');
   form?.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const name = document.getElementById('contactName')?.value || '';
-    const email = document.getElementById('contactEmail')?.value || '';
-    const text = document.getElementById('contactMessage')?.value || '';
+    const name = document.getElementById('contactName').value;
+    const email = document.getElementById('contactEmail').value;
+    const text = document.getElementById('contactMessage').value;
 
     const submitBtn = form.querySelector('[type="submit"]');
     submitBtn.classList.add('btn-loading');
 
-    try {
-      const user = await window.BookAPI.getCurrentUser();
-      if (user) {
-        await window.BookAPI.sendMessage('support@bookbridge.local', `Support Request from ${name} (${email}): ${text}`, 'Contact Support').catch(() => {});
-      }
-      submitBtn.classList.remove('btn-loading');
-      showToast(`Thank you, ${name}! Your message has been received.`, 'success');
-      form.reset();
-    } catch (err) {
-      submitBtn.classList.remove('btn-loading');
-      showToast(`Thank you, ${name}! Your message has been received.`, 'success');
-      form.reset();
-    }
+    await window.BookAPI.sendMessage(email, text, 'Contact Support');
+
+    submitBtn.classList.remove('btn-loading');
+    showToast(`Thank you, ${name}! Your message has been sent.`, 'success');
+    form.reset();
   });
 }
 
 /* 🔑 LOGIN */
 function initLoginPage() {
   const form = document.getElementById('dedicatedLoginForm');
-  const emailInput = document.getElementById('loginEmail');
-  const passwordInput = document.getElementById('loginPassword');
+  if (!form || form.dataset.bound) return;
+  form.dataset.bound = 'true';
 
-  // Check URL parameters for prefilled email (e.g. from registration redirect)
-  const urlEmail = new URLSearchParams(window.location.search).get('email');
-  if (urlEmail && emailInput) {
-    emailInput.value = urlEmail;
-    passwordInput?.focus();
-  }
-
-  // If already logged in, redirect smoothly
-  window.BookAPI.getCurrentUser().then(user => {
-    if (user) {
-      showToast(`Already signed in as ${user.name || user.full_name || 'User'}. Redirecting...`, 'info');
-      setTimeout(() => window.location.href = 'browse.html', 1000);
+  // Check if user is already logged in
+  window.BookAPI?.getCurrentUser().then(user => {
+    if (user && user.email) {
+      const formCard = document.querySelector('.auth-form-card');
+      if (formCard && !document.getElementById('alreadyLoggedInAlert')) {
+        const alertBox = document.createElement('div');
+        alertBox.id = 'alreadyLoggedInAlert';
+        alertBox.style.cssText = 'background:#f0fdf4; border:1px solid #86efac; border-radius:10px; padding:12px; margin-bottom:18px; font-size:14px; color:#166534; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;';
+        alertBox.innerHTML = `<span><i class="fa-solid fa-circle-check me-1"></i> Logged in as <strong>${user.name || user.email}</strong></span> <a href="browse.html" class="btn btn-primary btn-sm" style="height:30px; padding:0 12px; font-size:12px;">Go to Books <i class="fa-solid fa-arrow-right ms-1"></i></a>`;
+        formCard.insertBefore(alertBox, form);
+      }
     }
-  }).catch(() => {});
+  });
 
-  form?.addEventListener('submit', async (e) => {
+  // Attach Quick Demo Logins
+  document.querySelectorAll('.btn-quick-demo').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const email = btn.getAttribute('data-email');
+      const pass = btn.getAttribute('data-pass');
+      const emailInput = document.getElementById('loginEmail');
+      const passInput = document.getElementById('loginPassword');
+      if (emailInput) {
+        emailInput.value = email;
+        emailInput.dispatchEvent(new Event('input', { bubbles: true }));
+      }
+      if (passInput) {
+        passInput.value = pass;
+        passInput.dispatchEvent(new Event('input', { bubbles: true }));
+      }
+      showToast(`Filled credentials for ${btn.textContent.trim()}`, 'info');
+    });
+  });
+
+  form.addEventListener('submit', async (e) => {
     e.preventDefault();
     const email = document.getElementById('loginEmail')?.value.trim();
     const password = document.getElementById('loginPassword')?.value;
@@ -1468,30 +893,28 @@ function initLoginPage() {
     }
     if (!valid) return;
 
-    if (submitBtn) submitBtn.classList.add('btn-loading');
+    if (submitBtn) {
+      submitBtn.classList.add('btn-loading');
+      submitBtn.disabled = true;
+    }
 
     try {
       const user = await window.BookAPI.login(email, password);
-      if (submitBtn) submitBtn.classList.remove('btn-loading');
-
       if (user) {
-        showToast(`Welcome back, ${user.name || user.full_name || 'User'}!`, 'success');
-        // Validate redirect URL to prevent open redirect attacks
-        const rawRedirect = new URLSearchParams(window.location.search).get('redirect');
-        let safeRedirect = 'dashboard.html';
-        if (rawRedirect && (rawRedirect.startsWith('/') || /^[a-zA-Z0-9_\-]+\.html$/.test(rawRedirect))) {
-          safeRedirect = rawRedirect;
-        } else {
-          const isAdmin = ['SUPER_ADMIN', 'COLLEGE_ADMIN', 'DEPT_ADMIN', 'ADMIN'].includes((user.role || '').toUpperCase()) || Boolean(user.is_staff || user.is_superuser);
-          safeRedirect = isAdmin ? 'admin.html' : 'dashboard.html';
-        }
-        setTimeout(() => window.location.href = safeRedirect, 800);
+        showToast(`Welcome back, ${user.name || 'Student'}!`, 'success');
+        const redirectUrl = new URLSearchParams(window.location.search).get('redirect') || 'browse.html';
+        setTimeout(() => window.location.href = redirectUrl, 800);
       } else {
-        showToast('Invalid credentials.', 'danger');
+        showToast('Invalid email or password. Please try again.', 'danger');
       }
     } catch (err) {
-      if (submitBtn) submitBtn.classList.remove('btn-loading');
-      showToast(err.message || 'Login failed. Please check your credentials.', 'danger');
+      const msg = err.data?.error || err.data?.detail || err.message || 'Login failed. Please check your credentials.';
+      showToast(msg, 'danger');
+    } finally {
+      if (submitBtn) {
+        submitBtn.classList.remove('btn-loading');
+        submitBtn.disabled = false;
+      }
     }
   });
 
@@ -1506,32 +929,6 @@ function initLoginPage() {
 function initRegisterPage() {
   const form = document.getElementById('dedicatedRegisterForm');
   const passwordInput = document.getElementById('regPassword');
-  const enrollmentInput = document.getElementById('regEnrollment');
-  const collegeSelect = document.getElementById('regCollege');
-  const helpText = document.getElementById('collegeVerifyHelpText');
-
-  // If already logged in, redirect smoothly
-  window.BookAPI.getCurrentUser().then(user => {
-    if (user) {
-      showToast(`Already signed in as ${user.name || user.full_name || 'Student'}. Redirecting...`, 'info');
-      setTimeout(() => window.location.href = 'browse.html', 1000);
-    }
-  }).catch(() => {});
-
-  if (enrollmentInput) {
-    enrollmentInput.addEventListener('input', () => {
-      const val = enrollmentInput.value.trim();
-      if (val.length >= 10) {
-        if (helpText) {
-          helpText.innerHTML = '<span style="color: var(--color-primary); font-weight: 600;"><i class="fa-solid fa-circle-check"></i> Valid College Student Enrollment Detected</span>';
-        }
-      } else {
-        if (helpText) {
-          helpText.textContent = 'Enter your College & Enrollment ID to receive a Verified Student Badge.';
-        }
-      }
-    });
-  }
 
   if (passwordInput) {
     passwordInput.addEventListener('input', () => {
@@ -1566,1369 +963,193 @@ function initRegisterPage() {
     const submitBtn = document.getElementById('registerSubmitBtn');
 
     const userData = {
-      name: document.getElementById('regName')?.value.trim() || '',
-      full_name: document.getElementById('regName')?.value.trim() || '',
-      email: document.getElementById('regEmail')?.value.trim() || '',
-      password: document.getElementById('regPassword')?.value.trim() || '',
-      college_name: collegeSelect?.value || 'GTU Affiliated College',
-      enrollment: enrollmentInput?.value.trim() || '',
-      branch: document.getElementById('regBranch')?.value || 'CE',
-      semester: parseInt(document.getElementById('regSemester')?.value, 10) || 1,
+      name: document.getElementById('regName').value.trim(),
+      enrollment: document.getElementById('regEnrollment').value.trim(),
+      branch: document.getElementById('regBranch').value,
+      email: document.getElementById('regEmail').value.trim(),
+      password: document.getElementById('regPassword').value.trim()
     };
 
     let valid = true;
-    let firstInvalidInput = null;
-    ['regName', 'regEmail', 'regPassword', 'regEnrollment'].forEach(id => {
+    ['regName', 'regEnrollment', 'regEmail', 'regPassword'].forEach(id => {
       const input = document.getElementById(id);
-      if (!input || !input.value.trim()) {
-        input?.closest('.form-group')?.classList.add('error');
+      if (!input.value.trim()) {
+        input.closest('.form-group')?.classList.add('error');
         valid = false;
-        if (!firstInvalidInput) firstInvalidInput = input;
       }
     });
-
-    if (collegeSelect && !collegeSelect.value) {
-      collegeSelect.closest('.form-group')?.classList.add('error');
-      valid = false;
-      if (!firstInvalidInput) firstInvalidInput = collegeSelect;
-    }
-
-    if (!valid) {
-      if (firstInvalidInput) {
-        firstInvalidInput.focus();
-        firstInvalidInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
-      showToast('Please fill in all required registration fields (*).', 'warning');
-      return;
-    }
-
-    if (userData.password.length < 6) {
-      const pwInput = document.getElementById('regPassword');
-      pwInput?.closest('.form-group')?.classList.add('error');
-      pwInput?.focus();
-      showToast('Password must be at least 6 characters long.', 'warning');
-      return;
-    }
 
     if (!document.getElementById('regTerms')?.checked) {
-      showToast('Please accept the Terms of Service and Privacy Policy to register.', 'warning');
+      showToast('Please accept the Terms of Service', 'warning');
       return;
     }
 
-    if (submitBtn) submitBtn.classList.add('btn-loading');
+    if (!valid) return;
+
+    submitBtn.classList.add('btn-loading');
     try {
       const user = await window.BookAPI.register(userData);
-      if (submitBtn) submitBtn.classList.remove('btn-loading');
+      submitBtn.classList.remove('btn-loading');
       if (user) {
-        showToast(`🎉 Verified! Welcome, ${user.name || user.full_name || 'Student'}! Your college account is active.`, 'success');
-        setTimeout(() => window.location.href = 'browse.html', 1000);
+        showToast(`Welcome, ${user.name}! Account created.`, 'success');
+        // FIX: relative path (not /login.html)
+        setTimeout(() => window.location.href = 'login.html', 1200);
+      } else {
+        showToast('Registration failed. Please try again.', 'danger');
       }
     } catch (err) {
-      if (submitBtn) submitBtn.classList.remove('btn-loading');
-      const msg = (err.message || '').toLowerCase();
-      // If user already exists, seamlessly log them in or redirect with prefilled credentials
-      if (msg.includes('already exists') || msg.includes('already registered')) {
-        showToast('Account already exists for this email. Authenticating...', 'info');
-        try {
-          const loggedInUser = await window.BookAPI.login(userData.email, userData.password);
-          if (loggedInUser) {
-            showToast(`🎉 Welcome back, ${loggedInUser.name || loggedInUser.full_name || 'Student'}! Logged in successfully.`, 'success');
-            setTimeout(() => window.location.href = 'browse.html', 800);
-            return;
-          }
-        } catch (loginErr) {
-          showToast('An account with this email already exists! Redirecting to login...', 'warning');
-          setTimeout(() => {
-            window.location.href = 'login.html?email=' + encodeURIComponent(userData.email);
-          }, 1200);
-          return;
-        }
-      }
-      showToast(err.message || 'Registration failed. Please check your details.', 'danger');
+      submitBtn.classList.remove('btn-loading');
+      showToast(err.message || 'Registration failed. Please try again.', 'danger');
     }
   });
 
-  document.querySelectorAll('#dedicatedRegisterForm .form-input, #dedicatedRegisterForm .form-select').forEach(input => {
+  document.querySelectorAll('#dedicatedRegisterForm .form-input').forEach(input => {
     input.addEventListener('focus', () => input.closest('.form-group')?.classList.remove('error'));
-    input.addEventListener('change', () => input.closest('.form-group')?.classList.remove('error'));
   });
 }
 
-/* 🔑 FORGOT PASSWORD */
-function initForgotPasswordPage() {
-  const form = document.getElementById('forgotPasswordForm');
-  if (!form) return;
-  form.addEventListener('submit', (e) => {
-    e.preventDefault();
-    const emailInput = document.getElementById('forgotEmail');
-    const email = (emailInput?.value || '').trim();
-    if (!email) {
-      showToast('Please enter your registered email address.', 'warning');
-      return;
-    }
-    const btn = document.getElementById('forgotSubmitBtn');
-    if (btn) {
-      btn.disabled = true;
-      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Sending...';
-    }
-    setTimeout(() => {
-      const confirmed = document.getElementById('confirmedEmail');
-      if (confirmed) confirmed.textContent = email;
-      const stepEmail = document.getElementById('step-email');
-      const stepSuccess = document.getElementById('step-success');
-      if (stepEmail) stepEmail.style.display = 'none';
-      if (stepSuccess) stepSuccess.style.display = 'block';
-      showToast('Password reset instructions sent to your email.', 'success');
-      if (btn) {
-        btn.disabled = false;
-        btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Send Reset Instructions';
-      }
-    }, 600);
-  });
-}
-
-/* 🛡️ ADMIN FULL MANAGEMENT ENGINE */
-let _adminCharts = {};
-
-window.switchAdminTab = function(tabName) {
-  const sidebarLinks = document.querySelectorAll('.sidebar-link[data-admin-tab]');
-  const contentTabs = document.querySelectorAll('.admin-content-tab');
-
-  sidebarLinks.forEach(link => {
-    if (link.dataset.adminTab === tabName) link.classList.add('active');
-    else link.classList.remove('active');
-  });
-
-  contentTabs.forEach(tab => {
-    if (tab.id === `adminTab-${tabName}`) tab.classList.add('active');
-    else tab.classList.remove('active');
-  });
-
-  // Trigger tab data load
-  if (typeof window._loadAdminTab === 'function') {
-    window._loadAdminTab(tabName);
-  }
-};
-
+/* 🛡️ ADMIN */
 async function initAdminPage() {
-  const currentUser = await window.BookAPI.getCurrentUser();
-  const isAdmin = currentUser && (
-    ['SUPER_ADMIN', 'COLLEGE_ADMIN', 'DEPT_ADMIN', 'ADMIN'].includes((currentUser.role || '').toUpperCase()) ||
-    Boolean(currentUser.is_staff || currentUser.is_superuser)
-  );
+  const tbody = document.getElementById('adminBooksTableBody');
+  const addBtn = document.getElementById('btnAdminAddBook');
+  const adminAddModal = document.getElementById('adminAddBookModal');
+  const closeAdminModal = document.getElementById('closeAdminAddBookModal');
+  const adminAddForm = document.getElementById('adminAddBookForm');
+  const searchInput = document.getElementById('adminBookSearch');
 
-  if (!isAdmin) {
-    const authOverlay = document.getElementById('adminAuthOverlay');
-    if (authOverlay) {
-      // admin.html has a native password/auth modal overlay; let it handle the gate
-      return;
-    }
-    document.body.innerHTML = `
-      <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--color-bg);font-family:var(--font-sans);padding:24px;">
-        <div style="max-width:440px;background:#fff;padding:32px;border-radius:16px;box-shadow:0 8px 30px rgba(0,0,0,0.1);text-align:center;">
-          <div style="font-size:48px;margin-bottom:16px;">🔒</div>
-          <h2 style="margin-bottom:8px;font-weight:700;">Admin Access Required</h2>
-          <p style="color:var(--color-gray);font-size:14px;margin-bottom:20px;">You need staff or administrator privileges to view this portal.</p>
-          <a href="login.html" class="btn btn-primary btn-block">Sign in as Administrator</a>
-        </div>
-      </div>
-    `;
-    return;
-  }
+  // Admin tab switching
+  const adminTabBtns = document.querySelectorAll('.admin-tab-btn');
+  const adminContentTabs = document.querySelectorAll('.admin-content-tab');
 
-  // ── Tab Switching Handlers ────────────────────────────────────────────────
-  const sidebarLinks = document.querySelectorAll('.sidebar-link[data-admin-tab]');
-  sidebarLinks.forEach(link => {
-    link.addEventListener('click', (e) => {
-      e.preventDefault();
-      window.switchAdminTab(link.dataset.adminTab);
-    });
-  });
-
-  // Sub tabs for Academic section
-  const subTabBtns = document.querySelectorAll('.sub-tab-btn[data-sub-tab]');
-  subTabBtns.forEach(btn => {
+  adminTabBtns.forEach(btn => {
     btn.addEventListener('click', () => {
-      const targetSub = btn.dataset.subTab;
-      subTabBtns.forEach(b => b.classList.remove('active'));
+      const tab = btn.dataset.adminTab;
+      adminTabBtns.forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
-      document.querySelectorAll('.sub-content-tab').forEach(t => t.classList.remove('active'));
-      document.getElementById(`subTab-${targetSub}`)?.classList.add('active');
-      if (targetSub === 'colleges') loadColleges();
-      else if (targetSub === 'departments') loadDepartments();
-      else if (targetSub === 'courses') loadCourses();
+      adminContentTabs.forEach(t => t.classList.remove('active'));
+      document.getElementById(`adminTab-${tab}`)?.classList.add('active');
+      if (tab === 'users') fetchAdminUsers();
     });
   });
 
-  // ── Tab Router with 30s Caching ──────────────────────────────────────────
-  const _adminTabLastLoaded = {};
-  const TAB_CACHE_TTL_MS = 30000;
+  // Add Book Modal
+  addBtn?.addEventListener('click', () => adminAddModal?.classList.add('active'));
+  closeAdminModal?.addEventListener('click', () => adminAddModal?.classList.remove('active'));
+  adminAddModal?.addEventListener('click', (e) => { if (e.target === adminAddModal) adminAddModal.classList.remove('active'); });
 
-  window._loadAdminTab = function(tabName, force = false) {
-    const now = Date.now();
-    if (!force && _adminTabLastLoaded[tabName] && (now - _adminTabLastLoaded[tabName] < TAB_CACHE_TTL_MS)) {
-      return; // Already loaded and fresh
-    }
-    _adminTabLastLoaded[tabName] = now;
-
-    switch (tabName) {
-      case 'dashboard':
-        loadDashboardStats();
-        break;
-      case 'users':
-        loadUsers();
-        break;
-      case 'books':
-        loadBooks();
-        break;
-      case 'marketplace':
-        loadMarketplace();
-        break;
-      case 'payments':
-        loadPayments();
-        break;
-      case 'exchanges':
-        loadExchanges();
-        break;
-      case 'donations':
-        loadDonations();
-        break;
-      case 'academic':
-        loadColleges();
-        break;
-      case 'analytics':
-        loadAnalytics();
-        break;
-      case 'audit-logs':
-        loadAuditLogs();
-        break;
-      case 'notifications':
-        loadNotifications();
-        break;
-      case 'system-health':
-        loadSystemHealth();
-        break;
-      case 'admin-profile':
-        loadAdminProfile();
-        break;
-      default:
-        break;
-    }
-  };
-
-  // ── 1. DASHBOARD OVERVIEW & CHARTS ────────────────────────────────────────
-  async function loadDashboardStats() {
-    try {
-      const stats = await window.BookAPI.getAdminStats();
-      document.getElementById('dashStatUsers').textContent = (stats.totalUsers || 0).toLocaleString('en-IN');
-      document.getElementById('dashStatActiveUsers').textContent = (stats.activeUsers || 0).toLocaleString('en-IN');
-      document.getElementById('dashStatBooks').textContent = (stats.totalListings || stats.totalBooks || 0).toLocaleString('en-IN');
-      document.getElementById('dashStatAvailBooks').textContent = (stats.availableListings || stats.availableBooks || 0).toLocaleString('en-IN');
-      document.getElementById('dashStatSwaps').textContent = (stats.activeSwaps || 0).toLocaleString('en-IN');
-      document.getElementById('dashStatCompSwaps').textContent = (stats.completedSwaps || 0).toLocaleString('en-IN');
-      document.getElementById('dashStatDonations').textContent = (stats.freeDonations || 0).toLocaleString('en-IN');
-      document.getElementById('dashStatApprDonations').textContent = (stats.approvedDonations || 0).toLocaleString('en-IN');
-      document.getElementById('dashStatColleges').textContent = (stats.totalColleges || 0).toLocaleString('en-IN');
-      document.getElementById('dashStatDepartments').textContent = (stats.totalDepartments || 0).toLocaleString('en-IN');
-      document.getElementById('dashStatCourses').textContent = (stats.totalCourses || 0).toLocaleString('en-IN');
-      document.getElementById('dashLastUpdated').textContent = new Date().toLocaleTimeString();
-
-      // Recent Activity
-      const actBody = document.getElementById('dashRecentActivityBody');
-      if (actBody && stats.recentActivity) {
-        actBody.innerHTML = stats.recentActivity.map(a => `
-          <tr>
-            <td><span class="badge badge-primary">${escapeHtml(a.action || 'ACTIVITY')}</span></td>
-            <td><strong>${escapeHtml(a.title || '')}</strong><br><span style="font-size:11.5px;color:var(--color-gray);">${escapeHtml(a.user_email || a.user_name || 'System')}</span></td>
-            <td style="color:var(--color-gray);">${a.created_at ? new Date(a.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'N/A'}</td>
-          </tr>
-        `).join('') || '<tr><td colspan="3" style="text-align:center;color:var(--color-gray);padding:16px;">No recent activity.</td></tr>';
-      }
-
-      // Recent Users
-      const usersBody = document.getElementById('dashRecentUsersBody');
-      if (usersBody && stats.recentRegistrations) {
-        usersBody.innerHTML = stats.recentRegistrations.map(u => `
-          <tr>
-            <td><strong>${escapeHtml(u.full_name || u.email)}</strong><br><span style="font-size:11.5px;color:var(--color-gray);">${escapeHtml(u.email)}</span></td>
-            <td><span class="role-badge role-${(u.role || 'student').toLowerCase().replace('_', '-')}">${escapeHtml(u.role || 'STUDENT')}</span></td>
-            <td><span class="status-pill ${u.is_active ? 'active' : 'inactive'}">${u.is_active ? 'Active' : 'Inactive'}</span></td>
-            <td style="color:var(--color-gray);">${u.date_joined ? new Date(u.date_joined).toLocaleDateString() : 'N/A'}</td>
-          </tr>
-        `).join('') || '<tr><td colspan="4" style="text-align:center;color:var(--color-gray);padding:16px;">No users registered yet.</td></tr>';
-      }
-
-      // Render Charts
-      renderDashboardCharts(stats);
-    } catch (err) {
-      if (typeof showToast === 'function') showToast(err.message || 'Failed to load dashboard statistics', 'danger');
-    }
-  }
-
-  function renderDashboardCharts(stats) {
-    if (typeof Chart === 'undefined') return;
-
-    // 1. Department Distribution (Doughnut Chart)
-    const branchCanvas = document.getElementById('dashBranchChartCanvas');
-    if (branchCanvas) {
-      if (_adminCharts.dashBranch) _adminCharts.dashBranch.destroy();
-      const dist = stats.departmentDistribution || [];
-      const labels = dist.length > 0 ? dist.map(d => d.branch || 'Other') : ['CE', 'IT', 'EE', 'ME', 'Civil'];
-      const data = dist.length > 0 ? dist.map(d => d.count) : [0, 0, 0, 0, 0];
-
-      _adminCharts.dashBranch = new Chart(branchCanvas, {
-        type: 'doughnut',
-        data: {
-          labels: labels,
-          datasets: [{
-            data: data,
-            backgroundColor: ['#6366f1', '#06b6d4', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6', '#64748b'],
-            borderWidth: 2,
-            borderColor: '#ffffff',
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } } }
-        }
-      });
-    }
-
-    // 2. Listing Mode Breakdown (Bar Chart)
-    const typeCanvas = document.getElementById('dashTypeChartCanvas');
-    if (typeCanvas) {
-      if (_adminCharts.dashType) _adminCharts.dashType.destroy();
-      const modes = stats.listingTypeBreakdown || [];
-      const modeMap = { sell: 0, exchange: 0, donate: 0 };
-      modes.forEach(m => {
-        const k = (m.mode || '').toLowerCase();
-        if (modeMap[k] !== undefined) modeMap[k] = m.count;
-      });
-
-      _adminCharts.dashType = new Chart(typeCanvas, {
-        type: 'bar',
-        data: {
-          labels: ['For Sale', 'For Exchange', 'Free Donation'],
-          datasets: [{
-            label: 'Listings',
-            data: [modeMap.sell, modeMap.exchange, modeMap.donate],
-            backgroundColor: ['#3b82f6', '#8b5cf6', '#10b981'],
-            borderRadius: 6,
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: { legend: { display: false } },
-          scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
-        }
-      });
-    }
-  }
-
-  // ── 2. USERS MANAGEMENT ───────────────────────────────────────────────────
-  let _usersCache = [];
-
-  async function loadUsers() {
-    const tbody = document.getElementById('adminUsersTableBody');
-    const searchVal = document.getElementById('userSearchInput')?.value.trim();
-    const roleVal = document.getElementById('userRoleFilter')?.value;
-    const statusVal = document.getElementById('userStatusFilter')?.value;
-
-    if (tbody) tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--color-gray);"><i class="fa-solid fa-spinner fa-spin"></i> Loading registered users...</td></tr>';
-
-    try {
-      const filters = {};
-      if (searchVal) filters.search = searchVal;
-      if (roleVal) filters.role = roleVal;
-      if (statusVal === 'active') filters.is_active = 'true';
-      else if (statusVal === 'inactive') filters.is_active = 'false';
-
-      _usersCache = await window.BookAPI.getAdminUsers(filters);
-      document.getElementById('usersResultCount').textContent = `${_usersCache.length} Users`;
-
-      if (!tbody) return;
-      tbody.innerHTML = _usersCache.map(u => {
-        const roleClass = `role-${(u.role || 'student').toLowerCase().replace('_', '-')}`;
-        const activeStatus = u.is_active ? 'active' : 'inactive';
-        const activeLabel = u.is_active ? 'Active' : 'Inactive';
-
-        return `
-          <tr>
-            <td>
-              <div style="display:flex;align-items:center;gap:10px;">
-                <div style="width:34px;height:34px;border-radius:50%;background:var(--color-primary-light);color:var(--color-primary);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;">
-                  ${(u.full_name || u.name || u.email || 'U').charAt(0).toUpperCase()}
-                </div>
-                <div>
-                  <strong>${escapeHtml(u.full_name || u.name || 'User')}</strong>
-                  ${u.enrollment_number ? `<br><span style="font-size:11.5px;color:var(--color-gray);">${escapeHtml(u.enrollment_number)}</span>` : ''}
-                </div>
-              </div>
-            </td>
-            <td style="font-size:13px;">${escapeHtml(u.email)}</td>
-            <td style="font-size:12.5px;">${escapeHtml(u.department_name || u.college_name || 'Academic')}</td>
-            <td><span class="role-badge ${roleClass}">${escapeHtml(u.role || 'STUDENT')}</span></td>
-            <td><span class="status-pill ${activeStatus}">${activeLabel}</span></td>
-            <td style="font-size:12px;color:var(--color-gray);">${u.date_joined ? new Date(u.date_joined).toLocaleDateString() : 'N/A'}</td>
-            <td style="text-align: right;">
-              <div class="action-btn-group">
-                <button class="action-btn" title="View Full Details" onclick="window.inspectUser('${u.id}')"><i class="fa-solid fa-eye"></i></button>
-                <button class="action-btn" title="${u.is_active ? 'Deactivate' : 'Activate'}" onclick="window.toggleUserActive('${u.id}', ${u.is_active})">
-                  <i class="fa-solid ${u.is_active ? 'fa-ban' : 'fa-check'}" style="color:${u.is_active ? '#dc2626' : '#16a34a'};"></i>
-                </button>
-                <button class="action-btn" title="Assign Role" onclick="window.openRoleModal('${u.id}', '${escapeHtml(u.full_name || u.name || u.email)}', '${escapeHtml(u.email)}', '${u.role}')"><i class="fa-solid fa-user-gear"></i></button>
-                <button class="action-btn danger" title="Delete Account" onclick="window.deleteUser('${u.id}')"><i class="fa-solid fa-trash"></i></button>
-              </div>
-            </td>
-          </tr>
-        `;
-      }).join('') || '<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--color-gray);">No users match your filters.</td></tr>';
-    } catch (err) {
-      if (tbody) tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--color-danger);">${escapeHtml(err.message || 'Failed to load users.')}</td></tr>`;
-    }
-  }
-
-  // User Inspectors & Actions
-  window.inspectUser = async function(id) {
-    const modal = document.getElementById('adminUserDetailsModal');
-    const modalBody = document.getElementById('adminUserModalBody');
-    if (!modal || !modalBody) return;
-
-    modalBody.innerHTML = '<div style="text-align:center;padding:32px;"><i class="fa-solid fa-spinner fa-spin fa-2x"></i><p style="margin-top:12px;">Loading user profile & history...</p></div>';
-    modal.classList.add('active');
-
-    try {
-      const u = await window.BookAPI.getAdminUserDetail(id);
-      modalBody.innerHTML = `
-        <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--color-border);">
-          <div style="width:54px;height:54px;border-radius:50%;background:var(--color-primary);color:#fff;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;">
-            ${(u.full_name || u.email || 'U').charAt(0).toUpperCase()}
-          </div>
-          <div>
-            <h3 style="margin-bottom:4px;">${escapeHtml(u.full_name || u.email)}</h3>
-            <div style="display:flex;align-items:center;gap:8px;">
-              <span class="role-badge role-${(u.role || 'student').toLowerCase().replace('_', '-')}">${escapeHtml(u.role)}</span>
-              <span class="status-pill ${u.is_active ? 'active' : 'inactive'}">${u.is_active ? 'Active' : 'Inactive'}</span>
-              ${u.is_college_verified ? '<span class="badge badge-success"><i class="fa-solid fa-certificate"></i> Verified</span>' : ''}
-            </div>
-          </div>
-        </div>
-
-        <div class="grid-3" style="margin-bottom:20px;text-align:center;">
-          <div class="card" style="padding:12px;background:var(--color-bg);">
-            <div style="font-size:18px;font-weight:700;">${u.books_count || 0}</div>
-            <div style="font-size:11.5px;color:var(--color-gray);">Books Listed</div>
-          </div>
-          <div class="card" style="padding:12px;background:var(--color-bg);">
-            <div style="font-size:18px;font-weight:700;">${u.exchanges_count || 0}</div>
-            <div style="font-size:11.5px;color:var(--color-gray);">Exchanges</div>
-          </div>
-          <div class="card" style="padding:12px;background:var(--color-bg);">
-            <div style="font-size:18px;font-weight:700;">${u.donations_count || 0}</div>
-            <div style="font-size:11.5px;color:var(--color-gray);">Donations</div>
-          </div>
-        </div>
-
-        <div style="margin-bottom:16px;font-size:13.5px;">
-          <div><strong>Email:</strong> ${escapeHtml(u.email)}</div>
-          <div><strong>Phone:</strong> ${escapeHtml(u.phone_number || 'Not provided')}</div>
-          <div><strong>College:</strong> ${escapeHtml(u.college_name || 'N/A')}</div>
-          <div><strong>Department:</strong> ${escapeHtml(u.department_name || 'N/A')} (Sem ${u.semester || 1})</div>
-          <div><strong>Enrollment:</strong> ${escapeHtml(u.enrollment_number || 'N/A')}</div>
-          <div><strong>Joined Date:</strong> ${u.date_joined ? new Date(u.date_joined).toLocaleString() : 'N/A'}</div>
-          <div><strong>Last Login:</strong> ${u.last_login ? new Date(u.last_login).toLocaleString() : 'Never'}</div>
-        </div>
-
-        <h4 style="margin-top:16px;margin-bottom:8px;font-size:14px;"><i class="fa-solid fa-book"></i> Recent Listed Books</h4>
-        <div class="data-table-wrap" style="margin-bottom:16px;">
-          <table class="data-table" style="font-size:12px;">
-            <thead><tr><th>Title</th><th>Mode</th><th>Price</th><th>Status</th></tr></thead>
-            <tbody>
-              ${(u.recent_books || []).map(b => `
-                <tr>
-                  <td><strong>${escapeHtml(b.title)}</strong></td>
-                  <td>${escapeHtml(b.mode)}</td>
-                  <td>${b.price > 0 ? '₹' + b.price : 'Free'}</td>
-                  <td><span class="status-pill ${(b.status||'available').toLowerCase()}">${escapeHtml(b.status)}</span></td>
-                </tr>
-              `).join('') || '<tr><td colspan="4" style="text-align:center;color:var(--color-gray);padding:10px;">No listed books</td></tr>'}
-            </tbody>
-          </table>
-        </div>
-      `;
-    } catch (err) {
-      modalBody.innerHTML = `<div style="color:var(--color-danger);padding:24px;text-align:center;">Failed to load user details: ${escapeHtml(err.message)}</div>`;
-    }
-  };
-
-  window.toggleUserActive = async function(id, currentActive) {
-    const actionName = currentActive ? 'deactivate' : 'activate';
-    if (!confirm(`Are you sure you want to ${actionName} this user account?`)) return;
-    try {
-      await window.BookAPI.toggleUserStatus(id, !currentActive);
-      if (typeof showToast === 'function') showToast(`User account ${actionName}d successfully`, 'success');
-      loadUsers();
-    } catch (err) {
-      if (typeof showToast === 'function') showToast(err.message || 'Operation failed', 'danger');
-    }
-  };
-
-  window.openRoleModal = function(id, name, email, currentRole) {
-    const modal = document.getElementById('adminUserRoleModal');
-    if (!modal) return;
-    document.getElementById('roleModalUserId').value = id;
-    document.getElementById('roleModalUserName').textContent = name;
-    document.getElementById('roleModalUserEmail').textContent = email;
-    document.getElementById('roleModalSelect').value = currentRole || 'STUDENT';
-    modal.classList.add('active');
-  };
-
-  window.deleteUser = async function(id) {
-    if (!confirm('CAUTION: Are you sure you want to permanently delete this user account? This action cannot be undone.')) return;
-    try {
-      await window.BookAPI.deleteAdminUser(id);
-      if (typeof showToast === 'function') showToast('User deleted successfully', 'success');
-      loadUsers();
-    } catch (err) {
-      if (typeof showToast === 'function') showToast(err.message || 'Failed to delete user', 'danger');
-    }
-  };
-
-  // Role form submit
-  document.getElementById('adminUserRoleForm')?.addEventListener('submit', async (e) => {
+  adminAddForm?.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const id = document.getElementById('roleModalUserId').value;
-    const newRole = document.getElementById('roleModalSelect').value;
-    try {
-      await window.BookAPI.updateUserRole(id, newRole);
-      if (typeof showToast === 'function') showToast(`User role updated to ${newRole}`, 'success');
-      document.getElementById('adminUserRoleModal')?.classList.remove('active');
-      loadUsers();
-    } catch (err) {
-      if (typeof showToast === 'function') showToast(err.message || 'Failed to update role', 'danger');
-    }
-  });
+    const submitBtn = adminAddForm.querySelector('[type="submit"]');
+    submitBtn.classList.add('btn-loading');
 
-  // Filter Event Listeners for Users
-  let userSearchTimeout = null;
-  document.getElementById('userSearchInput')?.addEventListener('input', () => {
-    clearTimeout(userSearchTimeout);
-    userSearchTimeout = setTimeout(loadUsers, 300);
-  });
-  document.getElementById('userRoleFilter')?.addEventListener('change', loadUsers);
-  document.getElementById('userStatusFilter')?.addEventListener('change', loadUsers);
-  document.getElementById('btnRefreshUsers')?.addEventListener('click', loadUsers);
-
-  // ── 3. BOOKS MANAGEMENT ───────────────────────────────────────────────────
-  let _booksCache = [];
-
-  async function loadBooks() {
-    const tbody = document.getElementById('adminBooksTableBody');
-    const searchVal = document.getElementById('bookSearchInput')?.value.trim();
-    const branchVal = document.getElementById('bookBranchFilter')?.value;
-    const modeVal = document.getElementById('bookModeFilter')?.value;
-    const statusVal = document.getElementById('bookStatusFilter')?.value;
-
-    if (tbody) tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--color-gray);"><i class="fa-solid fa-spinner fa-spin"></i> Loading catalog...</td></tr>';
-
-    try {
-      const filters = {};
-      if (searchVal) filters.search = searchVal;
-      if (branchVal) filters.branch = branchVal;
-      if (modeVal) filters.mode = modeVal;
-      if (statusVal) filters.status = statusVal;
-
-      _booksCache = await window.BookAPI.getAdminBooks(filters);
-      document.getElementById('booksResultCount').textContent = `${_booksCache.length} Books`;
-
-      if (!tbody) return;
-      tbody.innerHTML = _booksCache.map(b => {
-        const modeBadgeClass = b.mode === 'sell' ? 'badge-primary' : (b.mode === 'exchange' ? 'badge-warning' : 'badge-success');
-        const statusClass = (b.status || 'available').toLowerCase();
-
-        return `
-          <tr>
-            <td><span style="font-weight:700;color:var(--color-primary);">${escapeHtml(b.gtu_code || b.gtuCode || b.id)}</span></td>
-            <td>
-              <strong>${escapeHtml(b.title)}</strong><br>
-              <span style="font-size:12px;color:var(--color-gray);">${escapeHtml(b.author || 'Unknown')} • Listed by ${escapeHtml(b.seller?.name || b.seller_name || 'Anonymous')}</span>
-            </td>
-            <td><span class="badge badge-secondary">${escapeHtml(b.branch || 'CE')} • Sem ${b.semester || 1}</span></td>
-            <td><span class="badge ${modeBadgeClass}">${(b.mode || 'sell').toUpperCase()}</span></td>
-            <td>${b.price > 0 ? '₹' + b.price : 'Free'}</td>
-            <td><span class="status-pill ${statusClass}">${escapeHtml(b.status || 'Available')}</span></td>
-            <td style="text-align: right;">
-              <div class="action-btn-group">
-                <button class="action-btn" title="View Book" onclick="window.viewBookDetails('${b.id}')"><i class="fa-solid fa-eye"></i></button>
-                <button class="action-btn" title="Edit Book" onclick="window.openEditBookModal('${b.id}')"><i class="fa-solid fa-pen-to-square"></i></button>
-                <button class="action-btn danger" title="Delete Listing" onclick="window.handleDeleteAdminBook('${b.id}')"><i class="fa-solid fa-trash"></i></button>
-              </div>
-            </td>
-          </tr>
-        `;
-      }).join('') || '<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--color-gray);">No books match your criteria.</td></tr>';
-    } catch (err) {
-      if (tbody) tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--color-danger);">${escapeHtml(err.message || 'Failed to load books catalog.')}</td></tr>`;
-    }
-  }
-
-  window.openEditBookModal = function(id) {
-    const book = _booksCache.find(b => String(b.id) === String(id));
-    if (!book) return;
-    document.getElementById('editBookId').value = book.id;
-    document.getElementById('editBookTitle').value = book.title;
-    document.getElementById('editBookAuthor').value = book.author || '';
-    document.getElementById('editBookBranch').value = book.branch || 'CE';
-    document.getElementById('editBookPrice').value = book.price || 0;
-    document.getElementById('editBookStatus').value = book.status || 'Available';
-    document.getElementById('editBookCondition').value = book.condition || 'Good';
-    document.getElementById('adminEditBookModal')?.classList.add('active');
-  };
-
-  document.getElementById('adminEditBookForm')?.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const id = document.getElementById('editBookId').value;
-    const payload = {
-      title: document.getElementById('editBookTitle').value.trim(),
-      author: document.getElementById('editBookAuthor').value.trim(),
-      branch: document.getElementById('editBookBranch').value,
-      price: parseFloat(document.getElementById('editBookPrice').value) || 0,
-      status: document.getElementById('editBookStatus').value,
-      condition: document.getElementById('editBookCondition').value,
-    };
-    try {
-      await window.BookAPI.updateAdminBook(id, payload);
-      if (typeof showToast === 'function') showToast('Book listing updated successfully', 'success');
-      document.getElementById('adminEditBookModal')?.classList.remove('active');
-      loadBooks();
-    } catch (err) {
-      if (typeof showToast === 'function') showToast(err.message || 'Failed to update book', 'danger');
-    }
-  });
-
-  window.handleDeleteAdminBook = async function(id) {
-    if (!confirm('Are you sure you want to remove this book listing from the catalog?')) return;
-    try {
-      await window.BookAPI.deleteAdminBook(id);
-      if (typeof showToast === 'function') showToast('Book listing deleted successfully', 'success');
-      loadBooks();
-      loadDashboardStats();
-    } catch (err) {
-      if (typeof showToast === 'function') showToast(err.message || 'Failed to delete listing', 'danger');
-    }
-  };
-
-  // Add Book Form Handlers
-  document.getElementById('btnAdminAddBook')?.addEventListener('click', () => {
-    document.getElementById('adminAddBookModal')?.classList.add('active');
-  });
-  document.getElementById('closeAdminAddBookModal')?.addEventListener('click', () => {
-    document.getElementById('adminAddBookModal')?.classList.remove('active');
-  });
-  document.getElementById('closeAdminEditBookModal')?.addEventListener('click', () => {
-    document.getElementById('adminEditBookModal')?.classList.remove('active');
-  });
-  document.getElementById('closeAdminUserDetailsModal')?.addEventListener('click', () => {
-    document.getElementById('adminUserDetailsModal')?.classList.remove('active');
-  });
-  document.getElementById('closeAdminUserRoleModal')?.addEventListener('click', () => {
-    document.getElementById('adminUserRoleModal')?.classList.remove('active');
-  });
-
-  document.getElementById('adminAddBookForm')?.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const payload = {
+    const bookData = {
       title: document.getElementById('adminBookTitle').value.trim(),
       author: document.getElementById('adminBookAuthor').value.trim(),
       branch: document.getElementById('adminBookBranch').value,
-      semester: parseInt(document.getElementById('adminBookSemester').value, 10),
-      gtu_code: document.getElementById('adminBookGtuCode').value.trim(),
+      semester: parseInt(document.getElementById('adminBookSemester').value) || 1,
+      gtuCode: document.getElementById('adminBookGtuCode').value.trim(),
       condition: document.getElementById('adminBookCondition').value,
-      mode: document.getElementById('adminBookMode').value,
       price: parseFloat(document.getElementById('adminBookPrice').value) || 0,
       description: document.getElementById('adminBookDesc').value.trim(),
+      mode: document.getElementById('adminBookMode').value,
+      category: 'official'
     };
-    try {
-      await window.BookAPI.addBook(payload);
-      if (typeof showToast === 'function') showToast('Book added to catalog successfully', 'success');
-      document.getElementById('adminAddBookModal')?.classList.remove('active');
-      document.getElementById('adminAddBookForm').reset();
-      loadBooks();
-      loadDashboardStats();
-    } catch (err) {
-      if (typeof showToast === 'function') showToast(err.message || 'Failed to add book', 'danger');
-    }
+
+    await window.BookAPI.addBook(bookData);
+    submitBtn.classList.remove('btn-loading');
+    showToast(`"${bookData.title}" added to catalog`, 'success');
+    adminAddModal.classList.remove('active');
+    adminAddForm.reset();
+    fetchAdmin();
   });
 
-  let bookSearchTimeout = null;
-  document.getElementById('bookSearchInput')?.addEventListener('input', () => {
-    clearTimeout(bookSearchTimeout);
-    bookSearchTimeout = setTimeout(loadBooks, 300);
+  searchInput?.addEventListener('input', () => {
+    const query = searchInput.value.toLowerCase().trim();
+    document.querySelectorAll('#adminBooksTableBody tr').forEach(row => {
+      row.style.display = row.textContent.toLowerCase().includes(query) ? '' : 'none';
+    });
   });
-  document.getElementById('bookBranchFilter')?.addEventListener('change', loadBooks);
-  document.getElementById('bookModeFilter')?.addEventListener('change', loadBooks);
-  document.getElementById('bookStatusFilter')?.addEventListener('change', loadBooks);
 
-  // ── 4. MARKETPLACE MANAGEMENT ─────────────────────────────────────────────
-  async function loadMarketplace() {
-    const tbody = document.getElementById('adminMarketplaceTableBody');
-    if (tbody) tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--color-gray);"><i class="fa-solid fa-spinner fa-spin"></i> Loading marketplace listings...</td></tr>';
-    try {
-      const books = await window.BookAPI.getAdminBooks();
-      if (!tbody) return;
-      tbody.innerHTML = books.map(b => `
-        <tr>
-          <td><span style="font-family:monospace;font-size:12px;color:var(--color-primary);">${b.id}</span></td>
-          <td><strong>${escapeHtml(b.title)}</strong><br><span style="font-size:12px;color:var(--color-gray);">${escapeHtml(b.author || '')}</span></td>
-          <td>${escapeHtml(b.seller?.name || b.seller_name || 'Seller')}</td>
-          <td><span class="badge badge-primary">${(b.mode || 'sell').toUpperCase()}</span></td>
-          <td>${escapeHtml(b.condition || 'Good')}</td>
-          <td>${b.price > 0 ? '₹' + b.price : 'Free'}</td>
-          <td><span class="status-pill ${(b.status || 'available').toLowerCase()}">${escapeHtml(b.status || 'Available')}</span></td>
-          <td style="text-align: right;">
-            <button class="action-btn" title="View Book" onclick="window.viewBookDetails('${b.id}')"><i class="fa-solid fa-eye"></i></button>
-            <button class="action-btn danger" title="Remove Listing" onclick="window.handleDeleteAdminBook('${b.id}')"><i class="fa-solid fa-trash"></i></button>
-          </td>
-        </tr>
-      `).join('') || '<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--color-gray);">No marketplace listings found.</td></tr>';
-    } catch (err) {
-      if (tbody) tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--color-danger);">${escapeHtml(err.message || 'Failed to load marketplace.')}</td></tr>`;
-    }
-  }
-  document.getElementById('btnRefreshMarketplace')?.addEventListener('click', loadMarketplace);
-
-  // ── 4b. PAYMENTS & ORDERS AUDIT MANAGEMENT ─────────────────────────────────
-  async function loadPayments() {
-    const tbody = document.getElementById('adminPaymentsTableBody');
-    if (tbody) tbody.innerHTML = '<tr><td colspan="12" style="text-align:center;padding:24px;color:var(--color-gray);"><i class="fa-solid fa-spinner fa-spin"></i> Loading platform payment records...</td></tr>';
-
-    const statusFilter = document.getElementById('adminPayStatusFilter')?.value || '';
-    const methodFilter = document.getElementById('adminPayMethodFilter')?.value || '';
-
-    try {
-      const data = await window.BookAPI.getAdminPayments(1, statusFilter, methodFilter);
-      const orders = data.orders || (Array.isArray(data) ? data : []);
-
-      const volEl = document.getElementById('adminTotalVolume');
-      if (volEl) volEl.innerHTML = `&#8377;${Number(data.total_volume || 0).toFixed(2)}`;
-
-      const revEl = document.getElementById('adminPlatformRevenue');
-      if (revEl) revEl.innerHTML = `&#8377;${Number(data.total_platform_revenue || 0).toFixed(2)}`;
-
-      const payEl = document.getElementById('adminSellerPayouts');
-      if (payEl) payEl.innerHTML = `&#8377;${Number(data.total_seller_payouts || 0).toFixed(2)}`;
-
-      const routeEl = document.getElementById('adminRouteStatus');
-      if (routeEl) {
-        if (data.route_status === 'ROUTE_ENABLED') {
-          routeEl.innerHTML = `<span style="color:#16a34a;"><i class="fa-solid fa-circle-check"></i> Route Active</span>`;
-        } else if (data.route_status === 'ROUTE_PENDING_APPROVAL') {
-          routeEl.innerHTML = `<span style="color:#d97706;"><i class="fa-solid fa-clock"></i> Approval Req.</span>`;
-        } else {
-          routeEl.innerHTML = `<span style="color:#64748b;">Disabled (Campus Direct)</span>`;
-        }
-      }
-
-      if (!tbody) return;
-
-      if (!orders || orders.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="12" style="text-align:center;padding:24px;color:var(--color-gray);">No payment transactions found matching the filter criteria.</td></tr>';
-        return;
-      }
-
-      tbody.innerHTML = orders.map(o => {
-        let payBadgeClass = 'badge-warning';
-        if (o.payment_status === 'PAID') payBadgeClass = 'badge-success';
-        else if (o.payment_status === 'FAILED') payBadgeClass = 'badge-danger';
-
-        let settleLabel = 'Campus Handover';
-        let settleClass = 'status-pill pending';
-        if (o.settlement_status === 'ROUTE_TRANSFER_EXECUTED') {
-          settleLabel = 'Transferred';
-          settleClass = 'status-pill completed';
-        } else if (o.settlement_status === 'TEST_CAPTURED') {
-          settleLabel = 'Test Sandbox';
-          settleClass = 'status-pill accepted';
-        } else if (o.settlement_status === 'ROUTE_PENDING_APPROVAL') {
-          settleLabel = 'Pending Route';
-          settleClass = 'status-pill pending';
-        }
-
-        const gatewayId = o.razorpay_payment_id || o.razorpay_order_id || '—';
-
-        return `
-          <tr>
-            <td><strong style="font-family:monospace;font-size:12px;color:var(--color-primary);">${escapeHtml(o.order_number)}</strong></td>
-            <td><strong>${escapeHtml(o.book_title)}</strong></td>
-            <td>${escapeHtml(o.buyer_name || 'Buyer')}<br><span style="font-size:11px;color:var(--color-gray);">${escapeHtml(o.buyer_email || '')}</span></td>
-            <td>${escapeHtml(o.seller_name || 'Seller')}<br><span style="font-size:11px;color:var(--color-gray);">${escapeHtml(o.seller_email || '')}</span></td>
-            <td><strong>&#8377;${o.amount}</strong></td>
-            <td style="color:var(--color-gray);">&#8377;${o.platform_fee}</td>
-            <td style="color:var(--color-success);font-weight:700;">&#8377;${o.seller_amount}</td>
-            <td><span style="font-size:12px;">${o.payment_method === 'CAMPUS_DEAL' ? '🤝 Campus' : '💳 Razorpay'}</span></td>
-            <td><span class="badge ${payBadgeClass}">${escapeHtml(o.payment_status)}</span></td>
-            <td><span class="${settleClass}">${settleLabel}</span></td>
-            <td><span style="font-family:monospace;font-size:11px;color:var(--color-gray-dark);">${escapeHtml(gatewayId)}</span></td>
-            <td style="font-size:11.5px;color:var(--color-gray);">${new Date(o.created_at).toLocaleDateString([], {month:'short', day:'numeric'})}</td>
-          </tr>
-        `;
-      }).join('');
-
-    } catch (err) {
-      if (tbody) tbody.innerHTML = `<tr><td colspan="12" style="text-align:center;padding:24px;color:var(--color-danger);">${escapeHtml(err.message || 'Failed to load payments.')}</td></tr>`;
-    }
-  }
-
-  document.getElementById('btnRefreshPayments')?.addEventListener('click', loadPayments);
-  document.getElementById('adminPayStatusFilter')?.addEventListener('change', loadPayments);
-  document.getElementById('adminPayMethodFilter')?.addEventListener('change', loadPayments);
-
-  // ── 5. EXCHANGES MANAGEMENT ───────────────────────────────────────────────
-  async function loadExchanges() {
-    const tbody = document.getElementById('adminExchangesTableBody');
-    if (tbody) tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--color-gray);"><i class="fa-solid fa-spinner fa-spin"></i> Loading exchanges...</td></tr>';
-    try {
-      const exchanges = await window.BookAPI.getAdminExchanges();
-      if (!tbody) return;
-      tbody.innerHTML = exchanges.map(ex => {
-        const statusClass = (ex.status || 'pending').toLowerCase();
-        const shortId = String(ex.id).slice(0, 8);
-        return `
-          <tr>
-            <td><span style="font-family:monospace;font-size:12px;font-weight:700;">#${shortId}</span></td>
-            <td><strong>${escapeHtml(ex.target_book_title || ex.target_book?.title || 'Unknown Book')}</strong></td>
-            <td>${escapeHtml(ex.proposer_name || ex.proposer?.full_name || 'Student')}</td>
-            <td>${escapeHtml(ex.seller_name || ex.target_book?.seller?.full_name || 'Owner')}</td>
-            <td>${escapeHtml(ex.offered_book_title || ex.offered_book?.title || 'None Specified')}</td>
-            <td><span class="status-pill ${statusClass}">${escapeHtml(ex.status || 'pending')}</span></td>
-            <td style="font-size:12px;color:var(--color-gray);">${ex.created_at ? new Date(ex.created_at).toLocaleDateString() : 'N/A'}</td>
-            <td style="text-align: right;">
-              <select class="admin-filter-select" style="height:28px;padding:0 6px;font-size:11.5px;" onchange="window.updateExchangeStatus('${ex.id}', this.value)">
-                <option value="pending" ${ex.status === 'pending' ? 'selected' : ''}>Pending</option>
-                <option value="accepted" ${ex.status === 'accepted' ? 'selected' : ''}>Accept</option>
-                <option value="completed" ${ex.status === 'completed' ? 'selected' : ''}>Complete</option>
-                <option value="rejected" ${ex.status === 'rejected' ? 'selected' : ''}>Reject</option>
-                <option value="cancelled" ${ex.status === 'cancelled' ? 'selected' : ''}>Cancel</option>
-              </select>
-            </td>
-          </tr>
-        `;
-      }).join('') || '<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--color-gray);">No exchange proposals found.</td></tr>';
-    } catch (err) {
-      if (tbody) tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--color-danger);">${escapeHtml(err.message || 'Failed to load exchanges.')}</td></tr>`;
-    }
-  }
-
-  window.updateExchangeStatus = async function(id, newStatus) {
-    try {
-      await window.BookAPI.updateExchangeStatus(id, newStatus);
-      if (typeof showToast === 'function') showToast(`Exchange status updated to ${newStatus}`, 'success');
-      loadExchanges();
-      loadDashboardStats();
-    } catch (err) {
-      if (typeof showToast === 'function') showToast(err.message || 'Failed to update exchange', 'danger');
-    }
-  };
-  document.getElementById('btnRefreshExchanges')?.addEventListener('click', loadExchanges);
-
-  // ── 6. DONATIONS MANAGEMENT ───────────────────────────────────────────────
-  async function loadDonations() {
-    const tbody = document.getElementById('adminDonationsTableBody');
-    if (tbody) tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--color-gray);"><i class="fa-solid fa-spinner fa-spin"></i> Loading donation claims...</td></tr>';
-    try {
-      const donations = await window.BookAPI.getAdminDonations();
-      if (!tbody) return;
-      tbody.innerHTML = donations.map(d => {
-        const statusClass = (d.status || 'pending').toLowerCase();
-        return `
-          <tr>
-            <td><span style="font-family:monospace;font-size:12px;font-weight:700;">#${d.id}</span></td>
-            <td><strong>${escapeHtml(d.book_title || d.book?.title || 'Donated Resource')}</strong></td>
-            <td>${escapeHtml(d.seller_name || d.book?.seller?.full_name || 'Donor')}</td>
-            <td>${escapeHtml(d.claimer_name || d.claimer?.full_name || 'Claimer')}</td>
-            <td style="font-size:12px;color:var(--color-gray);max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(d.message || 'No message')}</td>
-            <td><span class="status-pill ${statusClass}">${escapeHtml(d.status || 'pending')}</span></td>
-            <td style="font-size:12px;color:var(--color-gray);">${d.created_at ? new Date(d.created_at).toLocaleDateString() : 'N/A'}</td>
-            <td style="text-align: right;">
-              <select class="admin-filter-select" style="height:28px;padding:0 6px;font-size:11.5px;" onchange="window.updateDonationStatus('${d.id}', this.value)">
-                <option value="pending" ${d.status === 'pending' ? 'selected' : ''}>Pending</option>
-                <option value="approved" ${d.status === 'approved' ? 'selected' : ''}>Approve</option>
-                <option value="completed" ${d.status === 'completed' ? 'selected' : ''}>Complete</option>
-                <option value="rejected" ${d.status === 'rejected' ? 'selected' : ''}>Reject</option>
-              </select>
-            </td>
-          </tr>
-        `;
-      }).join('') || '<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--color-gray);">No donation claims found.</td></tr>';
-    } catch (err) {
-      if (tbody) tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--color-danger);">${escapeHtml(err.message || 'Failed to load donations.')}</td></tr>`;
-    }
-  }
-
-  window.updateDonationStatus = async function(id, newStatus) {
-    try {
-      await window.BookAPI.updateDonationStatus(id, newStatus);
-      if (typeof showToast === 'function') showToast(`Donation claim status updated to ${newStatus}`, 'success');
-      loadDonations();
-      loadDashboardStats();
-    } catch (err) {
-      if (typeof showToast === 'function') showToast(err.message || 'Failed to update donation', 'danger');
-    }
-  };
-  document.getElementById('btnRefreshDonations')?.addEventListener('click', loadDonations);
-
-  // ── 7. ACADEMIC STRUCTURE (Colleges / Depts / Courses) ─────────────────────
-  let _collegesList = [];
-  let _deptsList = [];
-
-  async function loadColleges() {
-    const tbody = document.getElementById('academicCollegesBody');
-    if (tbody) tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:16px;color:var(--color-gray);"><i class="fa-solid fa-spinner fa-spin"></i> Loading colleges...</td></tr>';
-    try {
-      _collegesList = await window.BookAPI.getColleges();
-      if (!tbody) return;
-      tbody.innerHTML = _collegesList.map(c => `
-        <tr>
-          <td><span style="font-weight:700;color:var(--color-primary);">${escapeHtml(c.code)}</span></td>
-          <td><strong>${escapeHtml(c.name)}</strong></td>
-          <td>${escapeHtml(c.city || 'Gujarat')}</td>
-          <td>${escapeHtml(c.state || 'Gujarat')}</td>
-          <td><span class="status-pill ${c.is_active ? 'active' : 'inactive'}">${c.is_active ? 'Active' : 'Inactive'}</span></td>
-          <td style="text-align: right;">
-            <button class="action-btn danger" title="Delete College" onclick="window.deleteCollege('${c.id}')"><i class="fa-solid fa-trash"></i></button>
-          </td>
-        </tr>
-      `).join('') || '<tr><td colspan="6" style="text-align:center;padding:16px;color:var(--color-gray);">No colleges registered.</td></tr>';
-    } catch (err) {
-      if (tbody) tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:16px;color:var(--color-danger);">${escapeHtml(err.message)}</td></tr>`;
-    }
-  }
-
-  async function loadDepartments() {
-    const tbody = document.getElementById('academicDepartmentsBody');
-    if (tbody) tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:16px;color:var(--color-gray);"><i class="fa-solid fa-spinner fa-spin"></i> Loading departments...</td></tr>';
-    try {
-      _deptsList = await window.BookAPI.getDepartments();
-      if (!tbody) return;
-      tbody.innerHTML = _deptsList.map(d => `
-        <tr>
-          <td><span style="font-weight:700;color:var(--color-primary);">${escapeHtml(d.code)}</span></td>
-          <td><strong>${escapeHtml(d.name)}</strong></td>
-          <td>${escapeHtml(d.college_name || 'RCTI')}</td>
-          <td style="text-align: right;">
-            <button class="action-btn danger" title="Delete Department" onclick="window.deleteDepartment('${d.id}')"><i class="fa-solid fa-trash"></i></button>
-          </td>
-        </tr>
-      `).join('') || '<tr><td colspan="4" style="text-align:center;padding:16px;color:var(--color-gray);">No departments found.</td></tr>';
-    } catch (err) {
-      if (tbody) tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;padding:16px;color:var(--color-danger);">${escapeHtml(err.message)}</td></tr>`;
-    }
-  }
-
-  async function loadCourses() {
-    const tbody = document.getElementById('academicCoursesBody');
-    if (tbody) tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:16px;color:var(--color-gray);"><i class="fa-solid fa-spinner fa-spin"></i> Loading courses...</td></tr>';
-    try {
-      const courses = await window.BookAPI.getCourses();
-      if (!tbody) return;
-      tbody.innerHTML = courses.map(c => `
-        <tr>
-          <td><span style="font-weight:700;color:var(--color-primary);">${escapeHtml(c.code)}</span></td>
-          <td><strong>${escapeHtml(c.name)}</strong></td>
-          <td>${escapeHtml(c.department_name || c.department?.name || 'Computer')}</td>
-          <td>Semester ${c.semester || 1}</td>
-          <td style="text-align: right;">
-            <button class="action-btn danger" title="Delete Course" onclick="window.deleteCourse('${c.id}')"><i class="fa-solid fa-trash"></i></button>
-          </td>
-        </tr>
-      `).join('') || '<tr><td colspan="5" style="text-align:center;padding:16px;color:var(--color-gray);">No courses found.</td></tr>';
-    } catch (err) {
-      if (tbody) tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:16px;color:var(--color-danger);">${escapeHtml(err.message)}</td></tr>`;
-    }
-  }
-
-  // Academic Modals & Actions
-  document.getElementById('btnAddCollege')?.addEventListener('click', () => {
-    document.getElementById('adminAddCollegeModal')?.classList.add('active');
-  });
-  document.getElementById('closeAddCollegeModal')?.addEventListener('click', () => {
-    document.getElementById('adminAddCollegeModal')?.classList.remove('active');
-  });
-  document.getElementById('adminAddCollegeForm')?.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const payload = {
-      name: document.getElementById('newCollegeName').value.trim(),
-      code: document.getElementById('newCollegeCode').value.trim(),
-      city: document.getElementById('newCollegeCity').value.trim(),
-      state: document.getElementById('newCollegeState').value.trim(),
+  async function fetchAdmin() {
+    const stats = await window.BookAPI.getAdminStats();
+    const els = {
+      adminStatUsers: stats.totalUsers,
+      adminStatBooks: stats.totalListings,
+      adminStatSwaps: stats.activeSwaps || 0,
+      adminStatDonations: stats.freeDonations || 0
     };
-    try {
-      await window.BookAPI.createCollege(payload);
-      if (typeof showToast === 'function') showToast('College added successfully', 'success');
-      document.getElementById('adminAddCollegeModal')?.classList.remove('active');
-      document.getElementById('adminAddCollegeForm').reset();
-      loadColleges();
-    } catch (err) {
-      if (typeof showToast === 'function') showToast(err.message || 'Failed to add college', 'danger');
-    }
-  });
-  window.deleteCollege = async function(id) {
-    if (!confirm('Are you sure you want to delete this college?')) return;
-    try {
-      await window.BookAPI.deleteCollege(id);
-      if (typeof showToast === 'function') showToast('College deleted successfully', 'success');
-      loadColleges();
-    } catch (err) {
-      if (typeof showToast === 'function') showToast(err.message || 'Failed to delete college', 'danger');
-    }
-  };
+    Object.entries(els).forEach(([id, val]) => {
+      const el = document.getElementById(id);
+      if (el) { el.dataset.count = val; el.textContent = val.toLocaleString('en-IN'); }
+    });
 
-  document.getElementById('btnAddDepartment')?.addEventListener('click', async () => {
-    const select = document.getElementById('newDeptCollegeSelect');
-    if (select) {
-      if (_collegesList.length === 0) _collegesList = await window.BookAPI.getColleges();
-      select.innerHTML = _collegesList.map(c => `<option value="${c.id}">${escapeHtml(c.name)} (${c.code})</option>`).join('');
-    }
-    document.getElementById('adminAddDeptModal')?.classList.add('active');
-  });
-  document.getElementById('closeAddDeptModal')?.addEventListener('click', () => {
-    document.getElementById('adminAddDeptModal')?.classList.remove('active');
-  });
-  document.getElementById('adminAddDeptForm')?.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const payload = {
-      college: document.getElementById('newDeptCollegeSelect').value,
-      name: document.getElementById('newDeptName').value.trim(),
-      code: document.getElementById('newDeptCode').value.trim().toUpperCase(),
-    };
-    try {
-      await window.BookAPI.createDepartment(payload);
-      if (typeof showToast === 'function') showToast('Department added successfully', 'success');
-      document.getElementById('adminAddDeptModal')?.classList.remove('active');
-      document.getElementById('adminAddDeptForm').reset();
-      loadDepartments();
-    } catch (err) {
-      if (typeof showToast === 'function') showToast(err.message || 'Failed to add department', 'danger');
-    }
-  });
-  window.deleteDepartment = async function(id) {
-    if (!confirm('Are you sure you want to delete this department?')) return;
-    try {
-      await window.BookAPI.deleteDepartment(id);
-      if (typeof showToast === 'function') showToast('Department deleted successfully', 'success');
-      loadDepartments();
-    } catch (err) {
-      if (typeof showToast === 'function') showToast(err.message || 'Failed to delete department', 'danger');
-    }
-  };
-
-  document.getElementById('btnAddCourse')?.addEventListener('click', async () => {
-    const select = document.getElementById('newCourseDeptSelect');
-    if (select) {
-      if (_deptsList.length === 0) _deptsList = await window.BookAPI.getDepartments();
-      select.innerHTML = _deptsList.map(d => `<option value="${d.id}">${escapeHtml(d.name)} (${d.code})</option>`).join('');
-    }
-    document.getElementById('adminAddCourseModal')?.classList.add('active');
-  });
-  document.getElementById('closeAddCourseModal')?.addEventListener('click', () => {
-    document.getElementById('adminAddCourseModal')?.classList.remove('active');
-  });
-  document.getElementById('adminAddCourseForm')?.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const payload = {
-      department: document.getElementById('newCourseDeptSelect').value,
-      name: document.getElementById('newCourseName').value.trim(),
-      code: document.getElementById('newCourseCode').value.trim(),
-      semester: parseInt(document.getElementById('newCourseSemester').value, 10),
-    };
-    try {
-      await window.BookAPI.createCourse(payload);
-      if (typeof showToast === 'function') showToast('Course added successfully', 'success');
-      document.getElementById('adminAddCourseModal')?.classList.remove('active');
-      document.getElementById('adminAddCourseForm').reset();
-      loadCourses();
-    } catch (err) {
-      if (typeof showToast === 'function') showToast(err.message || 'Failed to add course', 'danger');
-    }
-  });
-  window.deleteCourse = async function(id) {
-    if (!confirm('Are you sure you want to delete this course?')) return;
-    try {
-      await window.BookAPI.deleteCourse(id);
-      if (typeof showToast === 'function') showToast('Course deleted successfully', 'success');
-      loadCourses();
-    } catch (err) {
-      if (typeof showToast === 'function') showToast(err.message || 'Failed to delete course', 'danger');
-    }
-  };
-
-  // ── 8. ANALYTICS DEEP DIVE ────────────────────────────────────────────────
-  async function loadAnalytics() {
-    try {
-      const data = await window.BookAPI.getAdminAnalytics();
-
-      // 1. Monthly Trends
-      const growthCanvas = document.getElementById('analyticsGrowthChartCanvas');
-      if (growthCanvas && data.monthlyTrends) {
-        if (_adminCharts.analyticsGrowth) _adminCharts.analyticsGrowth.destroy();
-        _adminCharts.analyticsGrowth = new Chart(growthCanvas, {
-          type: 'line',
-          data: {
-            labels: data.monthlyTrends.map(m => m.month),
-            datasets: [
-              {
-                label: 'New Users',
-                data: data.monthlyTrends.map(m => m.users),
-                borderColor: '#6366f1',
-                backgroundColor: 'rgba(99, 102, 241, 0.1)',
-                tension: 0.3,
-                fill: true,
-              },
-              {
-                label: 'New Listings',
-                data: data.monthlyTrends.map(m => m.books),
-                borderColor: '#10b981',
-                backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                tension: 0.3,
-                fill: true,
-              }
-            ]
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: { y: { beginAtZero: true } }
-          }
-        });
-      }
-
-      // 2. Top Colleges
-      const collegesCanvas = document.getElementById('analyticsCollegesChartCanvas');
-      if (collegesCanvas && data.topColleges) {
-        if (_adminCharts.analyticsColleges) _adminCharts.analyticsColleges.destroy();
-        _adminCharts.analyticsColleges = new Chart(collegesCanvas, {
-          type: 'bar',
-          data: {
-            labels: data.topColleges.map(c => c.code || c.name),
-            datasets: [{
-              label: 'Enrolled Students',
-              data: data.topColleges.map(c => c.students_count),
-              backgroundColor: '#0284c7',
-              borderRadius: 6,
-            }]
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: { legend: { display: false } },
-            scales: { y: { beginAtZero: true } }
-          }
-        });
-      }
-
-      // 3. Condition Breakdown
-      const conditionCanvas = document.getElementById('analyticsConditionChartCanvas');
-      if (conditionCanvas && data.conditionBreakdown) {
-        if (_adminCharts.analyticsCondition) _adminCharts.analyticsCondition.destroy();
-        _adminCharts.analyticsCondition = new Chart(conditionCanvas, {
-          type: 'pie',
-          data: {
-            labels: data.conditionBreakdown.map(c => c.condition || 'Good'),
-            datasets: [{
-              data: data.conditionBreakdown.map(c => c.count),
-              backgroundColor: ['#10b981', '#3b82f6', '#f59e0b', '#ef4444'],
-            }]
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: { legend: { position: 'bottom' } }
-          }
-        });
-      }
-
-      // 4. Swap Fulfillment Rate
-      if (data.exchangeStats) {
-        document.getElementById('analyticsSwapRate').textContent = `${data.exchangeStats.successRate}%`;
-      }
-    } catch (err) {
-      if (typeof showToast === 'function') showToast(err.message || 'Failed to load analytics', 'danger');
-    }
-  }
-  document.getElementById('btnRefreshAnalytics')?.addEventListener('click', loadAnalytics);
-
-  // ── 9. AUDIT LOGS ─────────────────────────────────────────────────────────
-  let _logsCache = [];
-
-  async function loadAuditLogs() {
-    const tbody = document.getElementById('adminAuditLogsTableBody');
-    const searchVal = document.getElementById('auditSearchInput')?.value.trim();
-    const actionVal = document.getElementById('auditActionFilter')?.value;
-
-    if (tbody) tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--color-gray);"><i class="fa-solid fa-spinner fa-spin"></i> Loading audit logs...</td></tr>';
-
-    try {
-      const filters = {};
-      if (searchVal) filters.search = searchVal;
-      if (actionVal) filters.action = actionVal;
-
-      _logsCache = await window.BookAPI.getAuditLogs(filters);
-      document.getElementById('auditLogsResultCount').textContent = `${_logsCache.length} Logs`;
-
-      if (!tbody) return;
-      tbody.innerHTML = _logsCache.map((l, idx) => `
-        <tr>
-          <td><span class="badge badge-primary">${escapeHtml(l.action)}</span></td>
-          <td><strong>${escapeHtml(l.title)}</strong></td>
-          <td style="font-size:12.5px;">${escapeHtml(l.user_email || l.user_name || 'Anonymous')}</td>
-          <td style="font-family:monospace;font-size:12px;color:var(--color-gray);">${escapeHtml(l.ip_address || '127.0.0.1')}</td>
-          <td style="font-size:12px;color:var(--color-gray);">${l.created_at ? new Date(l.created_at).toLocaleString() : 'N/A'}</td>
-          <td style="text-align: right;">
-            <button class="action-btn" title="Inspect Telemetry" onclick="window.inspectAuditLog(${idx})"><i class="fa-solid fa-code"></i></button>
-          </td>
-        </tr>
-      `).join('') || '<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--color-gray);">No audit logs found.</td></tr>';
-    } catch (err) {
-      if (tbody) tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--color-danger);">${escapeHtml(err.message || 'Failed to load logs.')}</td></tr>`;
-    }
+    if (!tbody) return;
+    const books = await window.BookAPI.getBooks();
+    tbody.innerHTML = books.map(b => `
+      <tr>
+        <td><span style="color: var(--color-primary); font-weight: 600;">${b.gtuCode || b.id?.substring(0, 12) || 'N/A'}</span></td>
+        <td><strong>${b.title}</strong><br><span style="font-size:12px;color:var(--color-gray);">${b.author || ''}</span></td>
+        <td><span class="badge badge-primary">${b.branch || 'CE'}</span></td>
+        <td>${b.price > 0 ? '&#8377;' + b.price : 'Free'}</td>
+        <td><span class="book-status-badge ${(b.status||'available').toLowerCase()}">${b.status || 'Available'}</span></td>
+        <td style="text-align: right;">
+          <button onclick="handleDeleteAdminBook('${b.id}')" class="btn btn-danger btn-sm" style="height: 32px; padding: 0 12px; font-size: 12px;">Delete</button>
+        </td>
+      </tr>
+    `).join('') || '<tr><td colspan="6" style="text-align:center;color:var(--color-gray);padding:24px;">No books found.</td></tr>';
   }
 
-  window.inspectAuditLog = function(idx) {
-    const log = _logsCache[idx];
-    if (!log) return;
-    const modal = document.getElementById('adminAuditMetaModal');
-    const body = document.getElementById('auditMetaBody');
-    if (!modal || !body) return;
-    body.textContent = JSON.stringify(log, null, 2);
-    modal.classList.add('active');
-  };
-  document.getElementById('closeAuditMetaModal')?.addEventListener('click', () => {
-    document.getElementById('adminAuditMetaModal')?.classList.remove('active');
-  });
-
-  let auditSearchTimeout = null;
-  document.getElementById('auditSearchInput')?.addEventListener('input', () => {
-    clearTimeout(auditSearchTimeout);
-    auditSearchTimeout = setTimeout(loadAuditLogs, 300);
-  });
-  document.getElementById('auditActionFilter')?.addEventListener('change', loadAuditLogs);
-  document.getElementById('btnRefreshAuditLogs')?.addEventListener('click', loadAuditLogs);
-
-  // ── 10. NOTIFICATIONS & BROADCAST ─────────────────────────────────────────
-  async function loadNotifications() {
-    const tbody = document.getElementById('adminNotificationsTableBody');
-    if (tbody) tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--color-gray);"><i class="fa-solid fa-spinner fa-spin"></i> Loading notifications...</td></tr>';
-    try {
-      const data = await window.BookAPI.getNotifications();
-      const list = data.notifications || [];
-      if (!tbody) return;
-      tbody.innerHTML = list.map(n => `
-        <tr>
-          <td><strong>${escapeHtml(n.title)}</strong><br><span style="font-size:12px;color:var(--color-gray);">${escapeHtml(n.message || '')}</span></td>
-          <td>${escapeHtml(n.recipient_email || 'Recipient')}</td>
-          <td><span class="badge badge-secondary">${escapeHtml(n.notification_type || 'SYSTEM')}</span></td>
-          <td><span class="status-pill ${n.is_read ? 'completed' : 'pending'}">${n.is_read ? 'Read' : 'Unread'}</span></td>
-          <td style="font-size:12px;color:var(--color-gray);">${n.created_at ? new Date(n.created_at).toLocaleString() : 'N/A'}</td>
-        </tr>
-      `).join('') || '<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--color-gray);">No recent notifications.</td></tr>';
-    } catch (err) {
-      if (tbody) tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--color-danger);">${escapeHtml(err.message)}</td></tr>`;
-    }
+  async function fetchAdminUsers() {
+    const usersTbody = document.getElementById('adminUsersTableBody');
+    if (!usersTbody) return;
+    const users = await window.BookAPI.getAllUsers();
+    usersTbody.innerHTML = users.map(u => `
+      <tr>
+        <td><strong>${u.name}</strong></td>
+        <td style="font-size:13px;">${u.email}</td>
+        <td><span class="badge badge-primary">${u.branch || 'CE'}</span></td>
+        <td><span class="book-status-badge ${u.role === 'admin' ? 'available' : 'exchanged'}">${u.role || 'student'}</span></td>
+        <td style="font-size:12px;color:var(--color-gray);">${u.enrollment || 'N/A'}</td>
+        <td style="text-align: right;">
+          <button onclick="handleDeleteAdminUser('${u.id}')" class="btn btn-danger btn-sm" style="height:28px;padding:0 10px;font-size:12px;">Remove</button>
+        </td>
+      </tr>
+    `).join('') || '<tr><td colspan="6" style="text-align:center;color:var(--color-gray);padding:24px;">No users found.</td></tr>';
   }
 
-  document.getElementById('btnOpenBroadcastModal')?.addEventListener('click', () => {
-    document.getElementById('adminBroadcastModal')?.classList.add('active');
-  });
-  document.getElementById('closeBroadcastModal')?.addEventListener('click', () => {
-    document.getElementById('adminBroadcastModal')?.classList.remove('active');
-  });
-  document.getElementById('adminBroadcastForm')?.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const payload = {
-      title: document.getElementById('broadcastTitle').value.trim(),
-      message: document.getElementById('broadcastMessage').value.trim(),
-      target: document.getElementById('broadcastTarget').value,
-    };
-    try {
-      const res = await window.BookAPI.broadcastNotification(payload);
-      if (typeof showToast === 'function') showToast(res.message || 'Broadcast announcement sent', 'success');
-      document.getElementById('adminBroadcastModal')?.classList.remove('active');
-      document.getElementById('adminBroadcastForm').reset();
-      loadNotifications();
-    } catch (err) {
-      if (typeof showToast === 'function') showToast(err.message || 'Broadcast failed', 'danger');
-    }
-  });
-
-  // ── 11. SYSTEM HEALTH ─────────────────────────────────────────────────────
-  async function loadSystemHealth() {
-    try {
-      const health = await window.BookAPI.getAdminSystemHealth();
-      const isHealthy = health.status === 'HEALTHY';
-
-      const dbBadge = document.getElementById('healthDbBadge');
-      if (dbBadge) {
-        dbBadge.className = `health-status-badge ${isHealthy ? 'healthy' : 'degraded'}`;
-        dbBadge.innerHTML = `<i class="fa-solid ${isHealthy ? 'fa-circle-check' : 'fa-triangle-exclamation'}"></i> ${isHealthy ? 'Connected' : 'Degraded'}`;
-      }
-
-      document.getElementById('healthDbVendor').textContent = health.database?.vendor ? `${health.database.vendor.toUpperCase()} DB Engine` : 'MySQL Engine';
-      document.getElementById('healthDbLatency').textContent = `${health.database?.latency_ms || 1.2} ms`;
-      document.getElementById('healthEnv').textContent = health.engine?.environment || 'Production Ready';
-
-      if (health.counts) {
-        document.getElementById('healthCountUsers').textContent = health.counts.users || 0;
-        document.getElementById('healthCountBooks').textContent = health.counts.books || 0;
-        document.getElementById('healthCountColleges').textContent = health.counts.colleges || 0;
-        document.getElementById('healthCountLogs').textContent = health.counts.activity_logs || 0;
-      }
-    } catch (err) {
-      if (typeof showToast === 'function') showToast(err.message || 'Failed to fetch health check', 'danger');
-    }
-  }
-  document.getElementById('btnRefreshHealth')?.addEventListener('click', loadSystemHealth);
-
-  // ── 12. ADMIN PROFILE ─────────────────────────────────────────────────────
-  function loadAdminProfile() {
-    if (!currentUser) return;
-    document.getElementById('profAdminName').textContent = currentUser.full_name || currentUser.name || 'Administrator';
-    document.getElementById('profAdminEmail').textContent = currentUser.email || '';
-    document.getElementById('profAdminRoleBadge').textContent = currentUser.role || 'SUPER_ADMIN';
-    document.getElementById('profInputName').value = currentUser.full_name || currentUser.name || '';
-    document.getElementById('profInputEmail').value = currentUser.email || '';
-    document.getElementById('profInputPhone').value = currentUser.phone_number || '';
-    document.getElementById('profInputJoined').value = currentUser.date_joined ? new Date(currentUser.date_joined).toLocaleDateString() : 'Active Member';
-  }
-
-  document.getElementById('adminProfileForm')?.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const newName = document.getElementById('profInputName').value.trim();
-    const newPhone = document.getElementById('profInputPhone').value.trim();
-    try {
-      await _patch('/profile/', { full_name: newName, phone_number: newPhone });
-      if (typeof showToast === 'function') showToast('Admin profile updated successfully', 'success');
-      const updatedUser = await window.BookAPI.getCurrentUser();
-      const navName = document.getElementById('adminNavName');
-      if (navName && updatedUser) navName.textContent = `${updatedUser.full_name || updatedUser.name} (${updatedUser.role || 'Admin'})`;
-    } catch (err) {
-      if (typeof showToast === 'function') showToast(err.message || 'Failed to update profile', 'danger');
-    }
-  });
-
-  // ── Global Dashboard Refresh Handlers ─────────────────────────────────────
-  document.getElementById('btnRefreshDashboard')?.addEventListener('click', loadDashboardStats);
-  document.getElementById('btnGlobalRefresh')?.addEventListener('click', () => {
-    loadDashboardStats();
-    if (typeof showToast === 'function') showToast('Dashboard refreshed with latest database records', 'info');
-  });
-
-  // Initial Load
-  loadDashboardStats();
+  fetchAdmin();
 }
 
-/* 📊 DASHBOARD */
+window.handleDeleteAdminBook = async function(id) {
+  if (confirm('Delete this book listing?')) {
+    await window.BookAPI.deleteBook(id);
+    showToast('Listing removed', 'success');
+    initAdminPage();
+  }
+};
+
+window.handleDeleteAdminUser = async function(id) {
+  if (confirm('Remove this user? This cannot be undone.')) {
+    await window.BookAPI.deleteUser(id);
+    showToast('User removed', 'success');
+    const usersTbody = document.getElementById('adminUsersTableBody');
+    if (usersTbody) {
+      const users = await window.BookAPI.getAllUsers();
+      usersTbody.innerHTML = users.map(u => `
+        <tr>
+          <td><strong>${u.name}</strong></td>
+          <td style="font-size:13px;">${u.email}</td>
+          <td><span class="badge badge-primary">${u.branch || 'CE'}</span></td>
+          <td><span class="book-status-badge ${u.role === 'admin' ? 'available' : 'exchanged'}">${u.role || 'student'}</span></td>
+          <td style="font-size:12px;">${u.enrollment || 'N/A'}</td>
+          <td style="text-align:right;"><button onclick="handleDeleteAdminUser('${u.id}')" class="btn btn-danger btn-sm" style="height:28px;padding:0 10px;font-size:12px;">Remove</button></td>
+        </tr>
+      `).join('') || '<tr><td colspan="6" style="text-align:center;color:var(--color-gray);">No users found.</td></tr>';
+    }
+  }
+};
+
+/* 📊 DASHBOARD — Full Implementation */
 async function initDashboardPage() {
   const sidebarLinks = document.querySelectorAll('.sidebar-link[data-tab]');
   const tabContents = document.querySelectorAll('.tab-content');
@@ -2949,356 +1170,404 @@ async function initDashboardPage() {
   const profileCard = document.getElementById('profileCard');
 
   if (!user) {
-    if (greeting) greeting.textContent = 'Please sign in to access your student dashboard.';
-    setTimeout(() => window.location.href = 'login.html?redirect=dashboard.html', 1200);
+    if (greeting) greeting.textContent = 'Please login to view your dashboard.';
     return;
   }
 
   if (greeting) greeting.textContent = `Welcome back, ${user.name}! 👋`;
+  renderSwapMatchmakerBanner('dashMatchmakerContainer');
 
-  try {
-    const allBooks = await window.BookAPI.getBooks({ all: true });
-    const myBooks = allBooks.filter(b => b.seller?.id === user.id || b.seller?.email === user.email);
-    const wishBooks = await window.BookAPI.getWishlistBooks().catch(() => []);
+  const allBooks = await window.BookAPI.getBooks();
+  const myBooks = allBooks.filter(b => b.seller?.id === user.id || b.seller?.email === user.email);
+  const wishBooks = await window.BookAPI.getWishlistBooks();
 
-    const overviewEls = {
-      dashMyBooks: myBooks.length,
-      dashWishlist: wishBooks.length,
-      dashExchanges: myBooks.filter(b => b.mode === 'exchange').length,
-      dashDonations: myBooks.filter(b => b.mode === 'donate').length
-    };
-    Object.entries(overviewEls).forEach(([id, val]) => {
-      const el = document.getElementById(id);
-      if (el) el.textContent = val;
-    });
+  // Overview stats
+  const overviewEls = {
+    dashMyBooks: myBooks.length,
+    dashWishlist: wishBooks.length,
+    dashExchanges: myBooks.filter(b => b.mode === 'exchange').length,
+    dashDonations: myBooks.filter(b => b.mode === 'donate').length
+  };
+  Object.entries(overviewEls).forEach(([id, val]) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = val;
+  });
 
-    if (profileCard) {
-      profileCard.innerHTML = `
-        <div style="text-align: center; margin-bottom: 20px;">
-          <div style="width:64px;height:64px;border-radius:50%;background:var(--color-primary);color:#fff;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;margin:0 auto 12px;">
-            ${user.name.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase()}
-          </div>
-          <h3 style="margin:0 0 4px;">${user.name}</h3>
-          <p style="font-size:14px;color:var(--color-gray);margin:0;">${user.email}</p>
+  // Profile Tab
+  if (profileCard) {
+    profileCard.innerHTML = `
+      <div style="text-align: center; margin-bottom: 20px;">
+        <div style="width:64px;height:64px;border-radius:50%;background:var(--color-primary);color:#fff;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;margin:0 auto 12px;">
+          ${user.name.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase()}
         </div>
-        <div class="profile-stats-row">
-          <div class="profile-stat-box">
-            <div class="profile-stat-num">${myBooks.length}</div>
-            <div class="profile-stat-label">Listed</div>
-          </div>
-          <div class="profile-stat-box">
-            <div class="profile-stat-num">${wishBooks.length}</div>
-            <div class="profile-stat-label">Wishlisted</div>
-          </div>
-          <div class="profile-stat-box">
-            <div class="profile-stat-num">${myBooks.filter(b => b.mode === 'donate').length}</div>
-            <div class="profile-stat-label">Donated</div>
-          </div>
+        <h3 style="margin:0 0 4px;">${user.name}</h3>
+        <p style="font-size:14px;color:var(--color-gray);margin:0;">${user.email}</p>
+      </div>
+      <div class="profile-stats-row">
+        <div class="profile-stat-box">
+          <div class="profile-stat-num">${myBooks.length}</div>
+          <div class="profile-stat-label">Listed</div>
         </div>
-        <div style="display:grid;gap:12px;font-size:14px;">
-          <div class="flex-between"><span style="color:var(--color-gray);">Role</span><strong>${(user.role || 'STUDENT').toUpperCase()}</strong></div>
-          <div class="flex-between"><span style="color:var(--color-gray);">College</span><strong>${user.college_name || 'GTU / University'}</strong></div>
-          <div class="flex-between"><span style="color:var(--color-gray);">Status</span><span class="badge badge-success">Active Member</span></div>
+        <div class="profile-stat-box">
+          <div class="profile-stat-num">${wishBooks.length}</div>
+          <div class="profile-stat-label">Wishlisted</div>
+        </div>
+        <div class="profile-stat-box">
+          <div class="profile-stat-num">${myBooks.filter(b => b.mode === 'donate').length}</div>
+          <div class="profile-stat-label">Donated</div>
+        </div>
+      </div>
+      <div style="display:grid;gap:12px;font-size:14px;">
+        <div class="flex-between"><span style="color:var(--color-gray);">Enrollment</span><strong>${user.enrollment || 'N/A'}</strong></div>
+        <div class="flex-between"><span style="color:var(--color-gray);">Department</span><span class="badge badge-primary">${user.branch || 'CE'}</span></div>
+        <div class="flex-between"><span style="color:var(--color-gray);">Semester</span><strong>${user.semester ? 'Sem ' + user.semester : 'N/A'}</strong></div>
+        <div class="flex-between"><span style="color:var(--color-gray);">Role</span><strong>${(user.role || 'student').toUpperCase()}</strong></div>
+        <div class="flex-between"><span style="color:var(--color-gray);">Member Since</span><strong>${new Date(user.createdAt).toLocaleDateString('en-IN', {year:'numeric',month:'short',day:'numeric'})}</strong></div>
+      </div>
+    `;
+  }
+
+  // My Books Tab
+  const myBooksGrid = document.getElementById('dashMyBooksGrid');
+  if (myBooksGrid) {
+    if (myBooks.length === 0) {
+      myBooksGrid.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-state-icon">📖</div>
+          <h3>No Books Listed</h3>
+          <p>Upload your first book to start exchanging with students.</p>
+          <a href="exchange.html" class="btn btn-primary btn-sm"><i class="fa-solid fa-plus"></i> Upload Book</a>
         </div>
       `;
-    }
-
-    const myBooksGrid = document.getElementById('dashMyBooksGrid');
-    if (myBooksGrid) {
-      if (myBooks.length === 0) {
-        myBooksGrid.innerHTML = `
-          <div class="empty-state">
-            <div class="empty-state-icon">📖</div>
-            <h3>No Books Listed Yet</h3>
-            <p>Upload your textbooks to start exchanging or selling with other students.</p>
-            <a href="exchange.html" class="btn btn-primary btn-sm"><i class="fa-solid fa-plus"></i> Upload Book</a>
-          </div>
-        `;
-      } else {
-        const defaultCover = 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=400&q=80';
-        myBooksGrid.innerHTML = myBooks.map(b => `
+    } else {
+      myBooksGrid.innerHTML = myBooks.map(b => {
+        const statusClass = (b.status || 'available').toLowerCase();
+        return `
           <div class="book-card">
             <div class="book-cover" style="height:140px;">
-              <img src="${b.cover || defaultCover}" alt="${escapeHtml(b.title)}" loading="lazy" onerror="if(this.src!=='${defaultCover}'){this.onerror=null;this.src='${defaultCover}';}">
+              <img src="${b.cover || b.image || window.DEFAULT_BOOK_COVER}" alt="${b.title}" loading="lazy" onerror="this.onerror=null; this.src=window.DEFAULT_BOOK_COVER;">
             </div>
             <div class="book-body">
               <div class="book-meta-row">
                 <span class="book-category">${b.branch || 'CE'}</span>
                 <span class="book-type">${(b.mode || 'sell').toUpperCase()}</span>
               </div>
-              <div class="book-title" style="font-size:14px;">${escapeHtml(b.title)}</div>
-              <div class="book-author" style="font-size:12px;">by ${escapeHtml(b.author || 'Unknown')}</div>
+              <div class="book-title" style="font-size:14px;">${b.title}</div>
+              <div class="book-author" style="font-size:12px;">by ${b.author || 'Unknown'}</div>
               <div class="book-footer" style="margin-top:8px;">
-                <span class="book-status-badge ${(b.status || 'available').toLowerCase()}">${b.status || 'Available'}</span>
+                <span class="book-status-badge ${statusClass}">${b.status || 'Available'}</span>
                 <span style="font-size:13px;font-weight:600;color:var(--color-primary);">${b.price > 0 ? '&#8377;'+b.price : 'FREE'}</span>
               </div>
-              <div class="my-book-actions" style="display:flex;gap:6px;margin-top:8px;">
-                <button class="btn btn-ghost btn-sm" onclick="handleDeleteMyBook('${b.id}')"><i class="fa-solid fa-trash"></i> Delete</button>
+              <div class="my-book-actions">
+                <button class="btn-edit-book" onclick="handleEditMyBook('${b.id}')"><i class="fa-solid fa-pen"></i> Edit</button>
+                <button class="btn-mark-sold" onclick="handleMarkSold('${b.id}', this)"><i class="fa-solid fa-check"></i> Sold</button>
+                <button class="btn-delete-book" onclick="handleDeleteMyBook('${b.id}')"><i class="fa-solid fa-trash"></i></button>
               </div>
             </div>
           </div>
-        `).join('');
-      }
+        `;
+      }).join('');
     }
+  }
 
-    const wishlistGrid = document.getElementById('dashWishlistGrid');
-    if (wishlistGrid && wishBooks.length > 0) {
-      await renderBooksGrid(wishlistGrid, wishBooks, 'View');
-    }
+  // Wishlist Tab
+  const wishlistGrid = document.getElementById('dashWishlistGrid');
+  if (wishlistGrid && wishBooks.length > 0) {
+    await renderBooksGrid(wishlistGrid, wishBooks, 'View');
+  }
 
-    // Load Messages
-    const msgContainer = document.getElementById('dashboardMessagesContent');
-    if (msgContainer) {
-      let rawMessages = [];
-      try {
-        rawMessages = await window.BookAPI.getMessages();
-      } catch (_) {
-        rawMessages = [];
-      }
-      const messages = Array.isArray(rawMessages)
-        ? rawMessages
-        : (rawMessages && Array.isArray(rawMessages.results) ? rawMessages.results : (rawMessages && Array.isArray(rawMessages.messages) ? rawMessages.messages : []));
+  // Messages Tab
+  await renderDashboardMessages(user);
 
-      if (!messages || messages.length === 0) {
-        msgContainer.innerHTML = `
-          <div class="empty-state">
-            <div class="empty-state-icon">💬</div>
-            <h3>No Messages</h3>
-            <p>Direct inquiries from other students will appear here.</p>
+  // Notifications Tab
+  renderDashboardNotifications(user, myBooks, allBooks);
+}
+
+/* ─── Dashboard: Messages ─── */
+async function renderDashboardMessages(user) {
+  const msgContainer = document.getElementById('dashboardMessagesContent');
+  if (!msgContainer) return;
+
+  const msgsBadge = document.getElementById('msgsBadge');
+  const allMsgs = JSON.parse(localStorage.getItem('rcti_gtu_messages') || '[]');
+  const myMsgs = allMsgs.filter(m => m.receiverEmail === user.email || m.senderEmail === user.email);
+
+  const threads = {};
+  myMsgs.forEach(m => {
+    const partner = m.senderEmail === user.email ? m.receiverEmail : m.senderEmail;
+    const partnerName = m.senderEmail === user.email ? (m.receiverName || partner) : (m.senderName || partner);
+    if (!threads[partner]) threads[partner] = { name: partnerName, messages: [], unread: 0 };
+    threads[partner].messages.push(m);
+    if (m.receiverEmail === user.email) threads[partner].unread++;
+  });
+
+  const threadList = Object.entries(threads);
+  const unreadCount = threadList.reduce((sum, [, t]) => sum + t.unread, 0);
+
+  if (msgsBadge) {
+    if (unreadCount > 0) { msgsBadge.textContent = unreadCount; msgsBadge.style.display = 'inline-flex'; }
+    else msgsBadge.style.display = 'none';
+  }
+
+  if (threadList.length === 0) {
+    msgContainer.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-state-icon">💬</div>
+        <h3>No Messages Yet</h3>
+        <p>Start a conversation by clicking "View Details" on any book.</p>
+        <a href="browse.html" class="btn btn-primary btn-sm">Browse Books</a>
+      </div>
+    `;
+    return;
+  }
+
+  const colorVars = ['primary', 'secondary', 'info', 'success'];
+  msgContainer.innerHTML = `
+    <div class="message-thread-list">
+      ${threadList.map(([email, thread]) => {
+        const lastMsg = thread.messages[thread.messages.length - 1];
+        const initials = thread.name.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
+        const time = lastMsg ? new Date(lastMsg.timestamp).toLocaleTimeString('en-IN', {hour:'2-digit',minute:'2-digit'}) : '';
+        const colorVar = colorVars[email.length % colorVars.length];
+        return `
+          <div class="msg-thread-item ${thread.unread > 0 ? 'unread' : ''}">
+            <div class="msg-avatar" style="background:var(--color-${colorVar});">${initials}</div>
+            <div class="msg-thread-content">
+              <div class="msg-thread-name">${thread.name}</div>
+              <div class="msg-thread-preview">${lastMsg?.bookTitle ? '📖 ' + lastMsg.bookTitle + ': ' : ''}${lastMsg?.text || ''}</div>
+            </div>
+            <div class="msg-thread-meta">
+              <span class="msg-thread-time">${time}</span>
+              ${thread.unread > 0 ? `<span class="badge-dot">${thread.unread}</span>` : ''}
+            </div>
           </div>
         `;
-      } else {
-        msgContainer.innerHTML = `
-          <div class="message-thread-list">
-            ${messages.map(m => `
-              <div class="msg-thread-item">
-                <div class="msg-avatar" style="background:var(--color-primary);color:#fff;font-weight:700;display:flex;align-items:center;justify-content:center;border-radius:50%;width:40px;height:40px;">
-                  ${(m.sender_name || 'ST').substring(0, 2).toUpperCase()}
-                </div>
-                <div class="msg-thread-content" style="flex:1;margin-left:12px;">
-                  <div class="msg-thread-name" style="font-weight:700;">${escapeHtml(m.sender_name || m.sender_email)}</div>
-                  <div class="msg-thread-preview" style="font-size:13px;color:var(--color-gray);">${m.book_title ? '📖 ' + escapeHtml(m.book_title) + ': ' : ''}${escapeHtml(m.text || '')}</div>
-                </div>
-                <div class="msg-thread-meta" style="font-size:11px;color:var(--color-gray-light);">
-                  ${new Date(m.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-                </div>
-              </div>
-            `).join('')}
-          </div>
-        `;
-      }
-      const msgsBadge = document.getElementById('msgsBadge');
-      if (msgsBadge && messages && messages.length > 0) {
-        msgsBadge.textContent = messages.length;
-        msgsBadge.style.display = 'inline-block';
-      }
-    }
+      }).join('')}
+    </div>
+    <div class="msg-compose-bar">
+      <input type="text" id="newMsgInput" placeholder="Type a message to a seller...">
+      <button class="btn btn-primary btn-sm" onclick="showToast('Open a book card to send a message!', 'info')"><i class="fa-solid fa-paper-plane"></i></button>
+    </div>
+  `;
+}
 
-    // ── Load Buyer Orders ──────────────────────────────────────────
-    const ordersContainer = document.getElementById('dashOrdersContainer');
-    if (ordersContainer) {
-      const orders = await window.BookAPI.getMyOrders().catch(() => []);
-      if (!orders || orders.length === 0) {
-        ordersContainer.innerHTML = `
-          <div class="empty-state">
-            <div class="empty-state-icon">🛒</div>
-            <h3>No Orders Found</h3>
-            <p>When you purchase or reserve books on BookBridgee, your orders will appear here.</p>
-            <a href="browse.html" class="btn btn-primary btn-sm"><i class="fa-solid fa-search"></i> Browse Textbooks</a>
-          </div>
-        `;
-      } else {
-        ordersContainer.innerHTML = `
-          <div style="display:flex; flex-direction:column; gap:14px;">
-            ${orders.map(o => {
-              const coverImg = o.book_cover || 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=400&q=80';
-              const isPaid = o.payment_status === 'PAID';
-              const isCampus = o.payment_method === 'CAMPUS_DEAL';
-              return `
-                <div class="card" style="padding:16px; display:flex; gap:16px; align-items:center; flex-wrap:wrap; border:1px solid var(--color-border);">
-                  <img src="${coverImg}" style="width:60px; height:80px; object-fit:cover; border-radius:6px; box-shadow:0 2px 6px rgba(0,0,0,0.1);">
-                  <div style="flex:1; min-width:200px;">
-                    <div style="font-size:11px; color:var(--color-gray); font-family:monospace; font-weight:700;">${o.order_number}</div>
-                    <h4 style="margin:2px 0 4px; font-size:15px; font-weight:700;">${escapeHtml(o.book_title)}</h4>
-                    <div style="font-size:12.5px; color:var(--color-gray);">Seller: <strong>${escapeHtml(o.seller_name || 'Student')}</strong> · Meetup: ${escapeHtml(o.pickup_location || 'Campus')}</div>
-                    <div style="font-size:11.5px; color:var(--color-gray-light); margin-top:3px;">Date: ${new Date(o.created_at).toLocaleDateString([], {month:'short', day:'numeric', year:'numeric'})}</div>
-                  </div>
-                  <div style="text-align:right; min-width:140px;">
-                    <div style="font-size:17px; font-weight:800; color:var(--color-primary);">&#8377;${o.amount}</div>
-                    <div style="margin:4px 0;">
-                      <span class="badge ${isPaid ? 'badge-success' : 'badge-warning'}">${isPaid ? 'PAID / CONFIRMED' : (isCampus ? 'CAMPUS MEETUP PENDING' : 'PAYMENT PENDING')}</span>
-                    </div>
-                    <span style="font-size:11px; color:var(--color-gray);">${isCampus ? '🤝 Campus Direct Handover' : '💳 Razorpay Online'}</span>
-                  </div>
-                </div>
-              `;
-            }).join('')}
-          </div>
-        `;
-      }
-    }
+/* ─── Dashboard: Notifications ─── */
+function renderDashboardNotifications(user, myBooks, allBooks) {
+  const notifContainer = document.getElementById('dashboardNotificationsContent');
+  const notifBadge = document.getElementById('notifBadge');
+  if (!notifContainer) return;
 
-    // ── Load Seller Sales & Payouts ────────────────────────────────
-    const salesContainer = document.getElementById('dashSalesContainer');
-    if (salesContainer) {
-      const salesData = await window.BookAPI.getMySales().catch(() => ({ total_earnings: 0, pending_settlement: 0, route_status: 'ROUTE_DISABLED', sales: [] }));
-      const sales = salesData.sales || [];
-      
-      const earnEl = document.getElementById('dashTotalEarnings');
-      if (earnEl) earnEl.innerHTML = `&#8377;${Number(salesData.total_earnings || 0).toFixed(2)}`;
+  const notifications = [];
 
-      const pendingEl = document.getElementById('dashPendingSettlement');
-      if (pendingEl) pendingEl.innerHTML = `&#8377;${Number(salesData.pending_settlement || 0).toFixed(2)}`;
+  if (myBooks.length === 0) {
+    notifications.push({
+      icon: '📚', bg: 'var(--color-primary-light)', color: 'var(--color-primary)',
+      title: 'Start listing your books!',
+      desc: 'Upload books you no longer need and help fellow students save money.',
+      time: 'Just now', unread: true
+    });
+  }
 
-      const routeBadge = document.getElementById('dashRouteBadge');
-      if (routeBadge) {
-        if (salesData.route_status === 'ROUTE_ENABLED') {
-          routeBadge.innerHTML = `<span style="color:#16a34a;"><i class="fa-solid fa-circle-check"></i> Route Active</span>`;
-        } else if (salesData.route_status === 'ROUTE_PENDING_APPROVAL') {
-          routeBadge.innerHTML = `<span style="color:#d97706;"><i class="fa-solid fa-clock"></i> Route Approval Req.</span>`;
-        } else {
-          routeBadge.innerHTML = `<span style="color:#64748b;"><i class="fa-solid fa-circle-info"></i> Campus P2P / Standard</span>`;
-        }
-      }
+  if (myBooks.length > 0) {
+    notifications.push({
+      icon: '✅', bg: 'var(--color-success-light)', color: 'var(--color-success)',
+      title: `Your book "${myBooks[0].title.substring(0, 30)}..." is live`,
+      desc: 'Students can now browse and contact you for this book.',
+      time: new Date(myBooks[0].createdAt).toLocaleDateString('en-IN'), unread: true
+    });
+  }
 
-      // Populate Payout Preferences Form
-      if (salesData.seller_account) {
-        const upiInp = document.getElementById('sellerPayoutUpi');
-        const last4Inp = document.getElementById('sellerBankLast4');
-        const ifscInp = document.getElementById('sellerBankIfsc');
-        if (upiInp && salesData.seller_account.payout_upi_id) upiInp.value = salesData.seller_account.payout_upi_id;
-        if (last4Inp && salesData.seller_account.bank_account_last4) last4Inp.value = salesData.seller_account.bank_account_last4;
-        if (ifscInp && salesData.seller_account.bank_ifsc) ifscInp.value = salesData.seller_account.bank_ifsc;
-      }
+  const wishlistIds = JSON.parse(localStorage.getItem('rcti_gtu_wishlist') || '[]');
+  if (wishlistIds.length > 0) {
+    notifications.push({
+      icon: '❤️', bg: 'var(--color-danger-light)', color: 'var(--color-danger)',
+      title: `${wishlistIds.length} book${wishlistIds.length > 1 ? 's' : ''} in your wishlist`,
+      desc: 'Check if any wishlisted books have changed their status or price.',
+      time: 'Today', unread: false
+    });
+  }
 
-      if (sales.length === 0) {
-        salesContainer.innerHTML = `
-          <div class="empty-state">
-            <div class="empty-state-icon">📦</div>
-            <h3>No Sales Recorded Yet</h3>
-            <p>When students buy or request your listed books, their orders will appear here.</p>
-          </div>
-        `;
-      } else {
-        salesContainer.innerHTML = `
-          <div style="display:flex; flex-direction:column; gap:14px;">
-            ${sales.map(s => {
-              const coverImg = s.book_cover || 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=400&q=80';
-              let settlementLabel = 'Campus Handover';
-              let settlementClass = 'badge-info';
-              if (s.settlement_status === 'ROUTE_TRANSFER_EXECUTED') {
-                settlementLabel = 'Transferred via Route';
-                settlementClass = 'badge-success';
-              } else if (s.settlement_status === 'TEST_CAPTURED') {
-                settlementLabel = 'Test Mode Captured (Sandbox)';
-                settlementClass = 'badge-primary';
-              } else if (s.settlement_status === 'ROUTE_PENDING_APPROVAL') {
-                settlementLabel = 'Settlement Pending Route Approval';
-                settlementClass = 'badge-warning';
-              } else if (s.settlement_status === 'SETTLEMENT_PENDING_CAMPUS_HANDOVER') {
-                settlementLabel = 'Direct Campus Handover';
-                settlementClass = 'badge-secondary';
-              }
+  const donatedBooks = allBooks.filter(b => b.mode === 'donate');
+  if (donatedBooks.length > 0) {
+    notifications.push({
+      icon: '🎁', bg: 'var(--color-warning-light)', color: 'var(--color-warning)',
+      title: `${donatedBooks.length} free book${donatedBooks.length > 1 ? 's' : ''} available`,
+      desc: 'New free donations have been listed. Claim them before they\'re gone!',
+      time: 'Today', unread: false
+    });
+  }
 
-              return `
-                <div class="card" style="padding:16px; display:flex; gap:16px; align-items:center; flex-wrap:wrap; border:1px solid var(--color-border);">
-                  <img src="${coverImg}" style="width:60px; height:80px; object-fit:cover; border-radius:6px; box-shadow:0 2px 6px rgba(0,0,0,0.1);">
-                  <div style="flex:1; min-width:200px;">
-                    <div style="font-size:11px; color:var(--color-gray); font-family:monospace; font-weight:700;">${s.order_number}</div>
-                    <h4 style="margin:2px 0 4px; font-size:15px; font-weight:700;">${escapeHtml(s.book_title)}</h4>
-                    <div style="font-size:12.5px; color:var(--color-gray);">Buyer: <strong>${escapeHtml(s.buyer_name || 'Student')}</strong> · Meetup: ${escapeHtml(s.pickup_location || 'Campus')}</div>
-                    <div style="font-size:11.5px; color:var(--color-gray-light); margin-top:3px;">Date: ${new Date(s.created_at).toLocaleDateString([], {month:'short', day:'numeric', year:'numeric'})}</div>
-                  </div>
-                  <div style="text-align:right; min-width:160px;">
-                    <div style="font-size:16px; font-weight:800; color:var(--color-success);">&#8377;${s.seller_amount} <span style="font-size:12px; font-weight:400; color:var(--color-gray);">(Gross: &#8377;${s.amount})</span></div>
-                    <div style="margin:4px 0;">
-                      <span class="badge ${settlementClass}">${settlementLabel}</span>
-                    </div>
-                    <span style="font-size:11px; color:var(--color-gray);">${s.payment_method === 'CAMPUS_DEAL' ? '🤝 Campus Deal' : '💳 Online Payment'}</span>
-                  </div>
-                </div>
-              `;
-            }).join('')}
-          </div>
-        `;
-      }
-    }
+  notifications.push({
+    icon: '🔔', bg: 'var(--color-info-light)', color: 'var(--color-info)',
+    title: 'Welcome to BookBridge!',
+    desc: `Hi ${user.name.split(' ')[0]}, explore books by your classmates and save on textbooks.`,
+    time: new Date(user.createdAt).toLocaleDateString('en-IN'), unread: false
+  });
 
-    // Payout Preferences Form Handler
-    const payoutForm = document.getElementById('sellerPayoutPrefsForm');
-    if (payoutForm) {
-      payoutForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const submitBtn = payoutForm.querySelector('[type="submit"]');
-        submitBtn.disabled = true;
-        try {
-          const upi = document.getElementById('sellerPayoutUpi')?.value || '';
-          const last4 = document.getElementById('sellerBankLast4')?.value || '';
-          const ifsc = document.getElementById('sellerBankIfsc')?.value || '';
-          await window.BookAPI.updateSellerPaymentAccount({
-            payout_upi_id: upi,
-            bank_account_last4: last4,
-            bank_ifsc: ifsc,
-          });
-          showToast('Payout preferences saved successfully!', 'success');
-        } catch (err) {
-          showToast(err.message || 'Failed to save payout preferences', 'danger');
-        } finally {
-          submitBtn.disabled = false;
-        }
-      });
-    }
+  const unreadCount = notifications.filter(n => n.unread).length;
+  if (notifBadge) {
+    if (unreadCount > 0) { notifBadge.textContent = unreadCount; notifBadge.style.display = 'inline-flex'; }
+    else notifBadge.style.display = 'none';
+  }
 
-    // Load Notifications
-    const notifContainer = document.getElementById('dashboardNotificationsContent');
-    const notifBadge = document.getElementById('notifBadge');
-    if (notifContainer) {
-      const notifData = await window.BookAPI.getNotifications();
-      const notifs = notifData.notifications || [];
-      const unreadCount = notifData.count || 0;
-      if (notifBadge && unreadCount > 0) {
-        notifBadge.textContent = unreadCount;
-        notifBadge.style.display = 'inline-block';
-      }
-      if (!notifs || notifs.length === 0) {
-        notifContainer.innerHTML = `
-          <div class="empty-state">
-            <div class="empty-state-icon">🔔</div>
-            <h3>No Notifications</h3>
-            <p>You have no recent updates or alerts.</p>
-          </div>
-        `;
-      } else {
-        notifContainer.innerHTML = `
-          <div class="notification-list" style="display:flex;flex-direction:column;gap:12px;">
-            ${notifs.map(n => `
-              <div class="notification-item ${n.is_read ? '' : 'unread'}" style="padding:14px;background:#fff;border-radius:12px;border:1px solid var(--color-border);display:flex;align-items:flex-start;gap:12px;">
-                <div style="font-size:20px;color:var(--color-primary);margin-top:2px;">
-                  <i class="fa-solid fa-bell"></i>
-                </div>
-                <div style="flex:1;">
-                  <div style="font-weight:700;font-size:14px;margin-bottom:2px;">${n.title}</div>
-                  <div style="font-size:13px;color:var(--color-gray);">${n.message}</div>
-                  <div style="font-size:11px;color:var(--color-gray-light);margin-top:4px;">${new Date(n.created_at).toLocaleDateString([], {month:'short', day:'numeric'})}</div>
-                </div>
-              </div>
-            `).join('')}
-          </div>
-        `;
-      }
-    }
-  } catch (err) {
-    showToast(err.message || 'Error loading dashboard data', 'danger');
+  notifContainer.innerHTML = notifications.map(n => `
+    <div class="notification-item ${n.unread ? 'unread' : ''}">
+      <div class="notif-icon" style="background:${n.bg};color:${n.color};">${n.icon}</div>
+      <div class="notif-content">
+        <div class="notif-title">${n.title}</div>
+        <div class="notif-desc">${n.desc}</div>
+        <div class="notif-time">${n.time}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+/* ─── My Books Actions ─── */
+window.handleEditMyBook = async function(bookId) {
+  const book = await window.BookAPI.getBookById(bookId);
+  if (!book) return;
+
+  const newPrice = prompt(`Edit price for "${book.title.substring(0,30)}" (current: ${book.price === 0 ? 'FREE' : '&#8377;' + book.price}):`, book.price);
+  if (newPrice === null) return;
+
+  const newCondition = prompt(`Condition (current: ${book.condition}):`, book.condition) || book.condition;
+
+  if (window.BookDB) {
+    await window.BookDB.updateBook(bookId, {
+      price: parseFloat(newPrice) || 0,
+      condition: newCondition
+    });
+  }
+  showToast('Book updated successfully!', 'success');
+  initDashboardPage();
+};
+
+window.handleMarkSold = async function(bookId, btn) {
+  if (window.BookDB) await window.BookDB.updateBookStatus(bookId, 'Sold');
+  showToast('Marked as Sold!', 'success');
+  if (btn) { btn.textContent = '✅ Sold'; btn.disabled = true; }
+  setTimeout(() => initDashboardPage(), 1000);
+};
+
+window.handleDeleteMyBook = async function(bookId) {
+  if (!confirm('Delete this book listing?')) return;
+  await window.BookAPI.deleteBook(bookId);
+  showToast('Listing deleted.', 'success');
+  initDashboardPage();
+};
+
+
+/* 📊 CHART.JS ANALYTICS INITIALIZER */
+function initAdminCharts(books) {
+  if (typeof Chart === 'undefined') return;
+
+  const branchCtx = document.getElementById('branchChartCanvas')?.getContext('2d');
+  const typeCtx = document.getElementById('typeChartCanvas')?.getContext('2d');
+
+  if (branchCtx) {
+    const counts = { CE: 0, IT: 0, EE: 0, ME: 0, Civil: 0, IC: 0 };
+    books.forEach(b => {
+      const br = b.branch || 'CE';
+      if (counts[br] !== undefined) counts[br]++;
+      else counts.CE++;
+    });
+
+    new Chart(branchCtx, {
+      type: 'doughnut',
+      data: {
+        labels: Object.keys(counts),
+        datasets: [{
+          data: Object.values(counts),
+          backgroundColor: ['#3E6B3A', '#8B5E3C', '#2563EB', '#F59E0B', '#16A34A', '#7c3aed']
+        }]
+      },
+      options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+    });
+  }
+
+  if (typeCtx) {
+    const modes = { sell: 0, exchange: 0, donate: 0 };
+    books.forEach(b => {
+      const m = b.mode || 'sell';
+      if (modes[m] !== undefined) modes[m]++;
+      else modes.sell++;
+    });
+
+    new Chart(typeCtx, {
+      type: 'bar',
+      data: {
+        labels: ['For Sale', 'For Exchange', 'Free Donation'],
+        datasets: [{
+          label: 'Book Count',
+          data: [modes.sell, modes.exchange, modes.donate],
+          backgroundColor: ['#3E6B3A', '#2563EB', '#16A34A']
+        }]
+      },
+      options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
+    });
   }
 }
 
-window.handleDeleteMyBook = async function(bookId) {
-  if (!confirm('Are you sure you want to remove this book listing?')) return;
-  try {
-    await window.BookAPI.deleteBook(bookId);
-    showToast('Listing removed successfully', 'success');
-    initDashboardPage();
-  } catch (err) {
-    showToast(err.message || 'Failed to delete listing', 'danger');
+/* 📥 CSV DATA EXPORTER */
+async function exportAdminDataCSV() {
+  const books = await window.BookAPI.getBooks();
+  if (!books || books.length === 0) {
+    showToast('No books data to export', 'warning');
+    return;
   }
-};
+
+  let csvContent = 'data:text/csv;charset=utf-8,ID,Title,Author,Branch,Semester,Price,Mode,Status,Seller\n';
+  books.forEach(b => {
+    const row = [
+      `"${b.id}"`,
+      `"${(b.title || '').replace(/"/g, '""')}"`,
+      `"${(b.author || '').replace(/"/g, '""')}"`,
+      `"${b.branch || ''}"`,
+      `"${b.semester || 1}"`,
+      `"${b.price || 0}"`,
+      `"${b.mode || 'sell'}"`,
+      `"${b.status || 'Available'}"`,
+      `"${(b.seller?.name || '').replace(/"/g, '""')}"`
+    ].join(',');
+    csvContent += row + '\n';
+  });
+
+  const encodedUri = encodeURI(csvContent);
+  const link = document.createElement('a');
+  link.setAttribute('href', encodedUri);
+  link.setAttribute('download', `bookbridge_catalog_export_${Date.now()}.csv`);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  showToast('Catalog exported to CSV successfully!', 'success');
+}
+
+/* ⚡ SWAP MATCHMAKER BANNER RENDERER */
+async function renderSwapMatchmakerBanner(containerId) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+
+  const user = await window.BookAPI.getCurrentUser();
+  if (!user) return;
+
+  const allBooks = await window.BookAPI.getBooks();
+  const exchangeBooks = allBooks.filter(b => b.mode === 'exchange' && b.seller?.email !== user.email);
+
+  if (exchangeBooks.length === 0) return;
+
+  const matchedBook = exchangeBooks[0];
+  const sellerName = matchedBook.seller?.name || 'A Student';
+
+  container.innerHTML = `
+    <div class="matchmaker-banner animate-on-scroll">
+      <div class="matchmaker-info">
+        <h3>⚡ Perfect Swap Match Found!</h3>
+        <p><strong>${sellerName}</strong> has listed <strong>"${matchedBook.title}"</strong> (${matchedBook.branch} Sem ${matchedBook.semester || 5}). Tap to propose a trade!</p>
+      </div>
+      <button onclick="handleBookAction('${matchedBook.id}', 'Propose Swap')" class="matchmaker-btn">
+        <i class="fa-solid fa-arrows-rotate"></i> Swap Now
+      </button>
+    </div>
+  `;
+}
+

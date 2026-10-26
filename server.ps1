@@ -18,7 +18,7 @@ try {
     Write-Host ""
     Write-Host "===========================================================" -ForegroundColor Green
     Write-Host "  🌉 Book Bridge Local Server Running at:" -ForegroundColor Cyan
-    Write-Host "  $prefix" -ForegroundColor Yellow
+    Write-Host "  $prefix1" -ForegroundColor Yellow
     Write-Host "===========================================================" -ForegroundColor Green
     Write-Host "Press Ctrl+C in this PowerShell window to stop the server." -ForegroundColor Gray
     Write-Host ""
@@ -34,6 +34,11 @@ try {
         
         $localFilePath = Join-Path $root ($urlPath.TrimStart('/').Replace('/', '\'))
 
+        # Clean URL support: /browse -> browse.html
+        if (-not (Test-Path $localFilePath -PathType Leaf) -and (Test-Path ($localFilePath + ".html") -PathType Leaf)) {
+            $localFilePath = $localFilePath + ".html"
+        }
+
         if (Test-Path $localFilePath -PathType Leaf) {
             $bytes = [System.IO.File]::ReadAllBytes($localFilePath)
             
@@ -46,7 +51,10 @@ try {
                 ".json" { $response.ContentType = "application/json; charset=utf-8" }
                 ".png"  { $response.ContentType = "image/png" }
                 ".jpg"  { $response.ContentType = "image/jpeg" }
+                ".jpeg" { $response.ContentType = "image/jpeg" }
+                ".webp" { $response.ContentType = "image/webp" }
                 ".svg"  { $response.ContentType = "image/svg+xml" }
+                ".ico"  { $response.ContentType = "image/x-icon" }
                 default { $response.ContentType = "application/octet-stream" }
             }
 
