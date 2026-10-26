@@ -289,11 +289,11 @@ _mysql_ssl_mode = os.environ.get('MYSQL_SSL_MODE', '').strip()
 _mysql_ssl_required = (
     os.environ.get('MYSQL_SSL', '').lower() in ('true', '1', 'yes', 'required') or
     _mysql_url_has_ssl or
-    any(domain in _mysql_host.lower() for domain in ('tidbcloud.com', 'aivencloud.com', 'azure.com', 'digitalocean.com'))
+    any(domain in _mysql_host.lower() for domain in ('tidbcloud.com', 'tidb', 'aivencloud.com', 'azure.com', 'digitalocean.com'))
 )
 
 _init_vars = ["sql_mode='STRICT_TRANS_TABLES'"]
-if 'tidbcloud.com' in _mysql_host.lower() or os.environ.get('DISABLE_DB_CONSTRAINTS', '').lower() in ('true', '1', 'yes'):
+if 'tidbcloud.com' in _mysql_host.lower() or 'tidb' in _mysql_host.lower() or os.environ.get('DISABLE_DB_CONSTRAINTS', '').lower() in ('true', '1', 'yes'):
     _init_vars.append("foreign_key_checks=0")
 
 _mysql_options = {
