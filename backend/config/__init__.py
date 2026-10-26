@@ -65,15 +65,22 @@ try:
 
     DatabaseSchemaEditor.execute = _safe_mysql_execute
 
+    _orig_mysql_iter_column_sql = DatabaseSchemaEditor._iter_column_sql
+
+    def _safe_mysql_iter_column_sql(self, column_db_type, params, model, field, field_db_params, include_default):
+        for frag in _orig_mysql_iter_column_sql(self, column_db_type, params, model, field, field_db_params, include_default):
+            if getattr(self, '_in_safe_add_field', False) and frag == 'UNIQUE':
+                continue
+            yield frag
+
+    DatabaseSchemaEditor._iter_column_sql = _safe_mysql_iter_column_sql
+
     _orig_mysql_add_field = DatabaseSchemaEditor.add_field
 
     def _safe_mysql_add_field(self, model, field):
         should_split_unique = getattr(field, 'unique', False) and not getattr(field, 'primary_key', False)
         if should_split_unique:
-            was_unique = field.unique
-            was_db_index = getattr(field, 'db_index', False)
-            field.unique = False
-            field.db_index = False
+            self._in_safe_add_field = True
             try:
                 try:
                     _orig_mysql_add_field(self, model, field)
@@ -86,8 +93,7 @@ try:
                     else:
                         raise
             finally:
-                field.unique = was_unique
-                field.db_index = was_db_index
+                self._in_safe_add_field = False
 
             # Apply the UNIQUE constraint or index in a separate statement
             try:
