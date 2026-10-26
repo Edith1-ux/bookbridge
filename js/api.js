@@ -491,7 +491,7 @@ window.BookAPI = {
 
       return user;
     } catch (err) {
-      const isUnreachable = err.status === 404 || err.name === 'NetworkError' || (err.message && err.message.toLowerCase().includes('unable to reach'));
+      const isUnreachable = err.status === 404 || err.status === 502 || err.status === 503 || err.status === 504 || err.name === 'NetworkError' || (err.message && (err.message.toLowerCase().includes('unable to reach') || err.message.toLowerCase().includes('failed to fetch')));
       if (isUnreachable) {
         const mockNewStudent = {
           id: 'user-' + Date.now(),
@@ -551,8 +551,8 @@ window.BookAPI = {
 
       return user;
     } catch (err) {
-      // Offline / standalone fallback if backend server is unreachable (NetworkError or 404 from static file server)
-      const isUnreachable = err.status === 404 || err.name === 'NetworkError' || (err.message && err.message.toLowerCase().includes('unable to reach'));
+      // Offline / standalone fallback if backend server is unreachable (NetworkError or 404/502 from static server)
+      const isUnreachable = err.status === 404 || err.status === 502 || err.status === 503 || err.status === 504 || err.name === 'NetworkError' || (err.message && (err.message.toLowerCase().includes('unable to reach') || err.message.toLowerCase().includes('failed to fetch')));
       if (isUnreachable) {
         const lowerId = cleanEmail.toLowerCase();
         const lowerPass = cleanPassword.toLowerCase();

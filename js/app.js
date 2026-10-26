@@ -33,8 +33,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   else if (path.includes('exchange')) initExchangePage();
   else if (path.includes('donate')) initDonatePage();
   else if (path.includes('contact')) initContactPage();
-  else if (path.includes('login')) initLoginPage();
-  else if (path.includes('register')) initRegisterPage();
+  else if (path.includes('login') || document.getElementById('dedicatedLoginForm')) initLoginPage();
+  else if (path.includes('register') || document.getElementById('dedicatedRegisterForm')) initRegisterPage();
   else if (path.includes('forgot-password')) initForgotPasswordPage();
   else if (path.includes('dashboard')) initDashboardPage();
   else initHomePage();
@@ -1551,25 +1551,43 @@ function initRegisterPage() {
     };
 
     let valid = true;
+    let firstInvalidInput = null;
     ['regName', 'regEmail', 'regPassword', 'regEnrollment'].forEach(id => {
       const input = document.getElementById(id);
       if (!input || !input.value.trim()) {
         input?.closest('.form-group')?.classList.add('error');
         valid = false;
+        if (!firstInvalidInput) firstInvalidInput = input;
       }
     });
 
     if (collegeSelect && !collegeSelect.value) {
       collegeSelect.closest('.form-group')?.classList.add('error');
       valid = false;
+      if (!firstInvalidInput) firstInvalidInput = collegeSelect;
     }
 
-    if (!document.getElementById('regTerms')?.checked) {
-      showToast('Please accept the Terms of Service and Privacy Policy', 'warning');
+    if (!valid) {
+      if (firstInvalidInput) {
+        firstInvalidInput.focus();
+        firstInvalidInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+      showToast('Please fill in all required registration fields (*).', 'warning');
       return;
     }
 
-    if (!valid) return;
+    if (userData.password.length < 6) {
+      const pwInput = document.getElementById('regPassword');
+      pwInput?.closest('.form-group')?.classList.add('error');
+      pwInput?.focus();
+      showToast('Password must be at least 6 characters long.', 'warning');
+      return;
+    }
+
+    if (!document.getElementById('regTerms')?.checked) {
+      showToast('Please accept the Terms of Service and Privacy Policy to register.', 'warning');
+      return;
+    }
 
     if (submitBtn) submitBtn.classList.add('btn-loading');
     try {
