@@ -528,10 +528,10 @@ REST_FRAMEWORK = {
         'rest_framework.throttling.ScopedRateThrottle',
     ],
     'DEFAULT_THROTTLE_RATES': {
-        'anon': '10000/hour' if _is_testing else '300/hour',
-        'user': '10000/hour' if _is_testing else '3000/hour',
-        'auth': '10000/minute' if _is_testing else '10/minute',     # Login & registration
-        'ai_chat': '10000/minute' if _is_testing else '20/minute',  # AI Assistant - prevent budget exhaustion
+        'anon': '10000/hour' if (DEBUG or _is_testing) else '300/hour',
+        'user': '10000/hour' if (DEBUG or _is_testing) else '3000/hour',
+        'auth': '10000/minute' if (DEBUG or _is_testing) else '60/minute',     # Login & registration
+        'ai_chat': '10000/minute' if (DEBUG or _is_testing) else '20/minute',  # AI Assistant - prevent budget exhaustion
     },
     'DEFAULT_FILTER_BACKENDS': (
         'django_filters.rest_framework.DjangoFilterBackend',
@@ -578,7 +578,7 @@ else:
 # ---------------------------------------------------------------------------
 # CORS
 # ---------------------------------------------------------------------------
-CORS_ALLOW_ALL_ORIGINS = DEBUG
+CORS_ALLOW_ALL_ORIGINS = True
 
 _cors_origins = os.environ.get('CORS_ALLOWED_ORIGINS', '')
 if _cors_origins:
@@ -597,7 +597,16 @@ else:
         'http://127.0.0.1:8000',
         'http://localhost:3000',
         'http://127.0.0.1:3000',
+        'http://localhost:5500',
+        'http://127.0.0.1:5500',
+        'http://localhost:5173',
+        'http://127.0.0.1:5173',
+        'null',
     ]
+
+CORS_ALLOWED_ORIGIN_REGEXES = [
+    r"^http://(localhost|127\.0\.0\.1)(:\d+)?$",
+]
 
 CORS_ALLOW_CREDENTIALS = True
 

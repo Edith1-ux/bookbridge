@@ -6,9 +6,10 @@ from .models import User
 class FlexibleAuthBackend(ModelBackend):
     """
     Enhanced authentication backend allowing login via:
-    1. Full email (e.g. admin@bookbridge.com, admin@bookbridge.edu, admin@rcti.ac.in)
+    1. Full email (e.g. admin@bookbridge.com, admin@bookbridge.edu, admin@rcti.ac.in, pved95605@gmail.com)
     2. Admin alias ('admin', 'superadmin', 'superuser')
-    3. Student enrollment number
+    3. Student alias ('student', 'demostudent')
+    4. Student enrollment number (e.g. 246400307192)
     With case-insensitive identifier matching and support for standard credentials.
     """
     def authenticate(self, request, username=None, password=None, **kwargs):
@@ -27,12 +28,21 @@ class FlexibleAuthBackend(ModelBackend):
 
             for su in superusers:
                 if su.check_password(password) or (
-                    password.lower() in ('admin@123', 'admin@123456') and
+                    password.lower() in ('admin@123', 'admin@123456', 'admin123', 'admin') and
                     (su.check_password('Admin@123') or su.check_password('Admin@123456'))
                 ):
                     return su
 
             user = superusers[0] if superusers else None
+        elif clean_id.lower() in ('student', 'demostudent'):
+            student_users = list(User.objects.filter(role='STUDENT', is_active=True).order_by('-date_joined'))
+            for st in student_users:
+                if st.check_password(password) or (
+                    password.lower() in ('student@123', 'student', 'password123!') and
+                    (st.check_password('Student@123') or st.check_password('Password123!'))
+                ):
+                    return st
+            user = student_users[0] if student_users else None
         else:
             user = User.objects.filter(
                 Q(email__iexact=clean_id) | Q(enrollment_number__iexact=clean_id),
@@ -40,13 +50,21 @@ class FlexibleAuthBackend(ModelBackend):
             ).first()
 
         if user:
-            # Check exact password, or accept standard admin password variations for superadmin
+            # Check exact password
             if user.check_password(password):
                 return user
+            # Superadmin standard password variations
             if user.is_superuser or getattr(user, 'role', '') == 'SUPER_ADMIN':
                 if (
-                    password.lower() in ('admin@123', 'admin@123456') and
+                    password.lower() in ('admin@123', 'admin@123456', 'admin123', 'admin') and
                     (user.check_password('Admin@123') or user.check_password('Admin@123456'))
+                ):
+                    return user
+            # Student standard password variations
+            if getattr(user, 'role', '') == 'STUDENT':
+                if (
+                    password.lower() in ('student@123', 'student', 'password123!') and
+                    (user.check_password('Student@123') or user.check_password('Password123!'))
                 ):
                     return user
 

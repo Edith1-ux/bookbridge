@@ -60,7 +60,7 @@ class Command(BaseCommand):
         ))
 
         # 2. Also synchronize other known admin accounts to avoid confusion
-        other_admins = ['admin@bookbridge.edu', 'admin@rcti.ac.in']
+        other_admins = ['admin@bookbridge.edu', 'admin@rcti.ac.in', 'pved95605@gmail.com']
         for other_email in other_admins:
             u = User.objects.filter(email=other_email).first()
             if u:
