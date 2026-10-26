@@ -216,5 +216,18 @@
   <script src="js/api.js"></script>
   <script src="js/live-stats.js"></script>
   <script src="js/app.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const email = new URLSearchParams(window.location.search).get('email');
+      if (email) {
+        const input = document.getElementById('loginEmail');
+        if (input) {
+          input.value = email;
+          input.dispatchEvent(new Event('input', { bubbles: true }));
+          document.getElementById('loginPassword')?.focus();
+        }
+      }
+    });
+  </script>
 </body>
 </html>

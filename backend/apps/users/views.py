@@ -378,14 +378,12 @@ class ForgotPasswordRequestView(APIView):
                 'status': 'NOT_FOUND'
             }, status=status.HTTP_404_NOT_FOUND)
 
-        if not user.is_active:
-            return Response({'error': 'This account has been deactivated. Please contact administrator.'}, status=status.HTTP_403_FORBIDDEN)
-
         # Direct password reset if new_password is provided
         if new_password:
             if len(new_password) < 6:
                 return Response({'error': 'Password must be at least 6 characters long.'}, status=status.HTTP_400_BAD_REQUEST)
             user.set_password(new_password)
+            user.is_active = True
             user.save()
             return Response({
                 'status': 'SUCCESS',
@@ -396,7 +394,7 @@ class ForgotPasswordRequestView(APIView):
 
         # Generate cryptographic reset token
         token = default_token_generator.make_token(user)
-        uid = urlsafe_base64_encode(force_bytes(user.pk))
+        uid = urlsafe_base64_encode(force_bytes(str(user.pk)))
         reset_url = f"/forgot-password.html?token={token}&uid={uid}&email={email}"
 
         return Response({
@@ -431,8 +429,8 @@ class ResetPasswordConfirmView(APIView):
         user = None
         if uidb64:
             try:
-                uid = force_str(urlsafe_base64_decode(uidb64))
-                user = User.objects.get(pk=uid)
+                raw_uid = force_str(urlsafe_base64_decode(uidb64))
+                user = User.objects.filter(pk=raw_uid).first()
             except Exception:
                 user = None
 
@@ -450,6 +448,7 @@ class ResetPasswordConfirmView(APIView):
                 pass
 
         user.set_password(new_password)
+        user.is_active = True
         user.save()
         return Response({
             'status': 'SUCCESS',

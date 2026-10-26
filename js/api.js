@@ -290,11 +290,16 @@ window.BookAPI = {
     return res;
   },
 
-  async forgotPassword(email) {
+  async forgotPassword(email, newPassword = null) {
+    const payload = { email: (email || '').trim().toLowerCase() };
+    if (newPassword) {
+      payload.new_password = newPassword;
+      payload.password = newPassword;
+    }
     try {
-      return await _post('/forgot-password', { email });
+      return await _post('/forgot-password', payload);
     } catch (e) {
-      return await _post('/auth/forgot-password', { email });
+      return await _post('/auth/forgot-password', payload);
     }
   },
 

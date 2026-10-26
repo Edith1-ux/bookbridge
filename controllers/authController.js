@@ -258,11 +258,37 @@ exports.updateProfile = async (req, res, next) => {
  */
 exports.forgotPassword = async (req, res, next) => {
   try {
-    const { email } = req.body;
+    const { email, new_password, password } = req.body;
+    const newPass = new_password || password;
     const normalizedEmail = (email || '').trim().toLowerCase();
 
-    // Look up user without revealing if user exists (security best practice)
+    // Look up user
     const user = await User.findOne({ where: { email: normalizedEmail } });
+
+    // Direct password reset if new_password is provided
+    if (newPass) {
+      if (!user) {
+        return res.status(404).json({
+          error: `No account found with email "${normalizedEmail}". Please create an account.`,
+          status: 404
+        });
+      }
+      if (newPass.length < 6) {
+        return res.status(400).json({
+          error: 'Password must be at least 6 characters long.',
+          status: 400
+        });
+      }
+      const hashedPassword = await bcrypt.hash(newPass, 12);
+      user.password = hashedPassword;
+      user.isActive = true;
+      await user.save();
+      return res.json({
+        status: 200,
+        message: `Password for ${user.email} updated successfully! You can now log in.`,
+        updated: true
+      });
+    }
 
     if (user && user.isActive) {
       // Invalidate any previously active tokens for this user
