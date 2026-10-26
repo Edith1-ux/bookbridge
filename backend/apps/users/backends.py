@@ -45,25 +45,30 @@ class FlexibleAuthBackend(ModelBackend):
             user = student_users[0] if student_users else None
         else:
             user = User.objects.filter(
-                Q(email__iexact=clean_id) | Q(enrollment_number__iexact=clean_id),
+                Q(email__iexact=clean_id) |
+                Q(enrollment_number__iexact=clean_id) |
+                Q(full_name__iexact=clean_id) |
+                Q(phone_number__iexact=clean_id) |
+                Q(email__istartswith=f"{clean_id}@"),
                 is_active=True
             ).first()
 
         if user:
-            # Check exact password
-            if user.check_password(password):
+            clean_pw = str(password).strip()
+            # Check exact password and stripped password
+            if user.check_password(password) or user.check_password(clean_pw):
                 return user
             # Superadmin standard password variations
             if user.is_superuser or getattr(user, 'role', '') == 'SUPER_ADMIN':
                 if (
-                    password.lower() in ('admin@123', 'admin@123456', 'admin123', 'admin') and
+                    clean_pw.lower() in ('admin@123', 'admin@123456', 'admin123', 'admin') and
                     (user.check_password('Admin@123') or user.check_password('Admin@123456'))
                 ):
                     return user
             # Student standard password variations
             if getattr(user, 'role', '') == 'STUDENT':
                 if (
-                    password.lower() in ('student@123', 'student', 'password123!') and
+                    clean_pw.lower() in ('student@123', 'student', 'password123!') and
                     (user.check_password('Student@123') or user.check_password('Password123!'))
                 ):
                     return user

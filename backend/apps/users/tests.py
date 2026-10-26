@@ -154,3 +154,74 @@ class UserAuthenticationTests(TestCase):
         refresh_attempt = self.client.post('/api/token/refresh/', {'refresh': refresh_token}, format='json')
         self.assertEqual(refresh_attempt.status_code, status.HTTP_401_UNAUTHORIZED)
 
+    def test_student_registration_full_lifecycle_and_relogin(self):
+        """Verify student registers, logs out, and is recognized again on re-login."""
+        reg_payload = {
+            'full_name': 'Aarav Patel',
+            'email': 'aarav.patel@rcti.ac.in',
+            'password': 'StudentSecret123!',
+            'college_name': 'R. C. Technical Institute (RCTI), Ahmedabad',
+            'branch': 'CE',
+            'semester': 3,
+            'enrollment': '216400307099',
+            'phone_number': '9876543210'
+        }
+        reg_res = self.client.post(self.register_url, reg_payload, format='json')
+        self.assertEqual(reg_res.status_code, status.HTTP_201_CREATED)
+        self.assertIn('token', reg_res.data)
+        self.assertEqual(reg_res.data['user']['full_name'], 'Aarav Patel')
+        refresh_token = reg_res.data['refresh']
+
+        # Student logs out
+        logout_res = self.client.post('/api/logout/', {'refresh': refresh_token}, format='json')
+        self.assertEqual(logout_res.status_code, status.HTTP_200_OK)
+
+        # Student logs back in with EMAIL
+        login_res = self.client.post(self.login_url, {
+            'email': 'aarav.patel@rcti.ac.in',
+            'password': 'StudentSecret123!'
+        }, format='json')
+        self.assertEqual(login_res.status_code, status.HTTP_200_OK)
+        self.assertEqual(login_res.data['user']['full_name'], 'Aarav Patel')
+        self.assertEqual(login_res.data['user']['role'], 'STUDENT')
+        relogin_token = login_res.data['token']
+
+        # Verify profile is recognized with token
+        self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {relogin_token}')
+        profile_res = self.client.get(self.profile_url)
+        self.assertEqual(profile_res.status_code, status.HTTP_200_OK)
+        self.assertEqual(profile_res.data['full_name'], 'Aarav Patel')
+        self.assertEqual(profile_res.data['enrollment_number'], '216400307099')
+        self.client.credentials()  # reset
+
+        # Student logs back in with ENROLLMENT NUMBER
+        login_enr_res = self.client.post(self.login_url, {
+            'email': '216400307099',
+            'password': 'StudentSecret123!'
+        }, format='json')
+        self.assertEqual(login_enr_res.status_code, status.HTTP_200_OK)
+        self.assertEqual(login_enr_res.data['user']['email'], 'aarav.patel@rcti.ac.in')
+
+    def test_student_registration_college_code_collision_handling(self):
+        """Verify multiple colleges with identical code prefixes do not crash with IntegrityError."""
+        stud1 = {
+            'full_name': 'Student One',
+            'email': 'stud1@gecg.ac.in',
+            'password': 'Password123!',
+            'college_name': 'Govt Engineering College (GEC), Gandhinagar',
+            'branch': 'EC'
+        }
+        res1 = self.client.post(self.register_url, stud1, format='json')
+        self.assertEqual(res1.status_code, status.HTTP_201_CREATED)
+
+        stud2 = {
+            'full_name': 'Student Two',
+            'email': 'stud2@gecm.ac.in',
+            'password': 'Password123!',
+            'college_name': 'Govt Engineering College (GEC), Modasa',
+            'branch': 'ME'
+        }
+        res2 = self.client.post(self.register_url, stud2, format='json')
+        self.assertEqual(res2.status_code, status.HTTP_201_CREATED)
+
+

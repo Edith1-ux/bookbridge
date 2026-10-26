@@ -91,26 +91,78 @@ class UserRegisterSerializer(serializers.ModelSerializer):
         department = validated_data.get('department')
 
         from apps.colleges.models import College, Department
+        import re, uuid
+
         if not college and college_name:
-            college, _ = College.objects.get_or_create(
-                name=college_name,
-                defaults={'code': college_name[:10].upper().replace(' ', ''), 'city': 'Gujarat', 'state': 'Gujarat'}
-            )
+            c_name = college_name.strip()
+            # 1. Exact match (case-insensitive)
+            college = College.objects.filter(name__iexact=c_name).first()
+
+            # 2. Match by code (case-insensitive) if user entered short code (e.g. RCTI, LDCE, VGEC)
+            if not college:
+                code_guess = re.sub(r'[^A-Za-z0-9]', '', c_name).upper()
+                college = College.objects.filter(code__iexact=code_guess).first()
+
+            # 3. Match by code extracted from parenthesis, e.g. "R. C. Technical Institute (RCTI), Ahmedabad" -> RCTI
+            if not college:
+                paren_match = re.search(r'\(([A-Za-z0-9]+)\)', c_name)
+                if paren_match:
+                    code_in_paren = paren_match.group(1).upper()
+                    college = College.objects.filter(code__iexact=code_in_paren).first()
+
+            # 4. Match if existing college name contains requested name or vice-versa
+            if not college and len(c_name) >= 3:
+                college = College.objects.filter(name__icontains=c_name).first()
+                if not college:
+                    for existing_col in College.objects.all():
+                        if existing_col.name.lower() in c_name.lower() or c_name.lower() in existing_col.name.lower():
+                            college = existing_col
+                            break
+
+            # 5. If still not found, create a new College with a GUARANTEED collision-free unique code
+            if not college:
+                base_code = re.sub(r'[^A-Za-z0-9]', '', c_name).upper()[:8]
+                if not base_code:
+                    base_code = 'COLLEGE'
+                cand_code = base_code
+                counter = 1
+                while College.objects.filter(code=cand_code).exists():
+                    suffix = str(counter)
+                    cand_code = f"{base_code[:max(1, 8 - len(suffix))]}{suffix}"
+                    counter += 1
+                    if counter > 999:
+                        cand_code = f"{base_code[:4]}{uuid.uuid4().hex[:4].upper()}"
+                        break
+
+                college = College.objects.create(
+                    name=c_name,
+                    code=cand_code,
+                    city='Gujarat',
+                    state='Gujarat'
+                )
 
         if not department and branch and college:
-            department, _ = Department.objects.get_or_create(
-                college=college,
-                code=branch.upper(),
-                defaults={'name': f'{branch.upper()} Department'}
-            )
+            clean_branch = branch.strip().upper()
+            dept = Department.objects.filter(college=college, code__iexact=clean_branch).first()
+            if not dept:
+                dept = Department.objects.filter(college=college, name__icontains=clean_branch).first()
+            if not dept:
+                dept_name = f"{clean_branch} Department" if not clean_branch.endswith('DEPARTMENT') else clean_branch.title()
+                dept = Department.objects.create(
+                    college=college,
+                    code=clean_branch[:50],
+                    name=dept_name
+                )
+            department = dept
 
         # Verified college student if enrollment or college is provided
         is_verified = bool(enrollment or college)
 
         clean_email = validated_data['email'].strip().lower()
+        clean_password = str(validated_data['password']).strip()
         user = User.objects.create_user(
             email=clean_email,
-            password=validated_data['password'],
+            password=clean_password,
             full_name=validated_data['full_name'].strip(),
             college=college,
             department=department,
