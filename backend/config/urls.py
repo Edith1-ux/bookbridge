@@ -103,8 +103,18 @@ MIME_MAP = {
 }
 
 
+from django.views.static import serve as static_serve
+
+
 def serve_root_asset(request, asset_path):
     filepath = PROJECT_ROOT / asset_path
+    if not (filepath.exists() and filepath.is_file()):
+        if asset_path.startswith('media/'):
+            filepath = settings.MEDIA_ROOT / asset_path[6:]
+        else:
+            filepath = settings.MEDIA_ROOT / asset_path
+    if not (filepath.exists() and filepath.is_file()):
+        filepath = settings.BASE_DIR / asset_path
     if filepath.exists() and filepath.is_file():
         ext = filepath.suffix.lower()
         content_type = MIME_MAP.get(ext)
@@ -264,6 +274,9 @@ urlpatterns = [
     path('api/v1/public/', include(('apps.public_api.urls', 'public_api'), namespace='v1-public-api')),
     path('api/v1/analytics/', include(('apps.analytics.urls', 'analytics'), namespace='v1-analytics')),
     path('api/v1/admin-portal/', include(('apps.admin_portal.urls', 'admin_portal'), namespace='v1-admin-portal')),
+
+    # Media Assets (covers, uploads) served reliably in both local and production
+    re_path(r'^media/(?P<path>.*)$', static_serve, {'document_root': settings.MEDIA_ROOT}),
 
     # Static Assets & Catch-All Asset Route
     re_path(r'^(?P<asset_path>.+\.(css|js|png|jpg|jpeg|svg|json|ico|woff2|woff|ttf|pdf))$', serve_root_asset),

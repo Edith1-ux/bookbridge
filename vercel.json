@@ -6,6 +6,10 @@
       "destination": "https://book-bridge-2-5dbv.onrender.com/api/:path*"
     },
     {
+      "source": "/media/:path*",
+      "destination": "https://book-bridge-2-5dbv.onrender.com/media/:path*"
+    },
+    {
       "source": "/browse",
       "destination": "/browse.html"
     },

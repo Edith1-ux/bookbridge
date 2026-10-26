@@ -435,7 +435,8 @@ async function renderBooksGrid(container, books, actionLabel = 'View Details') {
     const initials = (b.seller?.name || 'BB').split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
     const isDonation = b.price === 0 || mode === 'donate';
     const isSold = (b.status || '').toLowerCase() === 'sold' || (b.status || '').toLowerCase() === 'exchanged' || (b.status || '').toLowerCase() === 'donated';
-    const coverImg = b.cover || 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=400&q=80';
+    const defaultCover = 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=400&q=80';
+    const coverImg = b.cover || defaultCover;
     const isDigital = Boolean(b.pdf_url);
     const safeTitle = (b.title || '').replace(/'/g, '');
 
@@ -463,7 +464,7 @@ async function renderBooksGrid(container, books, actionLabel = 'View Details') {
 
         <div class="book-cover">
           ${isSold ? `<span class="sold-badge" style="position: absolute; top: 10px; left: 10px; background: #dc2626; color: #fff; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 4px; z-index: 2;"><i class="fa-solid fa-circle-check"></i> ${escapeHtml(b.status)}</span>` : (isDonation ? '<span class="donation-badge"><i class="fa-solid fa-gift"></i> FREE</span>' : '')}
-          <img src="${coverImg}" alt="${escapeHtml(b.title)}" loading="lazy">
+          <img src="${coverImg}" alt="${escapeHtml(b.title)}" loading="lazy" onerror="if(this.src!=='${defaultCover}'){this.onerror=null;this.src='${defaultCover}';}">
         </div>
 
         <div class="book-body">
@@ -2951,18 +2952,19 @@ async function initDashboardPage() {
           </div>
         `;
       } else {
+        const defaultCover = 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=400&q=80';
         myBooksGrid.innerHTML = myBooks.map(b => `
           <div class="book-card">
             <div class="book-cover" style="height:140px;">
-              <img src="${b.cover || 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=400&q=80'}" alt="${b.title}" loading="lazy">
+              <img src="${b.cover || defaultCover}" alt="${escapeHtml(b.title)}" loading="lazy" onerror="if(this.src!=='${defaultCover}'){this.onerror=null;this.src='${defaultCover}';}">
             </div>
             <div class="book-body">
               <div class="book-meta-row">
                 <span class="book-category">${b.branch || 'CE'}</span>
                 <span class="book-type">${(b.mode || 'sell').toUpperCase()}</span>
               </div>
-              <div class="book-title" style="font-size:14px;">${b.title}</div>
-              <div class="book-author" style="font-size:12px;">by ${b.author || 'Unknown'}</div>
+              <div class="book-title" style="font-size:14px;">${escapeHtml(b.title)}</div>
+              <div class="book-author" style="font-size:12px;">by ${escapeHtml(b.author || 'Unknown')}</div>
               <div class="book-footer" style="margin-top:8px;">
                 <span class="book-status-badge ${(b.status || 'available').toLowerCase()}">${b.status || 'Available'}</span>
                 <span style="font-size:13px;font-weight:600;color:var(--color-primary);">${b.price > 0 ? '&#8377;'+b.price : 'FREE'}</span>
@@ -2984,7 +2986,16 @@ async function initDashboardPage() {
     // Load Messages
     const msgContainer = document.getElementById('dashboardMessagesContent');
     if (msgContainer) {
-      const messages = await window.BookAPI.getMessages();
+      let rawMessages = [];
+      try {
+        rawMessages = await window.BookAPI.getMessages();
+      } catch (_) {
+        rawMessages = [];
+      }
+      const messages = Array.isArray(rawMessages)
+        ? rawMessages
+        : (rawMessages && Array.isArray(rawMessages.results) ? rawMessages.results : (rawMessages && Array.isArray(rawMessages.messages) ? rawMessages.messages : []));
+
       if (!messages || messages.length === 0) {
         msgContainer.innerHTML = `
           <div class="empty-state">
@@ -3002,8 +3013,8 @@ async function initDashboardPage() {
                   ${(m.sender_name || 'ST').substring(0, 2).toUpperCase()}
                 </div>
                 <div class="msg-thread-content" style="flex:1;margin-left:12px;">
-                  <div class="msg-thread-name" style="font-weight:700;">${m.sender_name || m.sender_email}</div>
-                  <div class="msg-thread-preview" style="font-size:13px;color:var(--color-gray);">${m.book_title ? '📖 ' + m.book_title + ': ' : ''}${m.text}</div>
+                  <div class="msg-thread-name" style="font-weight:700;">${escapeHtml(m.sender_name || m.sender_email)}</div>
+                  <div class="msg-thread-preview" style="font-size:13px;color:var(--color-gray);">${m.book_title ? '📖 ' + escapeHtml(m.book_title) + ': ' : ''}${escapeHtml(m.text || '')}</div>
                 </div>
                 <div class="msg-thread-meta" style="font-size:11px;color:var(--color-gray-light);">
                   ${new Date(m.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}

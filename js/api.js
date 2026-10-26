@@ -240,10 +240,54 @@ async function _delete(path) {
 
 // ── Normalise data contracts between frontend & backend ─────────────────────
 
+function _normaliseCoverUrl(b) {
+  let url = b.cover || b.cover_url || b.cover_image;
+  if (!url || typeof url !== 'string') return null;
+  url = url.trim();
+  if (!url) return null;
+
+  // Remove duplicate /media/
+  while (url.includes('/media//media/')) {
+    url = url.replace('/media//media/', '/media/');
+  }
+
+  // If already absolute or blob/data URI
+  if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:') || url.startsWith('blob:')) {
+    // If it contains internal Daphne or 0.0.0.0 bind, strip to relative path
+    if (url.includes('0.0.0.0:')) {
+      url = url.replace(/^https?:\/\/0\.0\.0\.0(:\d+)?/, '');
+    } else {
+      return url;
+    }
+  }
+
+  // Prepend /media/ if missing
+  if (url.startsWith('/media/')) {
+    // Already starts with /media/
+  } else if (url.startsWith('media/')) {
+    url = '/' + url;
+  } else {
+    url = `/media/${url.replace(/^\/+/, '')}`;
+  }
+
+  // If running on local file:// or separate host without proxy and API_BASE is absolute
+  if (typeof window !== 'undefined' && API_BASE.startsWith('http')) {
+    try {
+      const apiOrigin = new URL(API_BASE).origin;
+      if (window.location.origin !== apiOrigin) {
+        return `${apiOrigin}${url}`;
+      }
+    } catch (_) {}
+  }
+
+  return url;
+}
+
 function _normaliseBook(b) {
   if (!b) return b;
   const sellerObj = b.seller_details || b.seller || {};
   const sellerName = b.seller_name || sellerObj.full_name || sellerObj.name || (typeof b.seller === 'string' ? b.seller : 'Anonymous Seller');
+  const coverUrl = _normaliseCoverUrl(b);
 
   return {
     ...b,
@@ -257,8 +301,8 @@ function _normaliseBook(b) {
     price: b.price !== undefined ? parseFloat(b.price) : 0,
     original: b.original !== undefined ? parseFloat(b.original) : (b.original_price !== undefined && b.original_price !== null ? parseFloat(b.original_price) : null),
     original_price: b.original_price !== undefined ? b.original_price : b.original,
-    cover: b.cover || b.cover_url || (b.cover_image ? (b.cover_image.startsWith('http') ? b.cover_image : `/media/${b.cover_image}`) : null),
-    cover_url: b.cover_url || b.cover || null,
+    cover: coverUrl,
+    cover_url: coverUrl,
     pdf_url: b.pdf_url || (b.pdf_file ? (b.pdf_file.startsWith('http') ? b.pdf_file : `/media/${b.pdf_file}`) : null),
     gtuCode: b.gtu_code || b.gtuCode || '',
     gtu_code: b.gtu_code || b.gtuCode || '',
@@ -691,7 +735,11 @@ window.BookAPI = {
   async getMessages(targetEmail = null) {
     try {
       const params = targetEmail ? { with: targetEmail } : {};
-      return await _get('/messages/', params);
+      const res = await _get('/messages/', params);
+      if (Array.isArray(res)) return res;
+      if (res && Array.isArray(res.results)) return res.results;
+      if (res && Array.isArray(res.messages)) return res.messages;
+      return [];
     } catch (e) {
       return [];
     }

@@ -14,9 +14,16 @@ logger = logging.getLogger('apps.chat')
 class ChatMessageListCreateView(generics.ListCreateAPIView):
     serializer_class = ChatMessageSerializer
     permission_classes = [permissions.IsAuthenticated]
+    pagination_class = None
 
     def get_queryset(self):
         user = self.request.user
+        target_email = self.request.query_params.get('with')
+        if target_email:
+            return ChatMessage.objects.filter(
+                (Q(sender=user) & Q(receiver_email__iexact=target_email)) |
+                (Q(sender__email__iexact=target_email) & Q(receiver_email__iexact=user.email))
+            ).select_related('sender').order_by('timestamp')
         return ChatMessage.objects.filter(
             Q(sender=user) | Q(receiver_email__iexact=user.email)
         ).select_related('sender').order_by('timestamp')
@@ -34,7 +41,7 @@ class ChatMessageListCreateView(generics.ListCreateAPIView):
                         title=f"New message from {self.request.user.full_name or self.request.user.email}",
                         message=f"{msg.text[:100]}...",
                         notification_type='MESSAGE',
-                        link='/dashboard.html'
+                        link='/dashboard.html?tab=messages'
                     )
             except Exception:
                 logger.exception(

@@ -34,10 +34,22 @@ class BookSerializer(serializers.ModelSerializer):
     def get_cover_image_url(self, obj):
         if obj.cover_image:
             try:
+                url = obj.cover_image.url
+                if url.startswith('http://') or url.startswith('https://'):
+                    return url
                 request = self.context.get('request')
                 if request:
-                    return request.build_absolute_uri(obj.cover_image.url)
-                return obj.cover_image.url
+                    host = request.get_host()
+                    if '0.0.0.0' in host:
+                        render_host = os.environ.get('RENDER_EXTERNAL_HOSTNAME')
+                        if render_host:
+                            return f"https://{render_host}{url}"
+                        return url
+                    return request.build_absolute_uri(url)
+                render_host = os.environ.get('RENDER_EXTERNAL_HOSTNAME')
+                if render_host:
+                    return f"https://{render_host}{url}"
+                return url
             except Exception:
                 return obj.cover_image.url if hasattr(obj.cover_image, 'url') else None
         return obj.cover_url or None

@@ -605,6 +605,7 @@ CORS_ALLOW_CREDENTIALS = True
 # SECURITY HARDENING (production only)
 # ---------------------------------------------------------------------------
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+USE_X_FORWARDED_HOST = True
 
 if not DEBUG:
     SECURE_SSL_REDIRECT = os.environ.get('SECURE_SSL_REDIRECT', 'True' if _is_prod else 'False').lower() in ('true', '1')
