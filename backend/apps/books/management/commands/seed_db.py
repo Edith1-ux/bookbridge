@@ -10,8 +10,9 @@ class Command(BaseCommand):
 
         # 1. Admin Users (ensure password, role and active state)
         admin_emails = [
+            ('admin@bookbridge.com', 'Super Administrator'),
             ('admin@bookbridge.edu', 'System Administrator'),
-            ('admin@rcti.ac.in', 'Campus Administrator')
+            ('admin@rcti.ac.in', 'Campus Administrator'),
         ]
         admin_user = None
         for a_email, a_name in admin_emails:
@@ -25,7 +26,7 @@ class Command(BaseCommand):
                     'is_active': True,
                 }
             )
-            u.set_password('Admin@123456')
+            u.set_password('Admin@123')
             u.role = 'SUPER_ADMIN'
             u.is_staff = True
             u.is_superuser = True
@@ -33,7 +34,7 @@ class Command(BaseCommand):
             u.save()
             if admin_user is None:
                 admin_user = u
-            self.stdout.write(f"Configured admin user: {u.email} (Password: Admin@123456)")
+            self.stdout.write(f"Configured admin user: {u.email} (Password: Admin@123)")
 
         # 2. Demo Student Users (ensure password and role)
         student_emails = [
