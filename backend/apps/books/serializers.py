@@ -53,6 +53,17 @@ class BookSerializer(serializers.ModelSerializer):
         elif instance.cover_url:
             data['cover_url'] = instance.cover_url
             data['cover'] = instance.cover_url
+
+        data['isUserListed'] = True
+        seller_obj = instance.seller
+        if seller_obj:
+            data['seller'] = {
+                'id': seller_obj.id,
+                'name': seller_obj.full_name or (seller_obj.email.split('@')[0] if seller_obj.email else 'Student Seller'),
+                'email': seller_obj.email,
+                'whatsapp': getattr(seller_obj, 'whatsapp', None) or getattr(seller_obj, 'phone_number', None) or '+919876543210',
+                'branch': instance.branch or 'CE'
+            }
         return data
 
 

@@ -17,6 +17,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const path = window.location.pathname;
   if (path.includes('admin')) initAdminPage();
   else if (path.includes('browse')) initBrowsePage();
+  else if (path.includes('sell')) initSellPage();
   else if (path.includes('exchange')) initExchangePage();
   else if (path.includes('donate')) initDonatePage();
   else if (path.includes('contact')) initContactPage();
@@ -409,7 +410,7 @@ async function renderBooksGrid(container, books, actionLabel = 'View Details') {
           </div>
 
           <div style="display:flex; gap:6px; margin-top:8px; flex-wrap:wrap;">
-            <a href="https://wa.me/${waNumber}?text=${waMsg}" target="_blank" rel="noopener" class="btn-whatsapp-share" title="Chat on WhatsApp">
+            <a href="https://wa.me/${waNumber}?text=${waMsg}" target="_blank" rel="noopener" class="btn-whatsapp-share" title="Chat on WhatsApp" onclick="return handleWhatsAppClick(event)">
               <i class="fa-brands fa-whatsapp"></i> WhatsApp
             </a>
             ${isDigital ? `<button class="btn-pdf-view" onclick="openPDFModal('${safePdfUrl}', '${safeTitle}')">
@@ -422,9 +423,33 @@ async function renderBooksGrid(container, books, actionLabel = 'View Details') {
   }).join('');
 }
 
+/* 📱 WHATSAPP AUTH GATE */
+window.handleWhatsAppClick = function(e) {
+  const user = JSON.parse(localStorage.getItem('rcti_gtu_current_user') || 'null');
+  const token = localStorage.getItem('bb_access_token');
+  if (!user && !token) {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    showToast('Please login with your student account to contact sellers', 'warning');
+    setTimeout(() => window.location.href = 'login.html?redirect=' + encodeURIComponent(window.location.pathname), 1000);
+    return false;
+  }
+  return true;
+};
+
 /* ❤️ WISHLIST TOGGLE */
 window.handleToggleWishlist = async function(e, bookId) {
   e.stopPropagation();
+  const user = JSON.parse(localStorage.getItem('rcti_gtu_current_user') || 'null');
+  const token = localStorage.getItem('bb_access_token');
+  if (!user && !token) {
+    showToast('Please login with your student account to save books to wishlist', 'warning');
+    setTimeout(() => window.location.href = 'login.html?redirect=' + encodeURIComponent(window.location.pathname), 1000);
+    return;
+  }
+
   const added = await window.BookAPI.toggleWishlist(bookId);
   const btn = e.currentTarget;
   const icon = btn.querySelector('i');
@@ -530,12 +555,23 @@ window.handleBookAction = async function(bookId, actionLabel) {
   `;
 
   waBtn.href = `https://wa.me/${waNumber}?text=${encodeURIComponent(`Hi ${seller.name}, I'm interested in "${book.title}" on BookBridge!`)}`;
+  waBtn.onclick = (e) => {
+    const user = JSON.parse(localStorage.getItem('rcti_gtu_current_user') || 'null');
+    const token = localStorage.getItem('bb_access_token');
+    if (!user && !token) {
+      e.preventDefault();
+      e.stopPropagation();
+      showToast('Please login with your student account to contact sellers', 'warning');
+      setTimeout(() => window.location.href = 'login.html?redirect=' + encodeURIComponent(window.location.pathname), 1000);
+      return false;
+    }
+  };
   confirmBtn.textContent = `${actionLabel}`;
   confirmBtn.onclick = async () => {
     const user = await window.BookAPI.getCurrentUser();
     if (!user) {
       showToast('Please login to continue', 'warning');
-      setTimeout(() => window.location.href = 'login.html', 1000);
+      setTimeout(() => window.location.href = 'login.html?redirect=' + encodeURIComponent(window.location.pathname), 1000);
       return;
     }
     await window.BookAPI.sendMessage(seller.email, `Interested in: ${book.title}`, book.title);
@@ -549,7 +585,11 @@ window.handleBookAction = async function(bookId, actionLabel) {
 /* ⭐ LEAVE REVIEW */
 window.handleLeaveReview = async function(sellerEmail, sellerName, bookId) {
   const user = await window.BookAPI.getCurrentUser();
-  if (!user) { showToast('Please login to leave a review', 'warning'); return; }
+  if (!user) {
+    showToast('Please login to leave a review', 'warning');
+    setTimeout(() => window.location.href = 'login.html?redirect=' + encodeURIComponent(window.location.pathname), 1000);
+    return;
+  }
 
   const rating = prompt(`Rate ${sellerName} (1-5 stars):`);
   if (!rating || isNaN(rating) || rating < 1 || rating > 5) return;
@@ -680,6 +720,213 @@ async function initBrowsePage() {
   fetchAndRender();
 }
 
+/* 🏷️ SELL BOOKS PAGE */
+async function initSellPage() {
+  const form = document.getElementById('sellPageBookForm');
+  if (!form) return;
+
+  const user = await window.BookAPI.getCurrentUser();
+  const formCard = form.closest('.modal-card') || form.parentElement;
+
+  // If user is not logged in, render an attention-grabbing authentication notice
+  if (!user && formCard && !document.getElementById('sellAuthGateBanner')) {
+    const authBanner = document.createElement('div');
+    authBanner.id = 'sellAuthGateBanner';
+    authBanner.style.cssText = 'background:#fffbeb; border:2px solid #f59e0b; border-radius:14px; padding:18px 20px; margin-bottom:24px; display:flex; align-items:center; gap:16px; flex-wrap:wrap;';
+    authBanner.innerHTML = `
+      <div style="width:48px; height:48px; border-radius:50%; background:#fef3c7; color:#d97706; display:flex; align-items:center; justify-content:center; font-size:22px; flex-shrink:0;">
+        <i class="fa-solid fa-user-lock"></i>
+      </div>
+      <div style="flex:1; min-width:220px;">
+        <h4 style="margin:0 0 4px; font-size:16px; color:#92400e; font-weight:700;">Student Account Required to Sell Books</h4>
+        <p style="margin:0; font-size:13px; color:#b45309; line-height:1.5;">You are currently browsing as a guest. To sell textbooks or list exchange items, you must sign in with your college account.</p>
+      </div>
+      <a href="login.html?redirect=sell.html" class="btn btn-primary" style="padding:10px 20px; font-weight:700; white-space:nowrap;">
+        <i class="fa-solid fa-right-to-bracket me-1"></i> Login to Sell
+      </a>
+    `;
+    formCard.insertBefore(authBanner, form);
+  }
+
+  // Listing Mode selection tabs
+  const modeCards = document.querySelectorAll('.sell-mode-card');
+  const priceGroup = document.getElementById('sellPriceGroup');
+  const exchangeGroup = document.getElementById('sellExchangeForGroup');
+  let currentMode = 'sell';
+
+  modeCards.forEach(card => {
+    card.addEventListener('click', () => {
+      modeCards.forEach(c => {
+        c.style.border = '2px solid var(--color-border)';
+        c.style.background = '#fff';
+      });
+      card.style.border = '2px solid var(--color-primary)';
+      card.style.background = 'rgba(62,107,58,0.05)';
+
+      const input = card.querySelector('input[name="sellMode"]');
+      if (input) {
+        input.checked = true;
+        currentMode = input.value;
+      }
+
+      if (currentMode === 'donate') {
+        if (priceGroup) priceGroup.style.display = 'none';
+        if (exchangeGroup) exchangeGroup.style.display = 'none';
+      } else if (currentMode === 'exchange') {
+        if (priceGroup) priceGroup.style.display = 'none';
+        if (exchangeGroup) exchangeGroup.style.display = 'block';
+      } else {
+        if (priceGroup) priceGroup.style.display = 'block';
+        if (exchangeGroup) exchangeGroup.style.display = 'none';
+      }
+    });
+  });
+
+  // Photo handlers
+  const fileGallery = document.getElementById('sellCoverFileGallery');
+  const fileCamera = document.getElementById('sellCoverFileCamera');
+  const btnChoose = document.getElementById('btnSellChooseFile');
+  const btnCamera = document.getElementById('btnSellTakePhoto');
+  const previewBox = document.getElementById('sellCoverPreviewContainer');
+  const previewImg = document.getElementById('sellCoverPreviewImg');
+  const fileNameEl = document.getElementById('sellCoverFileName');
+  const fileSizeEl = document.getElementById('sellCoverFileSize');
+  const btnChange = document.getElementById('btnSellChangePhoto');
+  const btnRemove = document.getElementById('btnSellRemovePhoto');
+  let selectedCoverBase64 = null;
+
+  btnChoose?.addEventListener('click', () => fileGallery?.click());
+  btnCamera?.addEventListener('click', () => fileCamera?.click());
+
+  function processCoverFile(file) {
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      showToast('Please select a valid image file (JPG, PNG, WebP)', 'warning');
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      showToast('Image size must be under 10MB', 'warning');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      selectedCoverBase64 = e.target.result;
+      if (previewImg) previewImg.src = selectedCoverBase64;
+      if (fileNameEl) fileNameEl.textContent = file.name;
+      if (fileSizeEl) fileSizeEl.textContent = `${(file.size / (1024 * 1024)).toFixed(2)} MB`;
+      if (previewBox) previewBox.style.display = 'block';
+    };
+    reader.readAsDataURL(file);
+  }
+
+  fileGallery?.addEventListener('change', (e) => { if (e.target.files.length) processCoverFile(e.target.files[0]); });
+  fileCamera?.addEventListener('change', (e) => { if (e.target.files.length) processCoverFile(e.target.files[0]); });
+  btnChange?.addEventListener('click', () => fileGallery?.click());
+  btnRemove?.addEventListener('click', () => {
+    selectedCoverBase64 = null;
+    if (previewBox) previewBox.style.display = 'none';
+    if (fileGallery) fileGallery.value = '';
+    if (fileCamera) fileCamera.value = '';
+  });
+
+  // Submit Handler with Strict Auth Gate
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    // Check student authentication
+    const activeUser = await window.BookAPI.getCurrentUser();
+    if (!activeUser) {
+      showToast('Student login required to publish textbook listings', 'warning');
+      setTimeout(() => window.location.href = 'login.html?redirect=sell.html', 1000);
+      return;
+    }
+
+    const title = document.getElementById('sellTitle')?.value.trim();
+    const author = document.getElementById('sellAuthor')?.value.trim();
+    const branch = document.getElementById('sellBranch')?.value;
+    const semester = parseInt(document.getElementById('sellSemester')?.value) || 1;
+    const gtuCode = document.getElementById('sellGtuCode')?.value.trim() || '';
+    const condition = document.getElementById('sellCondition')?.value || 'Good';
+    const priceVal = currentMode === 'donate' ? 0 : (parseFloat(document.getElementById('sellPrice')?.value) || 0);
+    const exchangeFor = currentMode === 'exchange' ? (document.getElementById('sellExchangeFor')?.value.trim() || '') : '';
+    const location = document.getElementById('sellLocation')?.value || 'Campus Central Library';
+    const description = document.getElementById('sellDescription')?.value.trim() || '';
+
+    if (!title || !author || !branch) {
+      showToast('Please fill all required fields marked with *', 'warning');
+      return;
+    }
+
+    const submitBtn = document.getElementById('btnSubmitSellBook');
+    const originalText = submitBtn ? submitBtn.innerHTML : '';
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-2"></i> Publishing Listing...';
+    }
+
+    const bookPayload = {
+      title,
+      author,
+      branch,
+      semester,
+      gtu_code: gtuCode,
+      gtuCode: gtuCode,
+      condition,
+      price: priceVal,
+      mode: currentMode,
+      exchange_for: exchangeFor,
+      exchangeFor: exchangeFor,
+      location,
+      description,
+      resource_type: 'Textbook',
+      genre: branch,
+      subject: branch,
+      cover: selectedCoverBase64,
+      image: selectedCoverBase64
+    };
+
+    try {
+      const saved = await window.BookAPI.addBook(bookPayload);
+      showToast(`🎉 "${title}" listed successfully on campus!`, 'success');
+
+      // Update local catalog cache
+      try {
+        const customBooks = JSON.parse(localStorage.getItem('user_uploaded_books') || '[]');
+        customBooks.unshift({
+          id: saved?.id || Date.now(),
+          title,
+          author,
+          department: branch,
+          semester,
+          category: 'Textbook',
+          condition,
+          price: priceVal,
+          type: currentMode === 'donate' ? 'Donate' : (currentMode === 'exchange' ? 'Exchange' : 'Sell'),
+          image: selectedCoverBase64 || window.DEFAULT_BOOK_COVER,
+          seller: {
+            name: activeUser.name || 'Verified Student',
+            email: activeUser.email || 'student@rcti.ac.in',
+            whatsapp: activeUser.whatsapp || '+919876543210'
+          },
+          isUserListed: true
+        });
+        localStorage.setItem('user_uploaded_books', JSON.stringify(customBooks));
+      } catch (err) {}
+
+      setTimeout(() => {
+        window.location.href = 'browse.html';
+      }, 1200);
+    } catch (err) {
+      showToast(err.message || 'Failed to publish book. Please try again.', 'danger');
+    } finally {
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalText;
+      }
+    }
+  });
+}
+
 /* 🔄 EXCHANGE */
 async function initExchangePage() {
   const grid = document.getElementById('exchangeGrid');
@@ -690,6 +937,20 @@ async function initExchangePage() {
   const fileInput = document.getElementById('uploadFileInput');
   const fileList = document.getElementById('uploadFileList');
   let uploadedFileBase64 = null;
+
+  // Global upload modal trigger with strict student auth check
+  window.openExchangeUploadModal = function() {
+    const user = JSON.parse(localStorage.getItem('rcti_gtu_current_user') || 'null');
+    const token = localStorage.getItem('bb_access_token');
+    if (!user && !token) {
+      showToast('Student account required to upload and exchange books', 'warning');
+      setTimeout(() => window.location.href = 'login.html?redirect=exchange.html', 1000);
+      return;
+    }
+    modal?.classList.add('active');
+  };
+
+  triggerBtn?.addEventListener('click', () => window.openExchangeUploadModal());
 
   if (dropZone && fileInput) {
     dropZone.addEventListener('click', () => fileInput.click());
@@ -765,10 +1026,17 @@ async function initExchangePage() {
     });
   });
 
-  triggerBtn?.addEventListener('click', () => modal?.classList.add('active'));
-
   form?.addEventListener('submit', async (e) => {
     e.preventDefault();
+
+    // Verify auth
+    const activeUser = await window.BookAPI.getCurrentUser();
+    if (!activeUser) {
+      showToast('Student login required to list exchange items', 'warning');
+      setTimeout(() => window.location.href = 'login.html?redirect=exchange.html', 1000);
+      return;
+    }
+
     const submitBtn = form.querySelector('[type="submit"]');
     submitBtn.classList.add('btn-loading');
 
