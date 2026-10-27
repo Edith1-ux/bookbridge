@@ -14,13 +14,13 @@ let isConnected = false;
 let dbDialect = 'mysql';
 
 const isProduction = process.env.NODE_ENV === 'production';
-const databaseUrl = process.env.DATABASE_URL || process.env.MYSQL_URL || process.env.TIDB_DATABASE_URL;
+const rawDatabaseUrl = process.env.DATABASE_URL || process.env.MYSQL_URL || '';
+const databaseUrl = rawDatabaseUrl.includes('?') ? rawDatabaseUrl.split('?')[0] : rawDatabaseUrl;
 
 if (databaseUrl) {
-  // MySQL / TiDB Cloud / Postgres Connection String
+  // MySQL / Postgres / External Cloud DB Connection String
   const isPostgres = databaseUrl.startsWith('postgres://') || databaseUrl.startsWith('postgresql://');
-  const isTiDB = databaseUrl.includes('tidbcloud.com') || process.env.TIDB_ENABLE_SSL === 'true';
-  const requireSSL = isPostgres || isTiDB || process.env.MYSQL_SSL === 'true' || process.env.DB_SSL === 'true' || databaseUrl.includes('ssl=');
+  const requireSSL = isPostgres || process.env.MYSQL_SSL === 'true' || process.env.DB_SSL === 'true' || rawDatabaseUrl.includes('ssl');
 
   dbDialect = isPostgres ? 'postgres' : 'mysql';
 
@@ -50,16 +50,15 @@ if (databaseUrl) {
       idle: 10000
     }
   });
-  console.log(`[DB Config] Configured ${isTiDB ? 'TiDB Cloud (MySQL SSL)' : dbDialect.toUpperCase()} connection from DATABASE_URL.`);
+  console.log(`[DB Config] Configured ${dbDialect.toUpperCase()} connection from DATABASE_URL.`);
 } else if (process.env.MYSQL_HOST) {
-  // Explicit MySQL / TiDB Environment Variables
+  // Explicit MySQL Environment Variables
   const host = process.env.MYSQL_HOST;
   const port = parseInt(process.env.MYSQL_PORT || '3306', 10);
   const database = process.env.MYSQL_DATABASE || 'bookbridge';
   const username = process.env.MYSQL_USER || 'root';
   const password = process.env.MYSQL_PASSWORD || '';
-  const isTiDB = host.includes('tidbcloud.com') || port === 4000 || process.env.TIDB_ENABLE_SSL === 'true';
-  const requireSSL = isTiDB || process.env.MYSQL_SSL === 'true';
+  const requireSSL = process.env.MYSQL_SSL === 'true' || process.env.DB_SSL === 'true';
   dbDialect = 'mysql';
 
   sequelize = new Sequelize(database, username, password, {
@@ -83,7 +82,7 @@ if (databaseUrl) {
       idle: 10000
     }
   });
-  console.log(`[DB Config] Configured ${isTiDB ? 'TiDB Cloud' : 'MySQL'} connection at ${host}:${port}/${database}.`);
+  console.log(`[DB Config] Configured MySQL connection at ${host}:${port}/${database}.`);
 } else {
   // Resilient Zero-Config Mode using SQLite
   // Never crashes the container on Render even if external DB credentials are not yet supplied!
@@ -99,7 +98,6 @@ if (databaseUrl) {
   });
   console.warn('[DB Resilience] Neither DATABASE_URL nor MYSQL_HOST provided in environment.');
   console.warn(`[DB Resilience] Initializing resilient SQLite database at: ${sqlitePath}`);
-  console.warn('[DB Resilience] To connect TiDB Cloud, add DATABASE_URL into your Render environment variables.');
 }
 
 /**

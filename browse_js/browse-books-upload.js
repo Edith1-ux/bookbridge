@@ -126,7 +126,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     condition: condition,
                     price: price,
                     mode: offerType === 'Donate' ? 'donate' : 'exchange',
-                    cover: uploadedBase64Image,
+                    cover: uploadedBase64Image || window.DEFAULT_BOOK_COVER || "browse_images/books/book1.jpg",
                     status: 'available',
                     category: 'physical',
                     seller: currentUser ? {

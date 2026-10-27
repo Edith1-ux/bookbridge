@@ -2,7 +2,8 @@
    BookBridge - Browse Books Render
 ========================================== */
 
-const DEFAULT_BOOK_COVER = window.DEFAULT_BOOK_COVER || "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 420' width='300' height='420'%3E%3Cdefs%3E%3ClinearGradient id='bg' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%231e3a8a'/%3E%3Cstop offset='100%25' stop-color='%233b82f6'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='300' height='420' rx='12' fill='url(%23bg)'/%3E%3Crect x='15' y='15' width='270' height='390' rx='8' fill='none' stroke='rgba(255,255,255,0.2)' stroke-width='2'/%3E%3Ctext x='150' y='180' font-size='56' text-anchor='middle'%3E📚%3C/text%3E%3Ctext x='150' y='235' font-size='20' font-weight='bold' fill='%23ffffff' font-family='system-ui,sans-serif' text-anchor='middle'%3EBookBridge%3C/text%3E%3Ctext x='150' y='265' font-size='13' fill='rgba(255,255,255,0.8)' font-family='system-ui,sans-serif' text-anchor='middle'%3EAcademic Book%3C/text%3E%3C/svg%3E";
+window.DEFAULT_BOOK_COVER = window.DEFAULT_BOOK_COVER || "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 420' width='300' height='420'%3E%3Cdefs%3E%3ClinearGradient id='bg' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%231e3a8a'/%3E%3Cstop offset='100%25' stop-color='%233b82f6'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='300' height='420' rx='12' fill='url(%23bg)'/%3E%3Crect x='15' y='15' width='270' height='390' rx='8' fill='none' stroke='rgba(255,255,255,0.2)' stroke-width='2'/%3E%3Ctext x='150' y='180' font-size='56' text-anchor='middle'%3E📚%3C/text%3E%3Ctext x='150' y='235' font-size='20' font-weight='bold' fill='%23ffffff' font-family='system-ui,sans-serif' text-anchor='middle'%3EBookBridge%3C/text%3E%3Ctext x='150' y='265' font-size='13' fill='rgba(255,255,255,0.8)' font-family='system-ui,sans-serif' text-anchor='middle'%3EAcademic Book%3C/text%3E%3C/svg%3E";
+const DEFAULT_BOOK_COVER = window.DEFAULT_BOOK_COVER;
 
 function escapeHTML(str) {
     if (str === null || str === undefined) return '';
@@ -13,6 +14,7 @@ function escapeHTML(str) {
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#039;');
 }
+window.escapeHTML = window.escapeHTML || escapeHTML;
 
 /* ==========================================
    Render Books Function
@@ -73,7 +75,7 @@ function renderBooks(bookList = books) {
                         alt="${escapeHTML(book.title || 'Book Cover')}"
                         class="book-image"
                         loading="lazy"
-                        onerror="if(!this.dataset.fallback){this.dataset.fallback='1'; this.src='${DEFAULT_BOOK_COVER}';}">
+                        onerror="if(!this.dataset.fallback){this.dataset.fallback='1'; this.src=window.DEFAULT_BOOK_COVER;}">
 
                     <div class="book-content">
                         <!-- Book Badges -->
