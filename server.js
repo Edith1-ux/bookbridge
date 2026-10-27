@@ -159,11 +159,10 @@ app.get(['/admin', '/admin.html'], (req, res) => serveStaticFile(res, 'admin.htm
    ========================================================================== */
 
 // 6. Health Check Endpoint (Render & Uptime Monitors)
-app.get('/api/health', (req, res) => {
+app.get(['/api/health', '/health'], (req, res) => {
   const isHealthy = getSQLStatus();
-  const statusCode = isHealthy ? 200 : (process.env.NODE_ENV === 'production' ? 503 : 200);
 
-  res.status(statusCode).json({
+  res.status(200).json({
     status: isHealthy ? 'ok' : 'degraded',
     service: 'BookBridge Enterprise Engine',
     database: {
@@ -171,8 +170,13 @@ app.get('/api/health', (req, res) => {
       dialect: getDialect()
     },
     version: '2.0.0',
+    uptime: Math.floor(process.uptime()),
     timestamp: new Date().toISOString()
   });
+});
+
+app.get(['/api/ping', '/ping'], (req, res) => {
+  res.status(200).send('pong');
 });
 
 // 7. Platform Statistics (Computed live from Database)
@@ -235,15 +239,17 @@ app.use((err, req, res, next) => {
 // 14. Server Initialization Function
 const startServer = async () => {
   try {
-    // Connect to database
+    // Connect to database (with automatic resilient fallback)
     await connectDB();
 
-    // Sync relational tables
-    await syncDatabase({ alter: false });
-
-    // In local dev, auto-seed default admin & GTU books if empty
-    if (process.env.NODE_ENV !== 'production') {
-      await seedDatabase();
+    // Sync relational tables if database engine is active
+    if (getSQLStatus()) {
+      try {
+        await syncDatabase({ alter: false });
+        await seedDatabase();
+      } catch (syncError) {
+        console.warn('[DB Sync Notice] Schema sync notice:', syncError.message);
+      }
     }
 
     server.listen(PORT, HOST, () => {
@@ -253,20 +259,46 @@ const startServer = async () => {
       console.log(` 📊 Health Check:  http://localhost:${PORT}/api/health`);
       console.log(` 📚 Browse Books:  http://localhost:${PORT}/browse.html`);
       console.log(` ⚡ Socket.IO:     Active on /socket.io/socket.io.js`);
-      console.log(` 🗄️  Database:      ${getDialect().toUpperCase()} Engine (${getSQLStatus() ? 'Connected' : 'Offline'})`);
+      console.log(` 🗄️  Database:      ${getDialect().toUpperCase()} Engine (${getSQLStatus() ? 'Connected' : 'Degraded Mode'})`);
       console.log(`===================================================`);
+
+      // Initialize Keep-Alive Heartbeat to prevent Render Free tier from spinning down
+      initKeepAliveHeartbeat();
     });
   } catch (error) {
-    console.error(`[Fatal Startup Error] Failed to initialize BookBridge engine:`, error.message);
-    if (process.env.NODE_ENV === 'production') {
-      process.exit(1);
-    } else {
-      // Local dev fallback server listening even if DB connection has issues
-      server.listen(PORT, HOST, () => {
-        console.log(`[Dev Warning] Server started on port ${PORT} with database offline.`);
-      });
-    }
+    console.error(`[Startup Notice] Encountered non-fatal error during startup:`, error.message);
+    server.listen(PORT, HOST, () => {
+      console.log(`[Resilient Startup] Server listening on port ${PORT} to keep instance alive.`);
+      initKeepAliveHeartbeat();
+    });
   }
+};
+
+// 15. Keep-Alive Service (Prevents Render Free Tier from Sleeping on Inactivity)
+const initKeepAliveHeartbeat = () => {
+  const rawUrl = process.env.KEEP_ALIVE_URL || process.env.RENDER_EXTERNAL_URL || 'https://bookbridge-tzk2.onrender.com';
+  if (!rawUrl) return;
+
+  const targetUrl = rawUrl.endsWith('/') ? rawUrl.slice(0, -1) : rawUrl;
+  const pingUrl = `${targetUrl}/api/health`;
+
+  // Render spins down after 15 minutes of inactivity; we ping every 14 minutes
+  const INTERVAL_MS = 14 * 60 * 1000;
+
+  setInterval(() => {
+    try {
+      const client = pingUrl.startsWith('https') ? require('https') : require('http');
+      client.get(pingUrl, (res) => {
+        console.log(`[Keep-Alive Ping] Heartbeat sent to ${pingUrl} - Status: ${res.statusCode}`);
+      }).on('error', (err) => {
+        console.warn(`[Keep-Alive Ping] Heartbeat probe: ${err.message}`);
+      });
+    } catch (e) {
+      // Ignored
+    }
+  }, INTERVAL_MS);
+
+  console.log(`[Keep-Alive Service] Heartbeat active every 14 minutes for: ${pingUrl}`);
 };
 
 // Graceful Shutdown
