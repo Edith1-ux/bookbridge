@@ -246,14 +246,14 @@ _mysql_ssl_required = (
     any(domain in _mysql_host.lower() for domain in ('tidbcloud.com', 'aivencloud.com', 'azure.com', 'digitalocean.com'))
 )
 
-_init_commands = ["SET sql_mode='STRICT_TRANS_TABLES'"]
-if 'tidbcloud.com' in _mysql_host.lower() or os.environ.get('DISABLE_DB_CONSTRAINTS', '').lower() in ('true', '1', 'yes'):
-    _init_commands.append("SET foreign_key_checks=0")
+_init_vars = ["sql_mode='STRICT_TRANS_TABLES'"]
+if 'tidbcloud.com' in _mysql_host.lower() or 'tidb' in _mysql_host.lower() or os.environ.get('DISABLE_DB_CONSTRAINTS', '').lower() in ('true', '1', 'yes'):
+    _init_vars.append("foreign_key_checks=0")
 
 _mysql_options = {
     'charset': 'utf8mb4',
     'connect_timeout': 15,
-    'init_command': ', '.join(_init_commands),
+    'init_command': f"SET {', '.join(_init_vars)}",
 }
 
 if _mysql_ssl_ca:

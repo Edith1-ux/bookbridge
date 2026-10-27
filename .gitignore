@@ -28,3 +28,10 @@ __pycache__/
 # Temporary IDE & test logs
 *.log
 .vscode/
+
+# Static and media directories
+staticfiles/
+media/
+backend/staticfiles/
+backend/media/
+
