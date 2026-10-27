@@ -15,7 +15,7 @@ from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView, SpectacularRedocView
 
 from apps.books.views import StatisticsAPIView, BookListCreateView
-from apps.users.views import RegisterView, CustomLoginView, AdminStatsView, UserListView
+from apps.users.views import RegisterView, CustomLoginView, AdminStatsView, UserListView, UserAdminDetailView
 from apps.chat.views import ChatMessageListCreateView
 
 PROJECT_ROOT = Path(settings.BASE_DIR).parent
@@ -77,6 +77,8 @@ urlpatterns = [
     path('api/books', BookListCreateView.as_view()),
     path('api/admin/stats', AdminStatsView.as_view()),
     path('api/admin/users', UserListView.as_view()),
+    path('api/admin/users/<str:pk>/', UserAdminDetailView.as_view()),
+    path('api/admin/users/<str:pk>', UserAdminDetailView.as_view()),
     path('api/messages', ChatMessageListCreateView.as_view()),
 
     # JWT Authentication Endpoints

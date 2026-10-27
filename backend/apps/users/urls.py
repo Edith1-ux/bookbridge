@@ -16,7 +16,7 @@ urlpatterns = [
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('profile/', ProfileView.as_view(), name='user-profile'),
     path('admin/users/', UserListView.as_view(), name='user-list-admin'),
-    path('admin/users/<uuid:pk>/', UserAdminDetailView.as_view(), name='user-detail-admin'),
+    path('admin/users/<str:pk>/', UserAdminDetailView.as_view(), name='user-detail-admin'),
     path('admin/stats/', AdminStatsView.as_view(), name='user-stats-admin'),
 ]
 
