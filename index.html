@@ -45,7 +45,8 @@
 
       <nav class="nav-links" aria-label="Main Navigation">
         <a href="index.html" class="nav-link active" data-i18n="home">Home</a>
-        <a href="browse.html" class="nav-link" data-i18n="browse">Browse</a>
+        <a href="browse.html" class="nav-link" data-i18n="buy">Buy Books</a>
+        <a href="sell.html" class="nav-link" data-i18n="sell">Sell Books</a>
         <a href="exchange.html" class="nav-link" data-i18n="exchange">Exchange</a>
         <a href="donate.html" class="nav-link" data-i18n="donate">Donate</a>
         <a href="about.html" class="nav-link" data-i18n="about">About</a>
@@ -71,15 +72,17 @@
   <div class="mobile-drawer" id="mobileNavDrawer" role="navigation" aria-label="Mobile Navigation">
     <div class="drawer-links">
       <a href="index.html" class="drawer-link active">Home <i class="fa-solid fa-chevron-right"></i></a>
-      <a href="browse.html" class="drawer-link">Browse Books <i class="fa-solid fa-chevron-right"></i></a>
+      <a href="browse.html" class="drawer-link">Buy Books <i class="fa-solid fa-chevron-right"></i></a>
+      <a href="sell.html" class="drawer-link">Sell Books <i class="fa-solid fa-chevron-right"></i></a>
       <a href="exchange.html" class="drawer-link">Exchange <i class="fa-solid fa-chevron-right"></i></a>
       <a href="donate.html" class="drawer-link">Donate <i class="fa-solid fa-chevron-right"></i></a>
       <a href="about.html" class="drawer-link">About <i class="fa-solid fa-chevron-right"></i></a>
       <a href="contact.html" class="drawer-link">Contact <i class="fa-solid fa-chevron-right"></i></a>
     </div>
     <div class="drawer-actions" id="mobileDrawerActions">
+      <a href="sell.html" class="btn btn-primary btn-block"><i class="fa-solid fa-tag me-1"></i> Sell a Book</a>
       <a href="login.html" class="btn btn-secondary btn-block">Login to Account</a>
-      <a href="register.html" class="btn btn-primary btn-block">Create Free Account</a>
+      <a href="register.html" class="btn btn-ghost btn-block">Create Free Account</a>
     </div>
   </div>
 
@@ -103,6 +106,15 @@
             aria-label="Search books" id="heroSearchInput">
           <button type="submit" class="btn btn-primary btn-sm"><i class="fa-solid fa-arrow-right"></i> Search</button>
         </form>
+
+        <div class="hero-actions animate-on-scroll" style="display: flex; gap: 12px; margin-top: 14px; margin-bottom: 8px; flex-wrap: wrap;">
+          <a href="browse.html" class="btn btn-primary" style="padding: 10px 20px; font-weight: 700; box-shadow: 0 4px 14px rgba(62,107,58,0.25);">
+            <i class="fa-solid fa-cart-shopping" style="margin-right: 6px;"></i> Buy Books
+          </a>
+          <a href="sell.html" class="btn btn-secondary" style="padding: 10px 20px; font-weight: 700; background: #fff; color: var(--color-primary); border: 2px solid var(--color-primary); box-shadow: 0 4px 14px rgba(0,0,0,0.06);">
+            <i class="fa-solid fa-tag" style="margin-right: 6px;"></i> Sell Books
+          </a>
+        </div>
 
         <div class="hero-search-tags animate-on-scroll">
           <span class="hero-search-tags-label"><i class="fa-solid fa-fire text-warning"></i> Trending:</span>
@@ -468,17 +480,16 @@
         <h2>Ready to Start Sharing Knowledge?</h2>
         <p>Join thousands of college students saving money, recycling books, and empowering peer education.</p>
         <div style="display: flex; gap: 16px; justify-content: center; flex-wrap: wrap;">
-          <a href="register.html" class="btn btn-lg">Create Free Account <i class="fa-solid fa-arrow-right"></i></a>
-          <a href="browse.html" class="btn btn-lg btn-secondary"
-            style="background: rgba(255,255,255,0.15); color: #fff; border-color: rgba(255,255,255,0.4);">Browse All
-            Books</a>
+          <a href="browse.html" class="btn btn-lg"><i class="fa-solid fa-cart-shopping" style="margin-right: 8px;"></i> Buy Books Now</a>
+          <a href="sell.html" class="btn btn-lg btn-secondary"
+            style="background: rgba(255,255,255,0.15); color: #fff; border-color: rgba(255,255,255,0.4);"><i class="fa-solid fa-tag" style="margin-right: 8px;"></i> Sell Your Books</a>
         </div>
       </div>
     </section>
 
     <!-- Floating Action Button for Quick Listing -->
-    <a href="dashboard.html" class="fab-btn" title="List a book on BookBridge">
-      <i class="fa-solid fa-plus"></i> List a Book
+    <a href="sell.html" class="fab-btn" title="Sell a book on BookBridge">
+      <i class="fa-solid fa-tag"></i> Sell a Book
     </a>
 
   </main>
@@ -509,7 +520,8 @@
 
         <div class="footer-col">
           <h4>Platform</h4>
-          <a href="browse.html">Browse Books</a>
+          <a href="browse.html">Buy Books</a>
+          <a href="sell.html">Sell Books</a>
           <a href="exchange.html">Exchange</a>
           <a href="donate.html">Donate</a>
           <a href="dashboard.html">Dashboard</a>

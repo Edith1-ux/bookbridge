@@ -58,10 +58,15 @@ function renderBooks(bookList = books) {
     bookList.forEach(book => {
 
         // Show Price or Donate
-        const priceText =
-            book.type === "Donate" || book.mode === "donate" || Number(book.price) === 0
-                ? "Donate (Free)"
-                : `₹${book.price}`;
+        const isFree = book.type === "Donate" || book.mode === "donate" || Number(book.price) === 0;
+        const isExchange = book.type === "Exchange" || book.mode === "exchange";
+        const priceText = isFree
+            ? "Donate (Free)"
+            : (isExchange ? "Book Swap (₹0)" : `₹${book.price}`);
+
+        const actionLabel = isFree ? "Claim" : (isExchange ? "Swap" : "Buy");
+        const actionIcon = isFree ? "bi-gift-fill" : (isExchange ? "bi-arrow-left-right" : "bi-cart-check-fill");
+        const actionTitle = isFree ? "Claim Free Book" : (isExchange ? "Swap / Exchange Book" : "Buy Book & Contact Seller");
 
         const bookImg = book.image || book.cover || DEFAULT_BOOK_COVER;
 
@@ -105,7 +110,7 @@ function renderBooks(bookList = books) {
                             ${escapeHTML(book.condition || 'Good')}
                         </div>
 
-                        <!-- View Details & Chat Actions -->
+                        <!-- View Details & Buy/Action -->
                         <div class="d-flex gap-2 align-items-center mt-2 flex-wrap">
                             <button
                                 class="view-btn flex-grow-1"
@@ -115,8 +120,8 @@ function renderBooks(bookList = books) {
                             <button
                                 class="btn btn-outline-success btn-sm chat-card-btn px-2 fw-semibold"
                                 data-id="${book.id}"
-                                title="Chat with Seller/Donor">
-                                <i class="bi bi-chat-dots-fill me-1"></i> Chat
+                                title="${escapeHTML(actionTitle)}">
+                                <i class="bi ${actionIcon} me-1"></i> ${escapeHTML(actionLabel)}
                             </button>
                             ${(typeof isAdminMode !== "undefined" && isAdminMode) ? `
                                 <button class="btn btn-sm btn-warning text-dark admin-edit-btn px-2" data-id="${book.id}" title="Edit Book & Replace Photo">

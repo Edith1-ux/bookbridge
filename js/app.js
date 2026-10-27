@@ -69,17 +69,17 @@ function registerPWA() {
 /* 🌐 i18n MULTI-LANGUAGE SWITCHER (EN / GU / HI) */
 const I18N_DICTIONARY = {
   en: {
-    home: 'Home', browse: 'Browse', exchange: 'Exchange', donate: 'Donate', about: 'About', contact: 'Contact',
+    home: 'Home', browse: 'Browse', buy: 'Buy Books', sell: 'Sell Books', exchange: 'Exchange', donate: 'Donate', about: 'About', contact: 'Contact',
     welcome: 'Bridge Books. Build Minds.', upload: 'Upload Book', login: 'Login', register: 'Get Started',
     verified: 'Verified Student'
   },
   gu: {
-    home: 'હોમ', browse: 'બ્રાઉઝ કરો', exchange: 'એક્સચેન્જ', donate: 'દાન કરો', about: 'અમારા વિશે', contact: 'સંપર્ક',
+    home: 'હોમ', browse: 'બ્રાઉઝ કરો', buy: 'પુસ્તકો ખરીદો', sell: 'પુસ્તકો વેચો', exchange: 'એક્સચેન્જ', donate: 'દાન કરો', about: 'અમારા વિશે', contact: 'સંપર્ક',
     welcome: 'પુસ્તકો જોડો. મન બનાવો.', upload: 'અપલોડ કરો', login: 'લોગિન', register: 'શરૂ કરો',
     verified: 'પ્રમાણિત વિદ્યાર્થી'
   },
   hi: {
-    home: 'होम', browse: 'ब्राउज़ करें', exchange: 'एक्सचेंज', donate: 'दान करें', about: 'हमारे बारे में', contact: 'संपर्क',
+    home: 'होम', browse: 'ब्राउज़ करें', buy: 'किताबें खरीदें', sell: 'किताबें बेचें', exchange: 'एक्सचेंज', donate: 'दान करें', about: 'हमारे बारे में', contact: 'संपर्क',
     welcome: 'किताबें जोड़ें। विचार बनाएं।', upload: 'अपलोड करें', login: 'लॉगिन', register: 'शुरू करें',
     verified: 'सत्यापित छात्र'
   }
@@ -400,6 +400,9 @@ async function renderBooksGrid(container, books, actionLabel = 'View Details') {
     const safeId = encodeURIComponent(String(b.id || ''));
     const safeTitleForAttr = bookTitleEscaped.replace(/'/g, '&#039;');
     const safeActionLabel = escapeHTML(actionLabel);
+    const resolvedActionText = actionLabel === 'View Details'
+      ? (isDonation ? '<i class="fa-solid fa-gift"></i> Claim Free' : (b.mode === 'exchange' ? '<i class="fa-solid fa-arrows-rotate"></i> Swap' : '<i class="fa-solid fa-cart-shopping"></i> Buy Now'))
+      : safeActionLabel;
 
     return `
       <div class="book-card">
@@ -447,7 +450,7 @@ async function renderBooksGrid(container, books, actionLabel = 'View Details') {
               ${isDonation ? 'FREE' : '&#8377;' + Number(b.price || 0)}
               ${b.original && b.price > 0 ? '<span class="original-price">&#8377;' + Number(b.original) + '</span>' : ''}
             </div>
-            <button class="btn btn-primary btn-sm" onclick="handleBookAction('${safeId}', '${safeActionLabel}')">${safeActionLabel}</button>
+            <button class="btn btn-primary btn-sm" onclick="handleBookAction('${safeId}', '${safeActionLabel}')">${resolvedActionText}</button>
           </div>
 
           <div style="display:flex; gap:6px; margin-top:8px; flex-wrap:wrap;">
@@ -598,7 +601,10 @@ window.handleBookAction = async function(bookId, actionLabel) {
   `;
 
   waBtn.href = `https://wa.me/${waNumber}?text=${encodeURIComponent(`Hi ${seller.name}, I'm interested in "${book.title}" on BookBridge!`)}`;
-  confirmBtn.textContent = `${actionLabel}`;
+  const isDonationMode = book.price === 0 || book.mode === 'donate';
+  const isExchangeMode = book.mode === 'exchange';
+  const resolvedConfirmLabel = isDonationMode ? 'Claim Book / Contact Donor' : (isExchangeMode ? 'Swap / Contact Student' : 'Buy Book / Contact Seller');
+  confirmBtn.innerHTML = `<i class="fa-solid ${isDonationMode ? 'fa-gift' : (isExchangeMode ? 'fa-arrows-rotate' : 'fa-cart-shopping')}"></i> ${resolvedConfirmLabel}`;
   confirmBtn.onclick = async () => {
     const user = await window.BookAPI.getCurrentUser();
     if (!user) {
