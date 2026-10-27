@@ -135,6 +135,19 @@ function renderBooks(bookList = books) {
     });
 }
 
+/**
+ * Check if the active visitor has logged in as a student
+ */
+function isStudentAuthenticated() {
+    try {
+        const u = JSON.parse(localStorage.getItem("rcti_gtu_current_user") || "null");
+        if (u && (u.email || u.id || u.name)) return true;
+        const token = localStorage.getItem("bb_access_token");
+        if (token) return true;
+    } catch (e) {}
+    return false;
+}
+
 /* ==========================================
    View Details & Chat Modal Event Listeners
 ========================================== */
@@ -149,9 +162,30 @@ document.addEventListener("DOMContentLoaded", () => {
             if (chatBtn) {
                 const rawId = chatBtn.getAttribute("data-id");
                 const book = (typeof books !== 'undefined' ? books : []).find(b => String(b.id) === String(rawId));
-                if (book && typeof window.openBookBridgeChat === "function") {
+                if (!book) return;
+
+                const isFree = book.type === "Donate" || book.mode === "donate" || Number(book.price) === 0;
+                const isExchange = book.type === "Exchange" || book.mode === "exchange";
+                const actionDesc = isFree ? "claim free donated books" : (isExchange ? "propose book exchanges" : "buy this book and chat with the student seller");
+
+                // STRICT AUTH CHECK
+                if (!isStudentAuthenticated()) {
+                    if (typeof window.showAuthPrompt === "function") {
+                        window.showAuthPrompt(
+                            "Student Login Required",
+                            `You are currently browsing as a guest. To <strong>${actionDesc}</strong>, you must sign in with your student account.`,
+                            "login.html?redirect=browse.html"
+                        );
+                    } else {
+                        alert("Please login to continue.");
+                        window.location.href = "login.html?redirect=browse.html";
+                    }
+                    return;
+                }
+
+                if (typeof window.openBookBridgeChat === "function") {
                     const seller = book.seller || { name: `Student (${book.department || 'CE'})`, email: 'student@rcti.ac.in', whatsapp: '+919876543210' };
-                    const mode = (book.type === "Donate" || book.mode === "donate") ? "donate" : ((book.type === "Exchange" || book.mode === "exchange") ? "exchange" : "sell");
+                    const mode = isFree ? "donate" : (isExchange ? "exchange" : "sell");
                     window.openBookBridgeChat({
                         receiverEmail: seller.email,
                         receiverName: seller.name,
@@ -205,21 +239,31 @@ document.addEventListener("DOMContentLoaded", () => {
             const typeEl = document.getElementById("modalBookType");
             const isFree = book.type === "Donate" || book.mode === "donate" || Number(book.price) === 0;
             const isExchange = book.type === "Exchange" || book.mode === "exchange";
-            if (typeEl) typeEl.textContent = isFree ? 'Donate' : (isExchange ? 'Exchange' : (book.type || 'Sell'));
+            if (typeEl) typeEl.textContent = isFree ? 'Donate (Free)' : (isExchange ? 'Exchange (Swap)' : (book.type || 'Sell'));
 
             const priceEl = document.getElementById("modalBookPrice");
             if (priceEl) {
-                priceEl.textContent = isFree ? "Free (Donate)" : (isExchange ? "Book Swap (Exchange)" : `₹${book.price}`);
+                priceEl.textContent = isFree ? "Free (Donate)" : (isExchange ? "Book Swap (₹0)" : `₹${book.price}`);
+            }
+
+            const sellerEl = document.getElementById("modalBookSeller");
+            if (sellerEl) {
+                sellerEl.textContent = book.seller?.name ? `${book.seller.name} (${book.seller.branch || book.department || 'CE'})` : 'Verified Student Seller';
+            }
+
+            const descEl = document.getElementById("modalBookDescription");
+            if (descEl) {
+                descEl.textContent = book.description || 'Academic textbook listed on the BookBridge campus sharing platform.';
             }
 
             const modalChatBtn = document.getElementById("modalChatActionBtn");
             if (modalChatBtn) {
                 if (isFree) {
-                    modalChatBtn.innerHTML = '<i class="bi bi-gift-fill me-1"></i> Chat to Claim Free Book';
+                    modalChatBtn.innerHTML = '<i class="bi bi-gift-fill me-1"></i> Claim Free Book';
                 } else if (isExchange) {
-                    modalChatBtn.innerHTML = '<i class="bi bi-arrow-left-right me-1"></i> Chat for Exchange Offer';
+                    modalChatBtn.innerHTML = '<i class="bi bi-arrow-left-right me-1"></i> Swap / Exchange Book';
                 } else {
-                    modalChatBtn.innerHTML = '<i class="bi bi-chat-dots-fill me-1"></i> Chat with Seller';
+                    modalChatBtn.innerHTML = '<i class="bi bi-cart-check-fill me-1"></i> Buy Book & Chat with Seller';
                 }
             }
 
@@ -237,6 +281,32 @@ document.addEventListener("DOMContentLoaded", () => {
         modalChatActionBtn.addEventListener("click", () => {
             if (!activeViewedBook) return;
 
+            const isFree = activeViewedBook.type === "Donate" || activeViewedBook.mode === "donate" || Number(activeViewedBook.price) === 0;
+            const isExchange = activeViewedBook.type === "Exchange" || activeViewedBook.mode === "exchange";
+            const actionDesc = isFree ? "claim free donated books" : (isExchange ? "propose book exchanges" : "buy this book and chat with the seller");
+
+            // STRICT AUTH CHECK
+            if (!isStudentAuthenticated()) {
+                // Hide Details Modal first
+                const modalElement = document.getElementById("bookDetailsModal");
+                if (modalElement && typeof bootstrap !== "undefined") {
+                    const modal = bootstrap.Modal.getInstance(modalElement);
+                    if (modal) modal.hide();
+                }
+
+                if (typeof window.showAuthPrompt === "function") {
+                    window.showAuthPrompt(
+                        "Student Login Required",
+                        `You are currently browsing as a guest. To <strong>${actionDesc}</strong>, you must sign in with your student account.`,
+                        "login.html?redirect=browse.html"
+                    );
+                } else {
+                    alert("Please login to continue.");
+                    window.location.href = "login.html?redirect=browse.html";
+                }
+                return;
+            }
+
             // Hide Details Modal
             const modalElement = document.getElementById("bookDetailsModal");
             if (modalElement && typeof bootstrap !== "undefined") {
@@ -245,7 +315,7 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
             const seller = activeViewedBook.seller || { name: `Student (${activeViewedBook.department || 'CE'})`, email: 'student@rcti.ac.in', whatsapp: '+919876543210' };
-            const mode = (activeViewedBook.type === "Donate" || activeViewedBook.mode === "donate") ? "donate" : ((activeViewedBook.type === "Exchange" || activeViewedBook.mode === "exchange") ? "exchange" : "sell");
+            const mode = isFree ? "donate" : (isExchange ? "exchange" : "sell");
 
             if (typeof window.openBookBridgeChat === "function") {
                 window.openBookBridgeChat({

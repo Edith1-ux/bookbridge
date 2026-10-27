@@ -287,6 +287,55 @@ img{
     background:#2f542d;
 }
 
+/* Chat Card Button */
+.chat-card-btn {
+    border: 1.5px solid #3E6B3A !important;
+    background: transparent !important;
+    color: #3E6B3A !important;
+    border-radius: 10px !important;
+    padding: 8px 12px !important;
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    transition: all 0.2s ease !important;
+}
+
+.chat-card-btn:hover {
+    background: #eef6ec !important;
+    color: #3E6B3A !important;
+    border-color: #3E6B3A !important;
+    transform: translateY(-1px);
+}
+
+/* Quick Filter Chips */
+.browse-chip {
+    background: #ffffff;
+    border: 1px solid #d1d5db;
+    border-radius: 9999px;
+    padding: 6px 14px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #4b5563;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+
+.browse-chip:hover {
+    border-color: #3E6B3A;
+    color: #3E6B3A;
+    background: #eef6ec;
+    transform: translateY(-1px);
+}
+
+.browse-chip.active {
+    background: #3E6B3A;
+    border-color: #3E6B3A;
+    color: #ffffff;
+    box-shadow: 0 3px 10px rgba(62, 107, 58, 0.25);
+}
+
 /* ==========================================
    Filter Offcanvas
 ========================================== */

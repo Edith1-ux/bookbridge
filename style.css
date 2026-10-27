@@ -967,16 +967,6 @@ p,
 }
 
 .search-bar:focus-within {
-  border-color: var(--color-primary-accent);
-  box-shadow: var(--shadow-glow);
-}dding: 6px 6px 6px 20px;
-  max-width: 560px;
-  width: 100%;
-  transition: all var(--tr-normal);
-  box-shadow: var(--shadow-sm);
-}
-
-.search-bar:focus-within {
   border-color: var(--color-primary);
   box-shadow: 0 0 0 4px var(--color-primary-glow);
 }

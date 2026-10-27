@@ -221,6 +221,18 @@
     const shouldOpen = forceState !== undefined ? forceState : !drawer.classList.contains('open');
 
     if (shouldOpen) {
+      const currentUser = getCurrentUser();
+      if (!currentUser) {
+        if (typeof showToast === 'function') {
+          showToast('Please login with your student account to access campus chat & deals', 'warning');
+        } else {
+          alert('Please login with your student account to access campus chat & deals');
+        }
+        const page = window.location.pathname.split('/').pop() || 'browse.html';
+        setTimeout(() => { window.location.href = `login.html?redirect=${encodeURIComponent(page)}`; }, 1000);
+        return;
+      }
+
       drawer.classList.add('open');
       if (!activePartner) {
         showInboxView();
@@ -370,11 +382,12 @@
     const currentUser = getCurrentUser();
     if (!currentUser) {
       if (typeof showToast === 'function') {
-        showToast('Please login to communicate with other students', 'warning');
+        showToast('Please login with your student account to contact sellers or buy books', 'warning');
       } else {
-        alert('Please login to communicate with other students');
+        alert('Please login with your student account to contact sellers or buy books');
       }
-      setTimeout(() => { window.location.href = 'login.html'; }, 1000);
+      const page = window.location.pathname.split('/').pop() || 'browse.html';
+      setTimeout(() => { window.location.href = `login.html?redirect=${encodeURIComponent(page)}`; }, 1000);
       return;
     }
 
