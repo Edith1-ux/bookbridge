@@ -33,11 +33,12 @@ function syncBrowseNavUser() {
     try {
         const currentUser = JSON.parse(localStorage.getItem("rcti_gtu_current_user") || "null");
         if (currentUser && (currentUser.name || currentUser.email)) {
-            const displayName = currentUser.name || currentUser.email.split('@')[0];
+            const rawName = currentUser.name || currentUser.email.split('@')[0];
+            const safeName = typeof escapeHTML === 'function' ? escapeHTML(rawName) : (window.escapeHTML ? window.escapeHTML(rawName) : String(rawName).replace(/</g, '&lt;'));
             navActions.innerHTML = `
                 <div class="d-flex align-items-center gap-2">
                     <span class="fw-semibold text-success d-none d-sm-inline">
-                        <i class="bi bi-person-circle me-1"></i> ${displayName}
+                        <i class="bi bi-person-circle me-1"></i> ${safeName}
                     </span>
                     <a href="dashboard.html" class="btn btn-outline-success btn-sm">
                         <i class="bi bi-speedometer2 me-1"></i> Dashboard

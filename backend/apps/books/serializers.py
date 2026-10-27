@@ -54,16 +54,25 @@ class BookSerializer(serializers.ModelSerializer):
             data['cover_url'] = instance.cover_url
             data['cover'] = instance.cover_url
 
+        from django.utils.html import strip_tags
         data['isUserListed'] = True
         seller_obj = instance.seller
         if seller_obj:
+            seller_name = seller_obj.full_name or (seller_obj.email.split('@')[0] if seller_obj.email else 'Student Seller')
+            clean_name = strip_tags(seller_name).strip() or 'Student Seller'
             data['seller'] = {
                 'id': seller_obj.id,
-                'name': seller_obj.full_name or (seller_obj.email.split('@')[0] if seller_obj.email else 'Student Seller'),
+                'name': clean_name,
                 'email': seller_obj.email,
                 'whatsapp': getattr(seller_obj, 'whatsapp', None) or getattr(seller_obj, 'phone_number', None) or '+919876543210',
                 'branch': instance.branch or 'CE'
             }
+
+        # Sanitize all string fields so stored XSS payloads can NEVER be sent down to clients
+        for field in ['title', 'author', 'description', 'exchange_for', 'location', 'subject', 'genre', 'condition', 'edition', 'seller_name']:
+            if field in data and isinstance(data[field], str):
+                cleaned = strip_tags(data[field]).strip()
+                data[field] = cleaned if cleaned else ('Textbook' if field in ('title', 'author') else '')
         return data
 
 
@@ -79,6 +88,32 @@ class BookCreateSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ['id']
 
+
+    def validate_title(self, value):
+        from django.utils.html import strip_tags
+        cleaned = strip_tags(value).strip()
+        if not cleaned:
+            raise serializers.ValidationError("Title cannot contain raw HTML/script tags.")
+        return cleaned
+
+    def validate_author(self, value):
+        from django.utils.html import strip_tags
+        cleaned = strip_tags(value).strip()
+        if not cleaned:
+            raise serializers.ValidationError("Author cannot contain raw HTML/script tags.")
+        return cleaned
+
+    def validate_description(self, value):
+        from django.utils.html import strip_tags
+        return strip_tags(value).strip() if value else ''
+
+    def validate_exchange_for(self, value):
+        from django.utils.html import strip_tags
+        return strip_tags(value).strip() if value else ''
+
+    def validate_location(self, value):
+        from django.utils.html import strip_tags
+        return strip_tags(value).strip() if value else ''
 
     def validate_price(self, value):
         if value is not None and value < 0:

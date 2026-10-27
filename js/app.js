@@ -8,6 +8,34 @@
 
 window.DEFAULT_BOOK_COVER = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 420' width='300' height='420'%3E%3Cdefs%3E%3ClinearGradient id='bg' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%231e3a8a'/%3E%3Cstop offset='100%25' stop-color='%233b82f6'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='300' height='420' rx='12' fill='url(%23bg)'/%3E%3Crect x='15' y='15' width='270' height='390' rx='8' fill='none' stroke='rgba(255,255,255,0.2)' stroke-width='2'/%3E%3Ctext x='150' y='180' font-size='56' text-anchor='middle'%3E📚%3C/text%3E%3Ctext x='150' y='235' font-size='20' font-weight='bold' fill='%23ffffff' font-family='system-ui,sans-serif' text-anchor='middle'%3EBookBridge%3C/text%3E%3Ctext x='150' y='265' font-size='13' fill='rgba(255,255,255,0.8)' font-family='system-ui,sans-serif' text-anchor='middle'%3EAcademic Book%3C/text%3E%3C/svg%3E";
 
+window.escapeHTML = function(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+};
+
+window.sanitizeUrl = function(url, fallback = window.DEFAULT_BOOK_COVER) {
+  if (!url) return fallback;
+  const trimmed = String(url).trim();
+  if (/^(?:javascript|vbscript):/i.test(trimmed)) {
+    return fallback;
+  }
+  if (trimmed.startsWith('data:')) {
+    if (trimmed.startsWith('data:image/svg+xml') || trimmed.startsWith('data:image/png') || trimmed.startsWith('data:image/jpeg') || trimmed.startsWith('data:image/webp')) {
+      return window.escapeHTML(trimmed);
+    }
+    return fallback;
+  }
+  return window.escapeHTML(trimmed);
+};
+
+const escapeHTML = window.escapeHTML;
+const sanitizeUrl = window.sanitizeUrl;
+
 document.addEventListener('DOMContentLoaded', async () => {
   initGlobalComponents();
   await updateNavUserUI();
@@ -296,10 +324,11 @@ async function updateNavUserUI() {
 
   if (!currentUser) return;
 
-  const role = (currentUser.role || 'student').toUpperCase();
+  const role = escapeHTML((currentUser.role || 'student').toUpperCase());
+  const safeName = escapeHTML(currentUser.name || currentUser.email || 'User');
   const userHTML = `
     <span style="font-size: 13px; font-weight: 600; color: var(--color-primary);">
-      <i class="fa-solid fa-user-circle"></i> ${currentUser.name}
+      <i class="fa-solid fa-user-circle"></i> ${safeName}
     </span>
     <a href="dashboard.html" class="btn btn-ghost btn-sm"><i class="fa-solid fa-gauge"></i> Dashboard</a>
     <button id="btnNavLogout" class="btn btn-ghost btn-sm">Logout</button>
@@ -309,7 +338,7 @@ async function updateNavUserUI() {
   if (mobileActions) {
     mobileActions.innerHTML = `
       <div style="font-size: 13px; font-weight: 600; color: var(--color-primary); padding: 8px 0;">
-        <i class="fa-solid fa-user-circle"></i> ${currentUser.name} (${role})
+        <i class="fa-solid fa-user-circle"></i> ${safeName} (${role})
       </div>
       <a href="dashboard.html" class="btn btn-ghost btn-block" style="margin-bottom:8px;text-decoration:none;"><i class="fa-solid fa-gauge"></i> Dashboard</a>
       <button id="btnMobileLogout" class="btn btn-secondary btn-block">Logout</button>
@@ -349,71 +378,83 @@ async function renderBooksGrid(container, books, actionLabel = 'View Details') {
 
   container.innerHTML = books.map(b => {
     const isWished = wishlistIds.includes(b.id);
-    const ratingVal = b.rating || 4.7;
-    const typeLabel = (b.mode || 'sell').toUpperCase();
-    const initials = (b.seller?.name || 'BB').split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
+    const ratingVal = Number(b.rating) || 4.7;
+    const typeLabel = escapeHTML((b.mode || 'sell').toUpperCase());
+    const rawSellerName = b.seller?.name || 'Student';
+    const sellerNameEscaped = escapeHTML(rawSellerName);
+    const initials = escapeHTML(rawSellerName.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase());
     const isDonation = b.price === 0 || b.mode === 'donate';
-    const coverImg = b.cover || b.image || window.DEFAULT_BOOK_COVER;
+    const coverImg = sanitizeUrl(b.cover || b.image, window.DEFAULT_BOOK_COVER);
     const isDigital = b.category === 'digital' && b.pdfUrl;
     const waNumber = ((b.seller?.whatsapp || '+919876543210')).replace(/[^0-9]/g, '');
-    const waMsg = encodeURIComponent(`Hi ${b.seller?.name || 'there'}, I found your book "${b.title}" on BookBridge! Is it still available?`);
-    const safePdfUrl = (b.pdfUrl || '').replace(/'/g, '');
-    const safeTitle = (b.title || '').replace(/'/g, '');
+    const waMsg = encodeURIComponent(`Hi ${rawSellerName}, I found your book "${b.title || 'book'}" on BookBridge! Is it still available?`);
+    const safePdfUrl = encodeURI(b.pdfUrl || '');
+    const bookTitleEscaped = escapeHTML(b.title || 'Academic Book');
+    const bookAuthorEscaped = escapeHTML(b.author || 'Unknown');
+    const bookBranchEscaped = escapeHTML(b.branch || b.genre || 'Academic');
+    const bookEditionEscaped = escapeHTML(b.edition || 'Latest');
+    const bookLangEscaped = escapeHTML(b.language || 'English');
+    const bookCondEscaped = escapeHTML(b.condition || 'Good');
+    const bookLocEscaped = escapeHTML((b.location || 'Campus').substring(0, 15));
+    const bookStatusEscaped = escapeHTML(b.status || 'Available');
+    const safeId = encodeURIComponent(String(b.id || ''));
+    const safeTitleForAttr = bookTitleEscaped.replace(/'/g, '&#039;');
+    const safeActionLabel = escapeHTML(actionLabel);
 
     return `
       <div class="book-card">
         <div class="book-card-actions">
-          <button class="card-action-btn ${isWished ? 'active' : ''}" onclick="handleToggleWishlist(event, '${b.id}')" title="Wishlist" aria-label="Toggle wishlist">
+          <button class="card-action-btn ${isWished ? 'active' : ''}" onclick="handleToggleWishlist(event, '${safeId}')" title="Wishlist" aria-label="Toggle wishlist">
             <i class="${isWished ? 'fa-solid' : 'fa-regular'} fa-heart"></i>
           </button>
-          <button class="card-action-btn" onclick="handleShare('${safeTitle}', '${b.id}')" title="Share" aria-label="Share book">
+          <button class="card-action-btn" onclick="handleShare('${safeTitleForAttr}', '${safeId}')" title="Share" aria-label="Share book">
             <i class="fa-solid fa-share-nodes"></i>
           </button>
         </div>
 
         <div class="book-cover">
           ${isDonation ? '<span class="donation-badge"><i class="fa-solid fa-gift"></i> FREE</span>' : ''}
-          <img src="${coverImg}" alt="${b.title}" loading="lazy" onerror="this.onerror=null; this.src=window.DEFAULT_BOOK_COVER;">
+          <img src="${coverImg}" alt="${safeTitleForAttr}" loading="lazy" onerror="this.onerror=null; this.src=window.DEFAULT_BOOK_COVER;">
         </div>
 
         <div class="book-body">
           <div class="book-meta-row">
-            <span class="book-category">${b.branch || b.genre || 'Academic'}</span>
+            <span class="book-category">${bookBranchEscaped}</span>
             <span class="book-type">${typeLabel}</span>
           </div>
 
-          <div class="book-title">${b.title}</div>
-          <div class="book-author">by ${b.author || 'Unknown'} · ${b.edition || 'Latest'}</div>
+          <div class="book-title">${bookTitleEscaped}</div>
+          <div class="book-author">by ${bookAuthorEscaped} · ${bookEditionEscaped}</div>
 
           <div class="book-details">
-            <span class="book-detail-tag"><i class="fa-solid fa-language"></i> ${b.language || 'English'}</span>
-            <span class="book-detail-tag"><i class="fa-solid fa-tag"></i> ${b.condition || 'Good'}</span>
-            <span class="book-detail-tag"><i class="fa-solid fa-location-dot"></i> ${(b.location || 'Campus').substring(0, 15)}</span>
+            <span class="book-detail-tag"><i class="fa-solid fa-language"></i> ${bookLangEscaped}</span>
+            <span class="book-detail-tag"><i class="fa-solid fa-tag"></i> ${bookCondEscaped}</span>
+            <span class="book-detail-tag"><i class="fa-solid fa-location-dot"></i> ${bookLocEscaped}</span>
           </div>
 
           <div class="book-rating">
             <i class="fa-solid fa-star"></i> ${ratingVal}
-            <span style="color: var(--color-gray-light); margin-left: 4px;">· ${b.status || 'Available'}</span>
+            <span style="color: var(--color-gray-light); margin-left: 4px;">· ${bookStatusEscaped}</span>
           </div>
 
           <div class="book-seller">
             <span class="book-seller-avatar">${initials}</span>
-            <span>${b.seller?.name || 'Student'}</span>
+            <span>${sellerNameEscaped}</span>
           </div>
 
           <div class="book-footer">
             <div class="${isDonation ? 'book-price-free' : 'book-price'}">
-              ${isDonation ? 'FREE' : '&#8377;' + b.price}
-              ${b.original && b.price > 0 ? '<span class="original-price">&#8377;' + b.original + '</span>' : ''}
+              ${isDonation ? 'FREE' : '&#8377;' + Number(b.price || 0)}
+              ${b.original && b.price > 0 ? '<span class="original-price">&#8377;' + Number(b.original) + '</span>' : ''}
             </div>
-            <button class="btn btn-primary btn-sm" onclick="handleBookAction('${b.id}', '${actionLabel}')">${actionLabel}</button>
+            <button class="btn btn-primary btn-sm" onclick="handleBookAction('${safeId}', '${safeActionLabel}')">${safeActionLabel}</button>
           </div>
 
           <div style="display:flex; gap:6px; margin-top:8px; flex-wrap:wrap;">
             <a href="https://wa.me/${waNumber}?text=${waMsg}" target="_blank" rel="noopener" class="btn-whatsapp-share" title="Chat on WhatsApp" onclick="return handleWhatsAppClick(event)">
               <i class="fa-brands fa-whatsapp"></i> WhatsApp
             </a>
-            ${isDigital ? `<button class="btn-pdf-view" onclick="openPDFModal('${safePdfUrl}', '${safeTitle}')">
+            ${isDigital ? `<button class="btn-pdf-view" onclick="openPDFModal('${escapeHTML(safePdfUrl)}', '${safeTitleForAttr}')">
               <i class="fa-solid fa-file-pdf"></i> View PDF
             </button>` : ''}
           </div>
@@ -505,36 +546,38 @@ window.handleBookAction = async function(bookId, actionLabel) {
     ? reviews.slice(0, 2).map(r => `
         <div class="review-item">
           <div class="review-item-header">
-            <span class="review-item-name">${r.reviewerName}</span>
+            <span class="review-item-name">${escapeHTML(r.reviewerName || 'Student')}</span>
             <div class="star-rating-display">
-              ${Array.from({length:5},(_,i) => `<i class="fa-${i < r.rating ? 'solid':'regular'} fa-star"></i>`).join('')}
+              ${Array.from({length:5},(_,i) => `<i class="fa-${i < Math.round(Number(r.rating) || 5) ? 'solid':'regular'} fa-star"></i>`).join('')}
             </div>
           </div>
-          <div class="review-item-text">${r.comment}</div>
-          <div class="review-item-date">${new Date(r.date).toLocaleDateString()}</div>
+          <div class="review-item-text">${escapeHTML(r.comment || '')}</div>
+          <div class="review-item-date">${escapeHTML(r.date ? new Date(r.date).toLocaleDateString() : '')}</div>
         </div>
       `).join('')
     : `<p style="color: var(--color-gray); font-size: 13px; margin: 0;">No reviews yet for this seller.</p>`;
 
-  const safeBookId = bookId;
-  const safeSellerEmail = seller.email;
-  const safeSellerName = seller.name.replace(/"/g, '&quot;');
+  const safeBookId = encodeURIComponent(String(bookId || ''));
+  const safeSellerEmail = encodeURIComponent(seller.email || '');
+  const safeSellerName = escapeHTML(seller.name || 'Student').replace(/'/g, '&#039;');
+  const safeTitleShort = escapeHTML((book.title || 'Academic Book').substring(0, 30)).replace(/'/g, '&#039;');
+  const safePdfUrl = encodeURI(book.pdfUrl || '');
 
   bodyEl.innerHTML = `
     <div style="display: grid; gap: 10px; font-size: 14px; line-height: 1.8;">
-      <div class="flex-between"><span style="color: var(--color-gray);">Author</span><strong>${book.author || 'N/A'}</strong></div>
-      <div class="flex-between"><span style="color: var(--color-gray);">Subject</span><strong>${book.subject || book.genre || 'Academic'}</strong></div>
-      <div class="flex-between"><span style="color: var(--color-gray);">Department</span><span class="badge badge-primary">${book.branch || 'CE'}</span></div>
-      <div class="flex-between"><span style="color: var(--color-gray);">Condition</span><strong>${book.condition || 'Good'}</strong></div>
-      <div class="flex-between"><span style="color: var(--color-gray);">Semester</span><strong>${book.semester ? 'Sem ' + book.semester : 'N/A'}</strong></div>
+      <div class="flex-between"><span style="color: var(--color-gray);">Author</span><strong>${escapeHTML(book.author || 'N/A')}</strong></div>
+      <div class="flex-between"><span style="color: var(--color-gray);">Subject</span><strong>${escapeHTML(book.subject || book.genre || 'Academic')}</strong></div>
+      <div class="flex-between"><span style="color: var(--color-gray);">Department</span><span class="badge badge-primary">${escapeHTML(book.branch || 'CE')}</span></div>
+      <div class="flex-between"><span style="color: var(--color-gray);">Condition</span><strong>${escapeHTML(book.condition || 'Good')}</strong></div>
+      <div class="flex-between"><span style="color: var(--color-gray);">Semester</span><strong>${escapeHTML(book.semester ? 'Sem ' + book.semester : 'N/A')}</strong></div>
       <div class="flex-between"><span style="color: var(--color-gray);">Rating</span><strong style="color: var(--color-warning);">&#11088; ${ratingVal}</strong></div>
-      <div class="flex-between"><span style="color: var(--color-gray);">Price</span><strong style="color: var(--color-primary);">${book.price > 0 ? '&#8377;' + book.price : 'FREE'}</strong></div>
-      ${book.exchangeFor ? `<div class="flex-between"><span style="color: var(--color-gray);">Exchange For</span><span style="font-size:13px;">${book.exchangeFor}</span></div>` : ''}
+      <div class="flex-between"><span style="color: var(--color-gray);">Price</span><strong style="color: var(--color-primary);">${book.price > 0 ? '&#8377;' + Number(book.price) : 'FREE'}</strong></div>
+      ${book.exchangeFor ? `<div class="flex-between"><span style="color: var(--color-gray);">Exchange For</span><span style="font-size:13px;">${escapeHTML(book.exchangeFor)}</span></div>` : ''}
       <div style="padding: 12px; background: rgba(0,0,0,0.02); border-radius: 8px; margin-top: 4px;">
         <span style="color: var(--color-gray); font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">Description</span>
-        <p style="margin-top: 4px; color: var(--color-dark);">${book.description || 'Academic resource listed on BookBridge.'}</p>
+        <p style="margin-top: 4px; color: var(--color-dark);">${escapeHTML(book.description || 'Academic resource listed on BookBridge.')}</p>
       </div>
-      <div class="flex-between"><span style="color: var(--color-gray);">Listed by</span><strong>${seller.name}</strong></div>
+      <div class="flex-between"><span style="color: var(--color-gray);">Listed by</span><strong>${escapeHTML(seller.name || 'Student')}</strong></div>
       <div class="flex-between">
         <span style="color: var(--color-gray);">Seller Rating</span>
         <div style="display:inline-flex;align-items:center;gap:3px;">${stars}<span style="font-size:13px;color:var(--color-gray);margin-left:4px;">${ratingVal} (${reviews.length})</span></div>
@@ -547,7 +590,7 @@ window.handleBookAction = async function(bookId, actionLabel) {
         <button onclick="handleLeaveReview('${safeSellerEmail}', '${safeSellerName}', '${safeBookId}')" class="btn btn-ghost btn-sm" style="font-size:12px;">
           <i class="fa-solid fa-star"></i> Leave a Review
         </button>
-        ${book.pdfUrl ? `<button onclick="openPDFModal('${book.pdfUrl}', '${book.title.substring(0,30)}'); document.getElementById('bookDetailsModal').classList.remove('active');" class="btn btn-ghost btn-sm" style="font-size:12px;">
+        ${book.pdfUrl ? `<button onclick="openPDFModal('${escapeHTML(safePdfUrl)}', '${safeTitleShort}'); document.getElementById('bookDetailsModal').classList.remove('active');" class="btn btn-ghost btn-sm" style="font-size:12px;">
           <i class="fa-solid fa-file-pdf"></i> View PDF
         </button>` : ''}
       </div>
@@ -1370,13 +1413,13 @@ async function initAdminPage() {
     const books = await window.BookAPI.getBooks();
     tbody.innerHTML = books.map(b => `
       <tr>
-        <td><span style="color: var(--color-primary); font-weight: 600;">${b.gtuCode || b.id?.substring(0, 12) || 'N/A'}</span></td>
-        <td><strong>${b.title}</strong><br><span style="font-size:12px;color:var(--color-gray);">${b.author || ''}</span></td>
-        <td><span class="badge badge-primary">${b.branch || 'CE'}</span></td>
-        <td>${b.price > 0 ? '&#8377;' + b.price : 'Free'}</td>
-        <td><span class="book-status-badge ${(b.status||'available').toLowerCase()}">${b.status || 'Available'}</span></td>
+        <td><span style="color: var(--color-primary); font-weight: 600;">${escapeHTML(b.gtuCode || b.id?.substring(0, 12) || 'N/A')}</span></td>
+        <td><strong>${escapeHTML(b.title || '')}</strong><br><span style="font-size:12px;color:var(--color-gray);">${escapeHTML(b.author || '')}</span></td>
+        <td><span class="badge badge-primary">${escapeHTML(b.branch || 'CE')}</span></td>
+        <td>${b.price > 0 ? '&#8377;' + Number(b.price) : 'Free'}</td>
+        <td><span class="book-status-badge ${(b.status||'available').toLowerCase()}">${escapeHTML(b.status || 'Available')}</span></td>
         <td style="text-align: right;">
-          <button onclick="handleDeleteAdminBook('${b.id}')" class="btn btn-danger btn-sm" style="height: 32px; padding: 0 12px; font-size: 12px;">Delete</button>
+          <button onclick="handleDeleteAdminBook('${encodeURIComponent(String(b.id || ''))}')" class="btn btn-danger btn-sm" style="height: 32px; padding: 0 12px; font-size: 12px;">Delete</button>
         </td>
       </tr>
     `).join('') || '<tr><td colspan="6" style="text-align:center;color:var(--color-gray);padding:24px;">No books found.</td></tr>';
@@ -1388,13 +1431,13 @@ async function initAdminPage() {
     const users = await window.BookAPI.getAllUsers();
     usersTbody.innerHTML = users.map(u => `
       <tr>
-        <td><strong>${u.name}</strong></td>
-        <td style="font-size:13px;">${u.email}</td>
-        <td><span class="badge badge-primary">${u.branch || 'CE'}</span></td>
-        <td><span class="book-status-badge ${u.role === 'admin' ? 'available' : 'exchanged'}">${u.role || 'student'}</span></td>
-        <td style="font-size:12px;color:var(--color-gray);">${u.enrollment || 'N/A'}</td>
+        <td><strong>${escapeHTML(u.name || '')}</strong></td>
+        <td style="font-size:13px;">${escapeHTML(u.email || '')}</td>
+        <td><span class="badge badge-primary">${escapeHTML(u.branch || 'CE')}</span></td>
+        <td><span class="book-status-badge ${u.role === 'admin' ? 'available' : 'exchanged'}">${escapeHTML(u.role || 'student')}</span></td>
+        <td style="font-size:12px;color:var(--color-gray);">${escapeHTML(u.enrollment || 'N/A')}</td>
         <td style="text-align: right;">
-          <button onclick="handleDeleteAdminUser('${u.id}')" class="btn btn-danger btn-sm" style="height:28px;padding:0 10px;font-size:12px;">Remove</button>
+          <button onclick="handleDeleteAdminUser('${encodeURIComponent(String(u.id || ''))}')" class="btn btn-danger btn-sm" style="height:28px;padding:0 10px;font-size:12px;">Remove</button>
         </td>
       </tr>
     `).join('') || '<tr><td colspan="6" style="text-align:center;color:var(--color-gray);padding:24px;">No users found.</td></tr>';
@@ -1420,12 +1463,12 @@ window.handleDeleteAdminUser = async function(id) {
       const users = await window.BookAPI.getAllUsers();
       usersTbody.innerHTML = users.map(u => `
         <tr>
-          <td><strong>${u.name}</strong></td>
-          <td style="font-size:13px;">${u.email}</td>
-          <td><span class="badge badge-primary">${u.branch || 'CE'}</span></td>
-          <td><span class="book-status-badge ${u.role === 'admin' ? 'available' : 'exchanged'}">${u.role || 'student'}</span></td>
-          <td style="font-size:12px;">${u.enrollment || 'N/A'}</td>
-          <td style="text-align:right;"><button onclick="handleDeleteAdminUser('${u.id}')" class="btn btn-danger btn-sm" style="height:28px;padding:0 10px;font-size:12px;">Remove</button></td>
+          <td><strong>${escapeHTML(u.name || '')}</strong></td>
+          <td style="font-size:13px;">${escapeHTML(u.email || '')}</td>
+          <td><span class="badge badge-primary">${escapeHTML(u.branch || 'CE')}</span></td>
+          <td><span class="book-status-badge ${u.role === 'admin' ? 'available' : 'exchanged'}">${escapeHTML(u.role || 'student')}</span></td>
+          <td style="font-size:12px;">${escapeHTML(u.enrollment || 'N/A')}</td>
+          <td style="text-align:right;"><button onclick="handleDeleteAdminUser('${encodeURIComponent(String(u.id || ''))}')" class="btn btn-danger btn-sm" style="height:28px;padding:0 10px;font-size:12px;">Remove</button></td>
         </tr>
       `).join('') || '<tr><td colspan="6" style="text-align:center;color:var(--color-gray);">No users found.</td></tr>';
     }
@@ -1478,13 +1521,16 @@ async function initDashboardPage() {
 
   // Profile Tab
   if (profileCard) {
+    const safeUserName = escapeHTML(user.name || 'Student');
+    const safeUserEmail = escapeHTML(user.email || '');
+    const userInitials = escapeHTML(safeUserName.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase());
     profileCard.innerHTML = `
       <div style="text-align: center; margin-bottom: 20px;">
         <div style="width:64px;height:64px;border-radius:50%;background:var(--color-primary);color:#fff;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;margin:0 auto 12px;">
-          ${user.name.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase()}
+          ${userInitials}
         </div>
-        <h3 style="margin:0 0 4px;">${user.name}</h3>
-        <p style="font-size:14px;color:var(--color-gray);margin:0;">${user.email}</p>
+        <h3 style="margin:0 0 4px;">${safeUserName}</h3>
+        <p style="font-size:14px;color:var(--color-gray);margin:0;">${safeUserEmail}</p>
       </div>
       <div class="profile-stats-row">
         <div class="profile-stat-box">
@@ -1501,11 +1547,11 @@ async function initDashboardPage() {
         </div>
       </div>
       <div style="display:grid;gap:12px;font-size:14px;">
-        <div class="flex-between"><span style="color:var(--color-gray);">Enrollment</span><strong>${user.enrollment || 'N/A'}</strong></div>
-        <div class="flex-between"><span style="color:var(--color-gray);">Department</span><span class="badge badge-primary">${user.branch || 'CE'}</span></div>
-        <div class="flex-between"><span style="color:var(--color-gray);">Semester</span><strong>${user.semester ? 'Sem ' + user.semester : 'N/A'}</strong></div>
-        <div class="flex-between"><span style="color:var(--color-gray);">Role</span><strong>${(user.role || 'student').toUpperCase()}</strong></div>
-        <div class="flex-between"><span style="color:var(--color-gray);">Member Since</span><strong>${new Date(user.createdAt).toLocaleDateString('en-IN', {year:'numeric',month:'short',day:'numeric'})}</strong></div>
+        <div class="flex-between"><span style="color:var(--color-gray);">Enrollment</span><strong>${escapeHTML(user.enrollment || 'N/A')}</strong></div>
+        <div class="flex-between"><span style="color:var(--color-gray);">Department</span><span class="badge badge-primary">${escapeHTML(user.branch || 'CE')}</span></div>
+        <div class="flex-between"><span style="color:var(--color-gray);">Semester</span><strong>${escapeHTML(user.semester ? 'Sem ' + user.semester : 'N/A')}</strong></div>
+        <div class="flex-between"><span style="color:var(--color-gray);">Role</span><strong>${escapeHTML((user.role || 'student').toUpperCase())}</strong></div>
+        <div class="flex-between"><span style="color:var(--color-gray);">Member Since</span><strong>${escapeHTML(new Date(user.createdAt || Date.now()).toLocaleDateString('en-IN', {year:'numeric',month:'short',day:'numeric'}))}</strong></div>
       </div>
     `;
   }
@@ -1524,27 +1570,35 @@ async function initDashboardPage() {
       `;
     } else {
       myBooksGrid.innerHTML = myBooks.map(b => {
-        const statusClass = (b.status || 'available').toLowerCase();
+        const statusClass = escapeHTML((b.status || 'available').toLowerCase());
+        const safeTitle = escapeHTML(b.title || 'Academic Book');
+        const safeTitleAttr = safeTitle.replace(/'/g, '&#039;');
+        const safeAuthor = escapeHTML(b.author || 'Unknown');
+        const safeBranch = escapeHTML(b.branch || 'CE');
+        const safeMode = escapeHTML((b.mode || 'sell').toUpperCase());
+        const safeStatus = escapeHTML(b.status || 'Available');
+        const safeCover = sanitizeUrl(b.cover || b.image, window.DEFAULT_BOOK_COVER);
+        const safeId = encodeURIComponent(String(b.id || ''));
         return `
           <div class="book-card">
             <div class="book-cover" style="height:140px;">
-              <img src="${b.cover || b.image || window.DEFAULT_BOOK_COVER}" alt="${b.title}" loading="lazy" onerror="this.onerror=null; this.src=window.DEFAULT_BOOK_COVER;">
+              <img src="${safeCover}" alt="${safeTitleAttr}" loading="lazy" onerror="this.onerror=null; this.src=window.DEFAULT_BOOK_COVER;">
             </div>
             <div class="book-body">
               <div class="book-meta-row">
-                <span class="book-category">${b.branch || 'CE'}</span>
-                <span class="book-type">${(b.mode || 'sell').toUpperCase()}</span>
+                <span class="book-category">${safeBranch}</span>
+                <span class="book-type">${safeMode}</span>
               </div>
-              <div class="book-title" style="font-size:14px;">${b.title}</div>
-              <div class="book-author" style="font-size:12px;">by ${b.author || 'Unknown'}</div>
+              <div class="book-title" style="font-size:14px;">${safeTitle}</div>
+              <div class="book-author" style="font-size:12px;">by ${safeAuthor}</div>
               <div class="book-footer" style="margin-top:8px;">
-                <span class="book-status-badge ${statusClass}">${b.status || 'Available'}</span>
-                <span style="font-size:13px;font-weight:600;color:var(--color-primary);">${b.price > 0 ? '&#8377;'+b.price : 'FREE'}</span>
+                <span class="book-status-badge ${statusClass}">${safeStatus}</span>
+                <span style="font-size:13px;font-weight:600;color:var(--color-primary);">${b.price > 0 ? '&#8377;'+Number(b.price) : 'FREE'}</span>
               </div>
               <div class="my-book-actions">
-                <button class="btn-edit-book" onclick="handleEditMyBook('${b.id}')"><i class="fa-solid fa-pen"></i> Edit</button>
-                <button class="btn-mark-sold" onclick="handleMarkSold('${b.id}', this)"><i class="fa-solid fa-check"></i> Sold</button>
-                <button class="btn-delete-book" onclick="handleDeleteMyBook('${b.id}')"><i class="fa-solid fa-trash"></i></button>
+                <button class="btn-edit-book" onclick="handleEditMyBook('${safeId}')"><i class="fa-solid fa-pen"></i> Edit</button>
+                <button class="btn-mark-sold" onclick="handleMarkSold('${safeId}', this)"><i class="fa-solid fa-check"></i> Sold</button>
+                <button class="btn-delete-book" onclick="handleDeleteMyBook('${safeId}')"><i class="fa-solid fa-trash"></i></button>
               </div>
             </div>
           </div>
@@ -1609,15 +1663,18 @@ async function renderDashboardMessages(user) {
     <div class="message-thread-list">
       ${threadList.map(([email, thread]) => {
         const lastMsg = thread.messages[thread.messages.length - 1];
-        const initials = thread.name.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
-        const time = lastMsg ? new Date(lastMsg.timestamp).toLocaleTimeString('en-IN', {hour:'2-digit',minute:'2-digit'}) : '';
+        const safeName = escapeHTML(thread.name || 'Student');
+        const initials = safeName.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
+        const time = lastMsg ? escapeHTML(new Date(lastMsg.timestamp).toLocaleTimeString('en-IN', {hour:'2-digit',minute:'2-digit'})) : '';
         const colorVar = colorVars[email.length % colorVars.length];
+        const safeBookTitle = lastMsg?.bookTitle ? escapeHTML(lastMsg.bookTitle) : '';
+        const safeText = lastMsg?.text ? escapeHTML(lastMsg.text) : '';
         return `
           <div class="msg-thread-item ${thread.unread > 0 ? 'unread' : ''}">
             <div class="msg-avatar" style="background:var(--color-${colorVar});">${initials}</div>
             <div class="msg-thread-content">
-              <div class="msg-thread-name">${thread.name}</div>
-              <div class="msg-thread-preview">${lastMsg?.bookTitle ? '📖 ' + lastMsg.bookTitle + ': ' : ''}${lastMsg?.text || ''}</div>
+              <div class="msg-thread-name">${safeName}</div>
+              <div class="msg-thread-preview">${safeBookTitle ? '📖 ' + safeBookTitle + ': ' : ''}${safeText}</div>
             </div>
             <div class="msg-thread-meta">
               <span class="msg-thread-time">${time}</span>
@@ -1695,11 +1752,11 @@ function renderDashboardNotifications(user, myBooks, allBooks) {
 
   notifContainer.innerHTML = notifications.map(n => `
     <div class="notification-item ${n.unread ? 'unread' : ''}">
-      <div class="notif-icon" style="background:${n.bg};color:${n.color};">${n.icon}</div>
+      <div class="notif-icon" style="background:${escapeHTML(n.bg)};color:${escapeHTML(n.color)};">${escapeHTML(n.icon)}</div>
       <div class="notif-content">
-        <div class="notif-title">${n.title}</div>
-        <div class="notif-desc">${n.desc}</div>
-        <div class="notif-time">${n.time}</div>
+        <div class="notif-title">${escapeHTML(n.title)}</div>
+        <div class="notif-desc">${escapeHTML(n.desc)}</div>
+        <div class="notif-time">${escapeHTML(n.time)}</div>
       </div>
     </div>
   `).join('');
@@ -1839,15 +1896,19 @@ async function renderSwapMatchmakerBanner(containerId) {
   if (exchangeBooks.length === 0) return;
 
   const matchedBook = exchangeBooks[0];
-  const sellerName = matchedBook.seller?.name || 'A Student';
+  const sellerName = escapeHTML(matchedBook.seller?.name || 'A Student');
+  const safeTitle = escapeHTML(matchedBook.title || 'Academic Book');
+  const safeBranch = escapeHTML(matchedBook.branch || 'General');
+  const safeSemester = escapeHTML(matchedBook.semester || 5);
+  const safeId = encodeURIComponent(String(matchedBook.id || ''));
 
   container.innerHTML = `
     <div class="matchmaker-banner animate-on-scroll">
       <div class="matchmaker-info">
         <h3>⚡ Perfect Swap Match Found!</h3>
-        <p><strong>${sellerName}</strong> has listed <strong>"${matchedBook.title}"</strong> (${matchedBook.branch} Sem ${matchedBook.semester || 5}). Tap to propose a trade!</p>
+        <p><strong>${sellerName}</strong> has listed <strong>"${safeTitle}"</strong> (${safeBranch} Sem ${safeSemester}). Tap to propose a trade!</p>
       </div>
-      <button onclick="handleBookAction('${matchedBook.id}', 'Propose Swap')" class="matchmaker-btn">
+      <button onclick="handleBookAction('${safeId}', 'Propose Swap')" class="matchmaker-btn">
         <i class="fa-solid fa-arrows-rotate"></i> Swap Now
       </button>
     </div>
