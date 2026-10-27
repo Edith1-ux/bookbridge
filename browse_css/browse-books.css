@@ -1,592 +1,424 @@
-/* ==========================================
-   BOOKBRIDGE - BROWSE BOOKS PAGE
-========================================== */
-
-/* Google Font */
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap');
-
-/* ==========================================
-   Global Styles
-========================================== */
-
-*{
-    margin:0;
-    padding:0;
-    box-sizing:border-box;
-}
-
-html{
-    scroll-behavior:smooth;
-}
-
-body{
-    font-family:'Poppins',sans-serif;
-    background:#F8F6F1;
-    color:#222;
-    overflow-x:hidden;
-}
-
-a{
-    text-decoration:none;
-}
-
-img{
-    max-width:100%;
-    display:block;
-}
-
-/* ==========================================
-   Navbar
-========================================== */
-
-.navbar{
-    background:#fff;
-    box-shadow:0 3px 15px rgba(0,0,0,.08);
-}
-
-.navbar-brand{
-    font-size:2rem;
-    font-weight:700;
-    color:#3E6B3A !important;
-}
-
-.nav-link{
-    font-weight:500;
-    color:#333 !important;
-    margin:0 8px;
-    transition:.3s;
-}
-
-.nav-link:hover{
-    color:#3E6B3A !important;
-}
-
-.nav-link.active{
-    color:#3E6B3A !important;
-    font-weight:600;
-}
-
-/* Buttons */
-
-.btn-success{
-    background:#3E6B3A;
-    border:none;
-    border-radius:10px;
-    padding:10px 24px;
-}
-
-.btn-success:hover{
-    background:#345b31;
-}
-
-.btn-outline-success{
-    border:2px solid #3E6B3A;
-    color:#3E6B3A;
-    border-radius:10px;
-}
-
-.btn-outline-success:hover{
-    background:#3E6B3A;
-    color:#fff;
-}
-
-/* ==========================================
-   Hero Section
-========================================== */
-
-.hero-section{
-    background:#F8F6F1;
-    padding:80px 0;
-}
-
-.hero-title{
-    font-size:3rem;
-    font-weight:700;
-    margin-bottom:20px;
-}
-
-.hero-description{
-    color:#666;
-    line-height:1.8;
-    margin-bottom:25px;
-    max-width:550px;
-}
-
-.hero-image{
-    width:100%;
-    max-width:470px;
-    margin:auto;
-}
-
-/* ==========================================
-   Search Section
-========================================== */
-
-.search-filter-section{
-    padding:30px 0;
-}
-
-.input-group{
-    border-radius:12px;
-    overflow:hidden;
-}
-
-.input-group-text{
-    background:#fff;
-    border-right:none;
-}
-
-.form-control{
-    border-left:none;
-    height:52px;
-    box-shadow:none !important;
-}
-
-.form-control:focus{
-    border-color:#ced4da;
-}
-
-.form-select{
-    height:52px;
-    border-radius:12px;
-}
-
-.results-section{
-    padding:15px 0;
-}
-
-#bookCount{
-    color:#3E6B3A;
-    font-weight:700;
-}
-
-/* ==========================================
-   Books Grid
-========================================== */
-
-.books-section{
-    padding:60px 0;
-    background:#F8F6F1;
-}
-
-.book-column{
-    display:flex;
-}
-
-/* ==========================================
-   Book Card
-========================================== */
-
-.book-card{
-    width:100%;
-    background:#fff;
-    border-radius:18px;
-    overflow:hidden;
-    box-shadow:0 8px 25px rgba(0,0,0,.08);
-    transition:.35s;
-    border:1px solid #ececec;
-    display:flex;
-    flex-direction:column;
-}
-
-.book-card:hover{
-    transform:translateY(-8px);
-    box-shadow:0 18px 40px rgba(0,0,0,.15);
-}
-
-.book-image{
-    width:100%;
-    height:280px;
-    object-fit:contain;
-    background:#fafafa;
-    padding:12px;
-    border-bottom:1px solid #f0f0f0;
-}
-
-.book-content{
-    padding:20px;
-    display:flex;
-    flex-direction:column;
-    flex:1;
-}
-
-/* ==========================================
-   Badges
-========================================== */
-
-.book-badges{
-    display:flex;
-    flex-wrap:wrap;
-    gap:8px;
-    margin-bottom:15px;
-}
-
-.book-badges span{
-    background:#eef6ec;
-    color:#3E6B3A;
-    padding:5px 12px;
-    border-radius:30px;
-    font-size:12px;
-    font-weight:600;
-}
-
-/* ==========================================
-   Book Text
-========================================== */
-
-.book-title{
-    font-size:20px;
-    font-weight:700;
-    margin-bottom:8px;
-    color:#222;
-}
-
-.book-author{
-    color:#777;
-    font-size:14px;
-    margin-bottom:15px;
-}
-
-.book-price{
-    font-size:22px;
-    font-weight:700;
-    color:#3E6B3A;
-    margin-bottom:10px;
-}
-
-.book-condition{
-    display:inline-block;
-    background:#fff4dc;
-    color:#c07b00;
-    padding:6px 12px;
-    border-radius:30px;
-    font-size:13px;
-    font-weight:600;
-    margin-bottom:20px;
-}
-
-/* ==========================================
-   View Button
-========================================== */
-
-.view-btn{
-    width:100%;
-    border:none;
-    background:#3E6B3A;
-    color:#fff;
-    padding:12px;
-    border-radius:10px;
-    font-size:15px;
-    font-weight:600;
-    cursor:pointer;
-    transition:.3s;
-    margin-top:auto;
-}
-
-.view-btn:hover{
-    background:#2f542d;
-}
-
-/* ==========================================
-   Filter Offcanvas
-========================================== */
-
-.offcanvas{
-    width:360px !important;
-}
-
-.offcanvas-header{
-    border-bottom:1px solid #e9ecef;
-}
-
-.offcanvas-title{
-    font-size:24px;
-    font-weight:700;
-    color:#3E6B3A;
-}
-
-.offcanvas-body h6{
-    font-weight:600;
-    margin-bottom:12px;
-}
-
-.offcanvas .form-select{
-    border-radius:10px;
-    height:48px;
-}
-
-.form-range{
-    cursor:pointer;
-}
-
-#priceValue{
-    color:#3E6B3A;
-    font-weight:700;
-    font-size:16px;
-}
-
-/* ==========================================
-   Book Details Modal
-========================================== */
-
-.modal-content{
-    border:none;
-    border-radius:18px;
-    overflow:hidden;
-}
-
-.modal-header{
-    background:#3E6B3A;
-    color:#fff;
-    border:none;
-}
-
-.modal-title{
-    font-weight:700;
-}
-
-.modal-header .btn-close{
-    filter:invert(1);
-}
-
-.modal-body{
-    padding:30px;
-}
-
-#modalBookImage{
-    width:100%;
-    border-radius:14px;
-    box-shadow:0 10px 25px rgba(0,0,0,.12);
-}
-
-#modalBookTitle{
-    font-size:28px;
-    font-weight:700;
-    margin-bottom:20px;
-}
-
-.modal-body p{
-    margin-bottom:12px;
-    font-size:15px;
-}
-
-.modal-body strong{
-    color:#3E6B3A;
-}
-
-#modalBookDescription{
-    line-height:1.8;
-    color:#666;
-}
-
-.modal-footer{
-    border:none;
-    padding:20px 30px;
-}
-
-.modal-footer .btn{
-    min-width:120px;
-    border-radius:10px;
-}
-
-/* ==========================================
-   Utility
-========================================== */
-
-.text-success{
-    color:#3E6B3A !important;
-}
-
-.bg-success{
-    background:#3E6B3A !important;
-}
-
-.shadow-soft{
-    box-shadow:0 8px 30px rgba(0,0,0,.08);
-}
-
-.rounded-xl{
-    border-radius:18px;
-}
-
-
-/* ==========================================
-   Footer
-========================================== */
-
-.footer{
-    background:#222;
-    color:#ffffff;
-    padding:70px 0 30px;
-}
-
-.footer h4,
-.footer h5{
-    color:#ffffff;
-    margin-bottom:20px;
-    font-weight:700;
-}
-
-.footer p{
-    color:#d8d8d8;
-    line-height:1.8;
-}
-
-.footer ul{
-    padding:0;
-    margin:0;
-    list-style:none;
-}
-
-.footer ul li{
-    margin-bottom:12px;
-}
-
-.footer ul li a{
-    color:#d8d8d8;
-    text-decoration:none;
-    transition:.3s;
-}
-
-.footer ul li a:hover{
-    color:#ffffff;
-    padding-left:6px;
-}
-
-.footer hr{
-    border-color:rgba(255,255,255,.15);
-    margin:35px 0 20px;
-}
-
-.footer .text-center{
-    color:#d8d8d8;
-}
-
-/* ==========================================
-   Scrollbar
-========================================== */
-
-::-webkit-scrollbar{
-    width:10px;
-}
-
-::-webkit-scrollbar-track{
-    background:#f2f2f2;
-}
-
-::-webkit-scrollbar-thumb{
-    background:#3E6B3A;
-    border-radius:20px;
-}
-
-::-webkit-scrollbar-thumb:hover{
-    background:#2f542d;
-}
-
-/* ==========================================
-   Responsive Design
-========================================== */
-
-@media (max-width:1200px){
-
-    .hero-title{
-        font-size:2.6rem;
+/* ==========================================================================
+   BOOKBRIDGE - BROWSE BOOKS ENHANCED STYLESHEET
+   Harmonized with the BookBridge HorizonX Design System (style.css)
+   ========================================================================== */
+
+/* ─── Search & Control Bar ─── */
+.browse-search-bar-wrap {
+    max-width: 760px;
+    margin: 0 auto 20px;
+}
+
+.browse-search-bar {
+    display: flex;
+    align-items: center;
+    background: var(--surface-card, #ffffff);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid var(--surface-glass-border, rgba(15, 23, 42, 0.08));
+    box-shadow: var(--shadow-md, 0 10px 15px -3px rgba(15, 23, 42, 0.07));
+    border-radius: var(--radius-lg, 16px);
+    padding: 6px 8px 6px 20px;
+    width: 100%;
+    transition: all var(--tr-normal, 0.25s ease);
+}
+
+.browse-search-bar:focus-within {
+    border-color: var(--color-primary, #059669);
+    box-shadow: 0 0 0 4px var(--color-primary-glow, rgba(16, 185, 129, 0.2));
+}
+
+.browse-search-bar .search-icon {
+    color: var(--color-gray-light, #94A3B8);
+    font-size: 16px;
+    margin-right: 12px;
+}
+
+.browse-search-bar input {
+    border: none;
+    background: transparent;
+    flex: 1;
+    font-size: 15px;
+    color: var(--color-dark, #0F172A);
+    outline: none;
+    font-family: var(--font-family, 'Plus Jakarta Sans', sans-serif);
+}
+
+.browse-search-bar input::placeholder {
+    color: var(--color-gray-light, #94A3B8);
+}
+
+/* ─── Browse Hero Banner ─── */
+.browse-hero-banner {
+    padding: 36px 0 24px;
+    background: linear-gradient(180deg, rgba(16, 185, 129, 0.05) 0%, transparent 100%);
+    border-bottom: 1px solid var(--color-border, rgba(15, 23, 42, 0.06));
+    margin-bottom: 24px;
+}
+
+.browse-page-title {
+    font-family: var(--font-display, 'Outfit', sans-serif);
+    font-size: clamp(26px, 3.5vw, 38px);
+    font-weight: 800;
+    color: var(--color-dark, #0F172A);
+    line-height: 1.25;
+    letter-spacing: -0.02em;
+}
+
+.browse-page-desc {
+    font-size: 15px;
+    line-height: 1.7;
+    color: var(--color-gray, #475569);
+    max-width: 620px;
+}
+
+.browse-hero-ill img {
+    max-height: 250px;
+    object-fit: cover;
+    border-radius: var(--radius-xl, 20px);
+    border: 1px solid var(--surface-glass-border, rgba(255, 255, 255, 0.6));
+    box-shadow: var(--shadow-xl, 0 20px 25px -5px rgba(0, 0, 0, 0.1));
+}
+
+.browse-sort-select {
+    height: 48px;
+    border-radius: var(--radius-lg, 16px);
+    border: 1px solid var(--color-border, rgba(15, 23, 42, 0.12));
+    background-color: var(--surface-card, #ffffff);
+    color: var(--color-dark, #0F172A);
+    font-size: 14px;
+    font-weight: 600;
+    padding: 0 16px;
+    box-shadow: var(--shadow-sm, 0 1px 2px 0 rgba(0, 0, 0, 0.05));
+    transition: all 0.2s ease;
+}
+
+.browse-sort-select:focus {
+    border-color: var(--color-primary, #059669);
+    box-shadow: 0 0 0 3px var(--color-primary-glow, rgba(16, 185, 129, 0.2));
+    outline: none;
+}
+
+/* ─── Category Quick-Filter Chips ─── */
+.browse-category-chips {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 18px auto 0;
+    max-width: 900px;
+}
+
+.browse-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    background: var(--surface-card, #ffffff);
+    border: 1px solid var(--color-border, rgba(15, 23, 42, 0.08));
+    border-radius: var(--radius-pill, 9999px);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-gray, #475569);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    user-select: none;
+}
+
+.browse-chip i {
+    font-size: 12px;
+}
+
+.browse-chip:hover {
+    background: var(--surface-glass, rgba(255, 255, 255, 0.8));
+    border-color: var(--color-primary, #059669);
+    color: var(--color-primary, #059669);
+    transform: translateY(-2px);
+}
+
+.browse-chip.active {
+    background: var(--color-primary, #059669);
+    border-color: var(--color-primary, #059669);
+    color: #ffffff;
+    box-shadow: 0 4px 12px var(--color-primary-glow, rgba(16, 185, 129, 0.25));
+}
+
+/* ─── Book Card Components ─── */
+.book-column {
+    display: flex;
+}
+
+.book-card {
+    width: 100%;
+    background: var(--surface-card, #ffffff);
+    border-radius: var(--radius-lg, 16px);
+    overflow: hidden;
+    box-shadow: var(--shadow-sm, 0 4px 6px -1px rgba(15, 23, 42, 0.05));
+    border: 1px solid var(--color-border, rgba(15, 23, 42, 0.08));
+    transition: all var(--tr-normal, 0.25s ease);
+    display: flex;
+    flex-direction: column;
+    position: relative;
+}
+
+.book-card:hover {
+    transform: translateY(-6px);
+    box-shadow: var(--shadow-card-hover, 0 20px 30px -10px rgba(5, 150, 105, 0.15));
+    border-color: var(--color-primary, #059669);
+}
+
+.book-image {
+    width: 100%;
+    height: 230px;
+    object-fit: contain;
+    background: linear-gradient(135deg, rgba(5, 150, 105, 0.03) 0%, rgba(14, 165, 233, 0.03) 100%);
+    padding: 14px;
+    border-bottom: 1px solid var(--color-border, rgba(15, 23, 42, 0.06));
+    transition: transform var(--tr-smooth, 0.35s ease);
+}
+
+.book-card:hover .book-image {
+    transform: scale(1.03);
+}
+
+.book-content {
+    padding: 18px;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+
+/* ─── Book Badges ─── */
+.book-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 12px;
+}
+
+.book-badges span {
+    background: var(--color-primary-light, rgba(16, 185, 129, 0.1));
+    color: var(--color-primary, #059669);
+    padding: 3px 10px;
+    border-radius: var(--radius-pill, 9999px);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.2px;
+    border: 1px solid rgba(5, 150, 105, 0.12);
+}
+
+/* ─── Book Typography ─── */
+.book-title {
+    font-family: var(--font-display, 'Outfit', sans-serif);
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--color-dark, #0F172A);
+    line-height: 1.35;
+    margin-bottom: 6px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    min-height: 44px;
+}
+
+.book-author {
+    color: var(--color-gray, #64748B);
+    font-size: 13px;
+    margin-bottom: 10px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.book-price {
+    font-family: var(--font-display, 'Outfit', sans-serif);
+    font-size: 20px;
+    font-weight: 800;
+    color: var(--color-primary, #059669);
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.book-condition {
+    display: inline-block;
+    align-self: flex-start;
+    background: var(--color-warning-light, rgba(245, 158, 11, 0.1));
+    color: var(--color-warning, #D97706);
+    padding: 3px 10px;
+    border-radius: var(--radius-pill, 9999px);
+    font-size: 11px;
+    font-weight: 700;
+    margin-bottom: 16px;
+    border: 1px solid rgba(245, 158, 11, 0.2);
+}
+
+/* ─── Action Buttons ─── */
+.view-btn {
+    border: none;
+    background: var(--color-primary, #059669);
+    color: #ffffff;
+    padding: 9px 14px;
+    border-radius: var(--radius-btn, 9999px);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: center;
+    text-decoration: none;
+    box-shadow: 0 2px 6px rgba(5, 150, 105, 0.2);
+}
+
+.view-btn:hover {
+    background: var(--color-primary-hover, #047857);
+    color: #ffffff;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(5, 150, 105, 0.3);
+}
+
+.chat-card-btn {
+    border: 1.5px solid var(--color-primary, #059669);
+    background: transparent;
+    color: var(--color-primary, #059669);
+    border-radius: var(--radius-btn, 9999px);
+    padding: 8px 12px;
+    font-size: 13px;
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+
+.chat-card-btn:hover {
+    background: var(--color-primary-light, rgba(16, 185, 129, 0.1));
+    color: var(--color-primary, #059669);
+    border-color: var(--color-primary, #059669);
+    transform: translateY(-1px);
+}
+
+/* ─── Offcanvas Filter Styling ─── */
+.offcanvas {
+    width: 380px !important;
+    border-left: 1px solid var(--color-border, rgba(15, 23, 42, 0.1)) !important;
+    box-shadow: -10px 0 30px rgba(0, 0, 0, 0.08) !important;
+}
+
+.offcanvas-header {
+    border-bottom: 1px solid var(--color-border, rgba(15, 23, 42, 0.08)) !important;
+    padding: 20px 24px;
+    background: var(--color-bg, #F8FAFC);
+}
+
+.offcanvas-title {
+    font-family: var(--font-display, 'Outfit', sans-serif);
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--color-dark, #0F172A);
+}
+
+.offcanvas-body {
+    padding: 24px;
+}
+
+.offcanvas .form-select {
+    border-radius: var(--radius, 12px);
+    border-color: var(--color-border, rgba(15, 23, 42, 0.12));
+    height: 46px;
+    font-size: 14px;
+}
+
+.offcanvas .form-select:focus {
+    border-color: var(--color-primary, #059669);
+    box-shadow: 0 0 0 3px var(--color-primary-glow, rgba(16, 185, 129, 0.2));
+}
+
+#priceValue {
+    color: var(--color-primary, #059669);
+    font-weight: 800;
+    font-size: 16px;
+}
+
+/* ─── Modal Harmonization ─── */
+.modal-content {
+    border: none;
+    border-radius: var(--radius-xl, 24px);
+    overflow: hidden;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+
+.modal-header {
+    background: linear-gradient(135deg, var(--color-primary, #059669) 0%, #047857 100%);
+    color: #ffffff;
+    border: none;
+    padding: 20px 24px;
+}
+
+.modal-title {
+    font-family: var(--font-display, 'Outfit', sans-serif);
+    font-weight: 700;
+    color: #ffffff;
+}
+
+.modal-header .btn-close {
+    filter: brightness(0) invert(1);
+    opacity: 0.85;
+}
+
+.modal-header .btn-close:hover {
+    opacity: 1;
+}
+
+.modal-body {
+    padding: 28px;
+}
+
+#modalBookImage {
+    width: 100%;
+    max-height: 340px;
+    object-fit: contain;
+    border-radius: var(--radius-lg, 16px);
+    background: #f8fafc;
+    border: 1px solid var(--color-border, rgba(0, 0, 0, 0.08));
+}
+
+#modalBookTitle {
+    font-family: var(--font-display, 'Outfit', sans-serif);
+    font-size: 24px;
+    font-weight: 800;
+    color: var(--color-dark, #0F172A);
+    margin-bottom: 14px;
+    line-height: 1.3;
+}
+
+#modalBookPrice {
+    font-family: var(--font-display, 'Outfit', sans-serif);
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--color-primary, #059669);
+}
+
+/* Responsive Rules */
+@media (max-width: 992px) {
+    .offcanvas {
+        width: 320px !important;
+    }
+}
+
+@media (max-width: 576px) {
+    .browse-search-bar {
+        padding: 5px 6px 5px 14px;
     }
 
+    .browse-search-bar input {
+        font-size: 13px;
+    }
+
+    .offcanvas {
+        width: 100% !important;
+    }
+
+    .modal-body {
+        padding: 18px;
+    }
 }
-
-@media (max-width:992px){
-
-    .hero-section{
-        text-align:center;
-        padding:60px 0;
-    }
-
-    .hero-title{
-        font-size:2.4rem;
-    }
-
-    .hero-description{
-        margin:auto;
-    }
-
-    .hero-image{
-        margin-top:40px;
-        max-width:380px;
-    }
-
-    .navbar-nav{
-        padding:20px 0;
-    }
-
-}
-
-@media (max-width:768px){
-
-    .hero-title{
-        font-size:2rem;
-    }
-
-    .hero-description{
-        font-size:15px;
-    }
-
-    .book-image{
-        height:260px;
-    }
-
-    .book-title{
-        font-size:18px;
-    }
-
-    .offcanvas{
-        width:100% !important;
-    }
-
-    .modal-body{
-        padding:20px;
-    }
-
-    #modalBookTitle{
-        font-size:24px;
-    }
-
-}
-
-@media (max-width:576px){
-
-    .hero-section{
-        padding:45px 0;
-    }
-
-    .hero-title{
-        font-size:1.8rem;
-    }
-
-    .book-image{
-        height:240px;
-    }
-
-    .book-content{
-        padding:16px;
-    }
-
-    .book-title{
-        font-size:17px;
-    }
-
-    .book-price{
-        font-size:20px;
-    }
-
-    .footer{
-        text-align:center;
-    }
-
-    .footer h4,
-    .footer h5{
-        margin-top:15px;
-    }
-
-}
-
