@@ -31,7 +31,7 @@ class User(AbstractUser):
     )
 
     username = None
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    id = models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')
     email = models.EmailField(unique=True, db_index=True)
     full_name = models.CharField(max_length=255)
     phone_number = models.CharField(max_length=20, blank=True, null=True)
