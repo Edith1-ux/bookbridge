@@ -73,34 +73,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Handle Form Submission (Add New Book to Catalog & Save to LocalStorage)
     if (uploadForm) {
-        uploadForm.addEventListener("submit", async (e) => {
+        uploadForm.addEventListener("submit", (e) => {
             e.preventDefault();
-
-            // STRICT AUTH GATE: Do not allow guests to list or sell books
-            const currentUser = JSON.parse(localStorage.getItem('rcti_gtu_current_user') || 'null');
-            const token = localStorage.getItem('bb_access_token');
-            if (!currentUser && !token) {
-                e.stopPropagation();
-
-                // Close modal
-                const modalEl = document.getElementById("uploadBookModal");
-                if (modalEl && typeof bootstrap !== "undefined") {
-                    const modal = bootstrap.Modal.getInstance(modalEl);
-                    if (modal) modal.hide();
-                }
-
-                if (typeof window.showAuthPrompt === "function") {
-                    window.showAuthPrompt(
-                        "Student Login Required to List Books",
-                        "You must be signed in with your college account to sell or exchange textbooks. Please login or register to publish your books on campus.",
-                        "login.html?redirect=browse.html"
-                    );
-                } else {
-                    alert("Please login with your student account to upload books.");
-                    window.location.href = "login.html?redirect=browse.html";
-                }
-                return;
-            }
 
             const title = document.getElementById("uploadTitle").value.trim();
             const author = document.getElementById("uploadAuthor").value.trim();
@@ -113,15 +87,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
             const finalImage = uploadedBase64Image || window.DEFAULT_BOOK_COVER || "browse_images/books/book1.jpg";
 
-            const sellerInfo = {
-                id: currentUser ? (currentUser.id || 'usr-1') : 'usr-student',
-                name: currentUser ? (currentUser.name || currentUser.full_name || 'Student Seller') : 'Student Seller',
-                email: currentUser ? (currentUser.email || 'student@rcti.edu') : 'student@rcti.edu',
-                role: currentUser ? (currentUser.role || 'student') : 'student',
-                whatsapp: currentUser ? (currentUser.whatsapp || '+919876543210') : '+919876543210',
-                branch: currentUser ? (currentUser.branch || department) : department
-            };
-
             const newBook = {
                 id: Date.now(),
                 title: title,
@@ -133,9 +98,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 price: price,
                 type: offerType,
                 image: finalImage,
-                cover: finalImage,
-                seller: sellerInfo,
-                isUserListed: true
+                cover: finalImage
             };
 
             // Prepend new book to global books array
@@ -150,29 +113,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 console.error("Failed to save book to localStorage:", err);
             }
 
-            // Sync to backend API (/api/books/) for campus-wide visibility
-            if (window.BookAPI && typeof window.BookAPI.addBook === "function") {
-                try {
-                    await window.BookAPI.addBook({
-                        title: title,
-                        author: author,
-                        branch: department,
-                        semester: semester,
-                        genre: category,
-                        subject: category,
-                        condition: condition,
-                        price: price,
-                        mode: offerType === 'Donate' ? 'donate' : (offerType === 'Exchange' ? 'exchange' : 'sell'),
-                        location: 'Campus Central Library',
-                        resource_type: 'Textbook'
-                    });
-                } catch (apiErr) {
-                    console.warn("Backend API sync warning:", apiErr);
-                }
-            }
-
             // Sync to unified BookDB / localStorage for dashboard & exchange integration
             try {
+                const currentUser = JSON.parse(localStorage.getItem('rcti_gtu_current_user') || 'null');
                 const unifiedBook = {
                     id: 'bk-' + newBook.id,
                     title: title,
@@ -186,7 +129,19 @@ document.addEventListener("DOMContentLoaded", () => {
                     cover: uploadedBase64Image,
                     status: 'available',
                     category: 'physical',
-                    seller: sellerInfo,
+                    seller: currentUser ? {
+                        id: currentUser.id || 'usr-1',
+                        name: currentUser.name || 'Student Seller',
+                        email: currentUser.email || 'student@rcti.edu',
+                        role: currentUser.role || 'student',
+                        whatsapp: currentUser.whatsapp || '+919876543210'
+                    } : {
+                        id: 'usr-guest',
+                        name: 'Student Seller',
+                        email: 'student@rcti.edu',
+                        role: 'student',
+                        whatsapp: '+919876543210'
+                    },
                     createdAt: new Date().toISOString()
                 };
 
@@ -227,7 +182,7 @@ document.addEventListener("DOMContentLoaded", () => {
             if (booksSec) booksSec.scrollIntoView({ behavior: "smooth" });
 
             // Success Notification
-            alert(`🎉 Success! "${title}" has been listed on campus by ${sellerInfo.name} with an offer price of ₹${price}.`);
+            alert(`🎉 Success! "${title}" has been added to the BookBridge catalog with an Exchange Offer price of ₹${price}.`);
         });
     }
 

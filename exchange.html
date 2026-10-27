@@ -43,7 +43,7 @@
       <a href="contact.html" class="drawer-link">Contact <i class="fa-solid fa-chevron-right"></i></a>
     </div>
     <div class="drawer-actions" id="mobileDrawerActions">
-      <button onclick="if(typeof openExchangeUploadModal==='function')openExchangeUploadModal();document.getElementById('mobileNavDrawer').classList.remove('active');" class="btn btn-primary btn-block"><i class="fa-solid fa-plus"></i> Upload Book</button>
+      <button onclick="document.getElementById('uploadModal').classList.add('active'); document.getElementById('mobileNavDrawer').classList.remove('active');" class="btn btn-primary btn-block"><i class="fa-solid fa-plus"></i> Upload Book</button>
       <a href="login.html" class="btn btn-secondary btn-block">Login</a>
     </div>
   </div>
@@ -82,7 +82,7 @@
     <section class="section" style="padding-top: 0;">
       <div class="flex-between" style="margin-bottom: 24px;">
         <h3>Active Exchange Listings</h3>
-        <button class="btn btn-primary btn-sm" onclick="if(typeof openExchangeUploadModal==='function')openExchangeUploadModal()"><i class="fa-solid fa-plus"></i> Upload Book</button>
+        <button class="btn btn-primary btn-sm" onclick="document.getElementById('uploadModal').classList.add('active')"><i class="fa-solid fa-plus"></i> Upload Book</button>
       </div>
 
       <div class="grid-auto" id="exchangeGrid">

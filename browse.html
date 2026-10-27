@@ -141,7 +141,8 @@
                         <a href="#books-section" class="btn btn-success btn-lg">
                             Explore Books
                         </a>
-                        <button class="btn btn-outline-success btn-lg" type="button" id="btnBrowseHeroUpload">
+                        <button class="btn btn-outline-success btn-lg" type="button" data-bs-toggle="modal"
+                            data-bs-target="#uploadBookModal">
                             <i class="bi bi-cloud-arrow-up me-2"></i> Upload & Exchange Offer
                         </button>
                     </div>
@@ -561,14 +562,6 @@
 
                             <p>
 
-                                <strong>Listed By :</strong>
-
-                                <span id="modalBookSeller" class="fw-semibold text-success">Verified Student</span>
-
-                            </p>
-
-                            <p>
-
                                 <strong>Description :</strong>
 
                             </p>
@@ -576,11 +569,6 @@
                             <p id="modalBookDescription" class="text-muted">
 
                             </p>
-
-                            <div class="alert alert-light border border-success-subtle p-2 rounded-3 small text-muted mt-2">
-                                <i class="bi bi-shield-lock text-success me-1"></i>
-                                <span>Campus peer transaction. Student login required to buy or chat with the seller.</span>
-                            </div>
 
                         </div>
 
@@ -883,46 +871,6 @@
                                 class="bi bi-check-circle me-1"></i> Save Changes & Photo</button>
                     </div>
                 </form>
-            </div>
-        </div>
-    </div>
-
-    <!-- ==========================================
-         Auth Required Modal (Strict Student Guard)
-    ========================================== -->
-    <div class="modal fade" id="authRequiredModal" tabindex="-1" aria-labelledby="authRequiredModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content shadow-lg border-0 rounded-4 overflow-hidden">
-                <div class="modal-header bg-success text-white py-3 px-4">
-                    <h5 class="modal-title fw-bold d-flex align-items-center gap-2" id="authRequiredModalLabel">
-                        <i class="bi bi-shield-lock-fill fs-5"></i> Student Login Required
-                    </h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body p-4 text-center">
-                    <div class="mb-3">
-                        <span class="d-inline-flex align-items-center justify-content-center bg-success-subtle text-success rounded-circle" style="width: 68px; height: 68px; font-size: 30px;">
-                            <i class="bi bi-person-fill-lock"></i>
-                        </span>
-                    </div>
-                    <h5 class="fw-bold text-dark mb-2" id="authModalTitle">Sign in to Continue</h5>
-                    <p class="text-muted small mb-4" id="authModalDesc">
-                        You are currently browsing as a guest. To <strong>buy books</strong>, <strong>chat with student sellers</strong>, <strong>upload books for sale</strong>, or <strong>propose exchanges</strong>, you must sign in with your student account.
-                    </p>
-                    <div class="d-grid gap-2">
-                        <a href="login.html?redirect=browse.html" class="btn btn-success btn-lg fw-semibold" id="authModalLoginBtn">
-                            <i class="bi bi-box-arrow-in-right me-2"></i> Login to Your Account
-                        </a>
-                        <a href="register.html" class="btn btn-outline-success fw-semibold">
-                            <i class="bi bi-person-plus me-2"></i> Create Free Student Account
-                        </a>
-                    </div>
-                </div>
-                <div class="modal-footer bg-light py-2 px-4 justify-content-center border-0">
-                    <small class="text-muted">
-                        <i class="bi bi-info-circle me-1"></i> Visitors can freely browse and view all books anytime without logging in.
-                    </small>
-                </div>
             </div>
         </div>
     </div>

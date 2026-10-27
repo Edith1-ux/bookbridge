@@ -56,31 +56,17 @@ function renderBooks(bookList = books) {
     bookList.forEach(book => {
 
         // Show Price or Donate
-        const isFree = book.type === "Donate" || book.mode === "donate" || Number(book.price) === 0;
-        const isExchange = book.type === "Exchange" || book.mode === "exchange";
-        const priceText = isFree
-            ? "Donate (Free)"
-            : (isExchange ? "Book Swap (₹0)" : `₹${book.price}`);
+        const priceText =
+            book.type === "Donate" || book.mode === "donate" || Number(book.price) === 0
+                ? "Donate (Free)"
+                : `₹${book.price}`;
 
         const bookImg = book.image || book.cover || DEFAULT_BOOK_COVER;
-        const isUserItem = book.isUserListed || !!book.seller;
-
-        // Action button label & icon
-        const actionLabel = isFree ? "Claim" : (isExchange ? "Swap" : "Buy");
-        const actionIcon = isFree ? "bi-gift-fill" : (isExchange ? "bi-arrow-left-right" : "bi-cart-check-fill");
 
         // Create Book Card
         const bookCard = `
             <div class="col-12 col-sm-6 col-md-4 col-lg-3 book-column">
-                <div class="book-card position-relative">
-                    ${isUserItem ? `
-                        <div class="position-absolute top-0 start-0 m-2" style="z-index: 2;">
-                            <span class="badge bg-success shadow-sm" style="font-size: 0.72rem; padding: 4px 8px; border-radius: 6px;">
-                                <i class="bi bi-person-check-fill me-1"></i> Student Listed
-                            </span>
-                        </div>
-                    ` : ''}
-
+                <div class="book-card">
                     <!-- Book Image with Safe Fallback -->
                     <img
                         src="${escapeHTML(bookImg)}"
@@ -107,12 +93,6 @@ function renderBooks(bookList = books) {
                             ${escapeHTML(book.author || 'Atul Prakashan')}
                         </p>
 
-                        ${book.seller ? `
-                            <p class="text-muted small mb-2" style="font-size: 0.82rem;">
-                                <i class="bi bi-person text-success"></i> Seller: <strong>${escapeHTML(book.seller.name || 'Verified Student')}</strong>
-                            </p>
-                        ` : ''}
-
                         <!-- Book Price -->
                         <div class="book-price">
                             ${escapeHTML(priceText)}
@@ -133,8 +113,8 @@ function renderBooks(bookList = books) {
                             <button
                                 class="btn btn-outline-success btn-sm chat-card-btn px-2 fw-semibold"
                                 data-id="${book.id}"
-                                title="${isFree ? 'Claim Free Book' : (isExchange ? 'Swap Book' : 'Buy Book / Chat with Seller')}">
-                                <i class="bi ${actionIcon} me-1"></i> ${actionLabel}
+                                title="Chat with Seller/Donor">
+                                <i class="bi bi-chat-dots-fill me-1"></i> Chat
                             </button>
                             ${(typeof isAdminMode !== "undefined" && isAdminMode) ? `
                                 <button class="btn btn-sm btn-warning text-dark admin-edit-btn px-2" data-id="${book.id}" title="Edit Book & Replace Photo">
@@ -155,19 +135,6 @@ function renderBooks(bookList = books) {
     });
 }
 
-/**
- * Check if the active visitor has logged in as a student
- */
-function isStudentAuthenticated() {
-    try {
-        const u = JSON.parse(localStorage.getItem("rcti_gtu_current_user") || "null");
-        if (u && (u.email || u.id || u.name)) return true;
-        const token = localStorage.getItem("bb_access_token");
-        if (token) return true;
-    } catch (e) {}
-    return false;
-}
-
 /* ==========================================
    View Details & Chat Modal Event Listeners
 ========================================== */
@@ -177,35 +144,14 @@ document.addEventListener("DOMContentLoaded", () => {
     const booksContainer = document.getElementById("booksContainer");
     if (booksContainer) {
         booksContainer.addEventListener("click", (e) => {
-            // Direct Card Chat / Buy Button
+            // Direct Card Chat Button
             const chatBtn = e.target.closest(".chat-card-btn");
             if (chatBtn) {
                 const rawId = chatBtn.getAttribute("data-id");
                 const book = (typeof books !== 'undefined' ? books : []).find(b => String(b.id) === String(rawId));
-                if (!book) return;
-
-                const isFree = book.type === "Donate" || book.mode === "donate" || Number(book.price) === 0;
-                const isExchange = book.type === "Exchange" || book.mode === "exchange";
-                const actionDesc = isFree ? "claim free donated books" : (isExchange ? "propose book exchanges" : "buy this book and chat with the student seller");
-
-                // STRICT AUTH CHECK
-                if (!isStudentAuthenticated()) {
-                    if (typeof window.showAuthPrompt === "function") {
-                        window.showAuthPrompt(
-                            "Student Login Required",
-                            `You are currently browsing as a guest. To <strong>${actionDesc}</strong>, you must sign in with your student account.`,
-                            "login.html?redirect=browse.html"
-                        );
-                    } else {
-                        alert("Please login to continue.");
-                        window.location.href = "login.html?redirect=browse.html";
-                    }
-                    return;
-                }
-
-                if (typeof window.openBookBridgeChat === "function") {
+                if (book && typeof window.openBookBridgeChat === "function") {
                     const seller = book.seller || { name: `Student (${book.department || 'CE'})`, email: 'student@rcti.ac.in', whatsapp: '+919876543210' };
-                    const mode = isFree ? "donate" : (isExchange ? "exchange" : "sell");
+                    const mode = (book.type === "Donate" || book.mode === "donate") ? "donate" : ((book.type === "Exchange" || book.mode === "exchange") ? "exchange" : "sell");
                     window.openBookBridgeChat({
                         receiverEmail: seller.email,
                         receiverName: seller.name,
@@ -259,31 +205,21 @@ document.addEventListener("DOMContentLoaded", () => {
             const typeEl = document.getElementById("modalBookType");
             const isFree = book.type === "Donate" || book.mode === "donate" || Number(book.price) === 0;
             const isExchange = book.type === "Exchange" || book.mode === "exchange";
-            if (typeEl) typeEl.textContent = isFree ? 'Donate (Free)' : (isExchange ? 'Exchange (Swap)' : (book.type || 'Sell'));
+            if (typeEl) typeEl.textContent = isFree ? 'Donate' : (isExchange ? 'Exchange' : (book.type || 'Sell'));
 
             const priceEl = document.getElementById("modalBookPrice");
             if (priceEl) {
-                priceEl.textContent = isFree ? "Free (Donate)" : (isExchange ? "Book Swap (₹0)" : `₹${book.price}`);
-            }
-
-            const sellerEl = document.getElementById("modalBookSeller");
-            if (sellerEl) {
-                sellerEl.textContent = book.seller?.name ? `${book.seller.name} (${book.seller.branch || book.department || 'CE'})` : 'Verified Student Seller';
-            }
-
-            const descEl = document.getElementById("modalBookDescription");
-            if (descEl) {
-                descEl.textContent = book.description || 'Academic textbook listed on the BookBridge campus sharing platform.';
+                priceEl.textContent = isFree ? "Free (Donate)" : (isExchange ? "Book Swap (Exchange)" : `₹${book.price}`);
             }
 
             const modalChatBtn = document.getElementById("modalChatActionBtn");
             if (modalChatBtn) {
                 if (isFree) {
-                    modalChatBtn.innerHTML = '<i class="bi bi-gift-fill me-1"></i> Claim Free Book';
+                    modalChatBtn.innerHTML = '<i class="bi bi-gift-fill me-1"></i> Chat to Claim Free Book';
                 } else if (isExchange) {
-                    modalChatBtn.innerHTML = '<i class="bi bi-arrow-left-right me-1"></i> Swap / Exchange Book';
+                    modalChatBtn.innerHTML = '<i class="bi bi-arrow-left-right me-1"></i> Chat for Exchange Offer';
                 } else {
-                    modalChatBtn.innerHTML = '<i class="bi bi-cart-check-fill me-1"></i> Buy Book & Chat with Seller';
+                    modalChatBtn.innerHTML = '<i class="bi bi-chat-dots-fill me-1"></i> Chat with Seller';
                 }
             }
 
@@ -295,37 +231,11 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // Modal Chat / Buy Action Button
+    // Modal Chat Action Button
     const modalChatActionBtn = document.getElementById("modalChatActionBtn");
     if (modalChatActionBtn) {
         modalChatActionBtn.addEventListener("click", () => {
             if (!activeViewedBook) return;
-
-            const isFree = activeViewedBook.type === "Donate" || activeViewedBook.mode === "donate" || Number(activeViewedBook.price) === 0;
-            const isExchange = activeViewedBook.type === "Exchange" || activeViewedBook.mode === "exchange";
-            const actionDesc = isFree ? "claim free donated books" : (isExchange ? "propose book exchanges" : "buy this book and chat with the seller");
-
-            // STRICT AUTH CHECK
-            if (!isStudentAuthenticated()) {
-                // Hide Details Modal first
-                const modalElement = document.getElementById("bookDetailsModal");
-                if (modalElement && typeof bootstrap !== "undefined") {
-                    const modal = bootstrap.Modal.getInstance(modalElement);
-                    if (modal) modal.hide();
-                }
-
-                if (typeof window.showAuthPrompt === "function") {
-                    window.showAuthPrompt(
-                        "Student Login Required",
-                        `You are currently browsing as a guest. To <strong>${actionDesc}</strong>, you must sign in with your student account.`,
-                        "login.html?redirect=browse.html"
-                    );
-                } else {
-                    alert("Please login to continue.");
-                    window.location.href = "login.html?redirect=browse.html";
-                }
-                return;
-            }
 
             // Hide Details Modal
             const modalElement = document.getElementById("bookDetailsModal");
@@ -335,7 +245,7 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
             const seller = activeViewedBook.seller || { name: `Student (${activeViewedBook.department || 'CE'})`, email: 'student@rcti.ac.in', whatsapp: '+919876543210' };
-            const mode = isFree ? "donate" : (isExchange ? "exchange" : "sell");
+            const mode = (activeViewedBook.type === "Donate" || activeViewedBook.mode === "donate") ? "donate" : ((activeViewedBook.type === "Exchange" || activeViewedBook.mode === "exchange") ? "exchange" : "sell");
 
             if (typeof window.openBookBridgeChat === "function") {
                 window.openBookBridgeChat({
